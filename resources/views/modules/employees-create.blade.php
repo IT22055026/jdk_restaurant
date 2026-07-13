@@ -1,0 +1,181 @@
+@extends('layouts.app')
+
+@section('title', 'Add Employee')
+
+@section('content')
+    <div>
+        <div class="mb-8">
+            <div>
+                <a href="{{ route('employees.index') }}" class="flex items-center justify-center w-9 h-9 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900 transition-colors mb-2" title="Back">
+                    <i class="fas fa-arrow-left text-sm"></i>
+                </a>
+                <h1 class="text-4xl font-bold text-gray-900">Add Employee</h1>
+            </div>
+            <p class="text-gray-600 mt-2">Create a new employee record</p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-8 max-w-3xl">
+            <form action="{{ route('employees.store') }}" method="POST" class="space-y-6">
+                @csrf
+
+                <!-- User Information Section -->
+                <div class="pb-6 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Account Information</h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="name" class="block text-sm font-semibold text-gray-900 mb-2">Full Name <span class="text-red-600">*</span></label>
+                            <input type="text" name="name" id="name" value="{{ old('name') }}" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent {{ $errors->has('name') ? 'border-red-600' : '' }}"
+                                placeholder="John Doe">
+                            @error('name')
+                                <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="email" class="block text-sm font-semibold text-gray-900 mb-2">Email <span class="text-red-600">*</span></label>
+                            <input type="email" name="email" id="email" value="{{ old('email') }}" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent {{ $errors->has('email') ? 'border-red-600' : '' }}"
+                                placeholder="john@example.com">
+                            @error('email')
+                                <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="password" class="block text-sm font-semibold text-gray-900 mb-2">Password <span class="text-red-600">*</span></label>
+                            <input type="password" name="password" id="password" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent {{ $errors->has('password') ? 'border-red-600' : '' }}"
+                                placeholder="••••••••">
+                            @error('password')
+                                <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="password_confirmation" class="block text-sm font-semibold text-gray-900 mb-2">Confirm Password <span class="text-red-600">*</span></label>
+                            <input type="password" name="password_confirmation" id="password_confirmation" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                placeholder="••••••••">
+                        </div>
+
+                        <div>
+                            <label for="role_id" class="block text-sm font-semibold text-gray-900 mb-2">Role <span class="text-red-600">*</span></label>
+                            <select name="role_id" id="role_id" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent {{ $errors->has('role_id') ? 'border-red-600' : '' }}">
+                                <option value="">Select role</option>
+                                @foreach($roles as $role)
+                                    <option value="{{ $role->id }}" {{ old('role_id') == $role->id ? 'selected' : '' }}>{{ $role->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('role_id')
+                                <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="status" class="block text-sm font-semibold text-gray-900 mb-2">Status <span class="text-red-600">*</span></label>
+                            <select name="status" id="status" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent {{ $errors->has('status') ? 'border-red-600' : '' }}">
+                                <option value="">Select status</option>
+                                <option value="active" {{ old('status') === 'active' ? 'selected' : '' }}>Active</option>
+                                <option value="inactive" {{ old('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
+                            </select>
+                            @error('status')
+                                <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Employee Information Section -->
+                <div class="pb-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Employee Information</h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="phone" class="block text-sm font-semibold text-gray-900 mb-2">Phone <span class="text-gray-500">(Optional)</span></label>
+                            <input type="tel" name="phone" id="phone" value="{{ old('phone') }}"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                placeholder="+1 (555) 000-0000">
+                            @error('phone')
+                                <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="hire_date" class="block text-sm font-semibold text-gray-900 mb-2">Hire Date <span class="text-gray-500">(Optional)</span></label>
+                            <input type="date" name="hire_date" id="hire_date" value="{{ old('hire_date') }}"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                            @error('hire_date')
+                                <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="salary" class="block text-sm font-semibold text-gray-900 mb-2">Salary <span class="text-gray-500">(Optional)</span></label>
+                            <input type="number" name="salary" id="salary" value="{{ old('salary') }}" step="0.01" min="0"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                placeholder="0.00">
+                            @error('salary')
+                                <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div></div>
+
+                        <div>
+                            <label for="address" class="block text-sm font-semibold text-gray-900 mb-2">Address <span class="text-gray-500">(Optional)</span></label>
+                            <input type="text" name="address" id="address" value="{{ old('address') }}"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                placeholder="123 Main Street">
+                            @error('address')
+                                <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="city" class="block text-sm font-semibold text-gray-900 mb-2">City <span class="text-gray-500">(Optional)</span></label>
+                            <input type="text" name="city" id="city" value="{{ old('city') }}"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                placeholder="New York">
+                            @error('city')
+                                <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="state" class="block text-sm font-semibold text-gray-900 mb-2">State <span class="text-gray-500">(Optional)</span></label>
+                            <input type="text" name="state" id="state" value="{{ old('state') }}"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                placeholder="NY">
+                            @error('state')
+                                <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="postal_code" class="block text-sm font-semibold text-gray-900 mb-2">Postal Code <span class="text-gray-500">(Optional)</span></label>
+                            <input type="text" name="postal_code" id="postal_code" value="{{ old('postal_code') }}"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                placeholder="10001">
+                            @error('postal_code')
+                                <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 pt-4">
+                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
+                        <i class="fas fa-save mr-2"></i>Save Employee
+                    </button>
+                    <a href="{{ route('employees.index') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-900 px-6 py-2 rounded-lg font-semibold transition-colors">
+                        <i class="fas fa-times mr-2"></i>Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+@endsection

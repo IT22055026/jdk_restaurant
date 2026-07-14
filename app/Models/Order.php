@@ -8,14 +8,12 @@ class Order extends Model
 {
     protected $fillable = [
         'order_number',
-        'table_id',
+        'token_date',
+        'token_number',
         'customer_id',
         'customer_name',
         'customer_phone',
         'user_id',
-        'order_type',
-        'source',
-        'seen_at',
         'status',
         'subtotal',
         'discount_amount',
@@ -34,6 +32,7 @@ class Order extends Model
     ];
 
     protected $casts = [
+        'token_date' => 'date',
         'subtotal' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'tax_amount' => 'decimal:2',
@@ -45,15 +44,9 @@ class Order extends Model
         'bot_printed_at' => 'datetime',
         'waiter_bill_printed_at' => 'datetime',
         'printed_at' => 'datetime',
-        'seen_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
-
-    public function table()
-    {
-        return $this->belongsTo(RestaurantTable::class, 'table_id');
-    }
 
     public function customer()
     {

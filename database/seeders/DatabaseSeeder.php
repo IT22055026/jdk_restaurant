@@ -17,7 +17,6 @@ class DatabaseSeeder extends Seeder
             ModuleSeeder::class,
             UserSeeder::class,
             CategorySeeder::class,
-            TableSeeder::class,
         ]);
     }
 }

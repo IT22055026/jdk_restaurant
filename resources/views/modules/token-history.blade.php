@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>KOT History — Restaurant BYOB</title>
+    <title>Token History — Restaurant BYOB</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -70,8 +70,7 @@
             font-weight: 600;
         }
 
-        .badge-kitchen { background: #dbeafe; color: #1e40af; }
-        .badge-bar { background: #fef3c7; color: #92400e; }
+        .badge-token { background: #ffedd5; color: #9a3412; }
 
         .main-content { margin-left: 256px; }
         @media (max-width: 1024px) { .main-content { margin-left: 0; } }
@@ -94,8 +93,8 @@
 
             <!-- Page header -->
             <div class="mb-8">
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">KOT History</h1>
-                <p class="text-gray-600">View and reprint kitchen orders in real-time</p>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">Token History</h1>
+                <p class="text-gray-600">View and reprint kitchen tokens in real-time</p>
             </div>
 
             <!-- Search -->
@@ -105,9 +104,9 @@
                         <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                         <input type="text" id="searchInput" placeholder="Search by order # or customer name..."
                             class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition-all"
-                            onkeyup="if(event.key==='Enter') loadKotHistory(true)">
+                            onkeyup="if(event.key==='Enter') loadTokenHistory(true)">
                     </div>
-                    <button onclick="loadKotHistory(true)" class="btn btn-primary px-6 py-2.5 rounded-lg shadow-md shadow-red-100">
+                    <button onclick="loadTokenHistory(true)" class="btn btn-primary px-6 py-2.5 rounded-lg shadow-md shadow-red-100">
                          Search
                     </button>
                     <button onclick="resetFilters()" class="btn btn-secondary px-6 py-2.5 rounded-lg">
@@ -123,20 +122,21 @@
                 </div>
             </div>
 
-            <!-- KOT History table -->
+            <!-- Token History table -->
             <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
                             <tr>
                                 <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 13px; color: #475569;">Order #</th>
+                                <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 13px; color: #475569;">Token</th>
                                 <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 13px; color: #475569;">Customer</th>
                                 <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 13px; color: #475569;">Items Count</th>
-                                <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 13px; color: #475569;">KOT Printed At</th>
+                                <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 13px; color: #475569;">Token Printed At</th>
                                 <th style="text-align: center; padding: 12px 16px; font-weight: 600; font-size: 13px; color: #475569;">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="kotTableBody">
+                        <tbody id="tokenTableBody">
                             <tr style="height: 80px;">
                                 <td colspan="6" style="text-align: center; padding: 40px; color: #94a3b8;">
                                     <i class="fas fa-spinner fa-spin" style="font-size: 24px;"></i>
@@ -150,44 +150,44 @@
         </div>
     </div>
 
-    <!-- KOT/BOT Modal -->
-    <div id="kotModal" class="modal">
+    <!-- Token Modal -->
+    <div id="tokenModal" class="modal">
         <div class="modal-content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 id="kotModalTitle" style="font-size: 18px; font-weight: 700; color: #1e293b;">Kitchen Order</h3>
-                <button onclick="closeKotModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b;">
+                <h3 id="tokenModalTitle" style="font-size: 18px; font-weight: 700; color: #1e293b;">Token</h3>
+                <button onclick="closeTokenModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b;">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
 
-            <div id="kotContent" style="text-align: center; padding: 20px;">
+            <div id="tokenModalContent" style="text-align: center; padding: 20px;">
                 <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #dc2626;"></i>
             </div>
         </div>
     </div>
 
     <script>
-        function loadKotHistory(showSpinner = false) {
+        function loadTokenHistory(showSpinner = false) {
             const search = document.getElementById('searchInput').value;
-            const tbody = document.getElementById('kotTableBody');
+            const tbody = document.getElementById('tokenTableBody');
 
             if (showSpinner) {
-                tbody.innerHTML = '<tr style="height: 80px;"><td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8;"><i class="fas fa-spinner fa-spin" style="font-size: 24px;"></i></td></tr>';
+                tbody.innerHTML = '<tr style="height: 80px;"><td colspan="6" style="text-align: center; padding: 40px; color: #94a3b8;"><i class="fas fa-spinner fa-spin" style="font-size: 24px;"></i></td></tr>';
             }
 
-            let url = '/api/kot-history';
+            let url = '/api/token-history';
             if (search) url += `?search=${encodeURIComponent(search)}`;
 
             fetch(url)
                 .then(res => res.json())
                 .then(data => {
                     if (!Array.isArray(data)) {
-                        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #ef4444;">Error loading KOT history</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #ef4444;">Error loading token history</td></tr>';
                         return;
                     }
 
                     if (data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8;">No KOT records found</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #94a3b8;">No token records found</td></tr>';
                         return;
                     }
 
@@ -195,12 +195,13 @@
                         return `
                             <tr class="table-row">
                                 <td style="padding: 12px 16px; font-weight: 600; color: #1e293b;">${order.order_number}</td>
+                                <td style="padding: 12px 16px;">${order.token_number ? `<span class="badge badge-token">#${String(order.token_number).padStart(2, '0')}</span>` : '<span style="color:#94a3b8;">—</span>'}</td>
                                 <td style="padding: 12px 16px; color: #475569;">${order.customer_name}</td>
                                 <td style="padding: 12px 16px; color: #475569;">${order.items_count}</td>
-                                <td style="padding: 12px 16px; color: #475569; font-size: 13px;">${order.kot_printed_at || '-'}</td>
+                                <td style="padding: 12px 16px; color: #475569; font-size: 13px;">${order.token_printed_at || '-'}</td>
                                 <td style="padding: 12px 16px; text-align: center;">
-                                    <button onclick="reprintKot(${order.id})" class="btn btn-primary" style="font-size: 11px; padding: 6px 16px;">
-                                        <i class="fas fa-print"></i> Re-print KOT
+                                    <button onclick="reprintToken(${order.id})" class="btn btn-primary" style="font-size: 11px; padding: 6px 16px;">
+                                        <i class="fas fa-print"></i> Re-print Token
                                     </button>
                                 </td>
                             </tr>
@@ -209,16 +210,16 @@
                 })
                 .catch(err => {
                     console.error(err);
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #ef4444;">Failed to load KOT history</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #ef4444;">Failed to load token history</td></tr>';
                 });
         }
 
-        async function reprintKot(orderId) {
+        async function reprintToken(orderId) {
             try {
-                const res = await fetch(`/pos/order/${orderId}/kot/reprint`);
+                const res = await fetch(`/pos/order/${orderId}/token/reprint`);
                 const data = await res.json();
                 if (data.success) {
-                    printTicket(data, 'KITCHEN ORDER (KOT)');
+                    printTicket(data, 'TOKEN');
                 } else {
                     alert('Error: ' + data.message);
                 }
@@ -231,7 +232,7 @@
                     <div style="font-size: 24px; font-weight: 900; color: #dc2626; border: 3px solid #dc2626; display: inline-block; padding: 4px 15px; margin-bottom: 10px; border-radius: 8px; letter-spacing: 2px;">RE-PRINT</div>
                     <div style="font-weight: 900; font-size: 16px; color:#000;">${title}</div>
                     <div style="font-size: 13px; font-weight: 800; color:#000; margin-top: 5px;">Order: ${data.order_number}</div>
-                    <div style="font-size: 14px; font-weight: 900; margin:4px 0; color:#000;">Table ${data.table_number || '—'}</div>
+                    <div style="font-size: 32px; font-weight: 900; margin:4px 0; color:#000;">#${String(data.token_number).padStart(2, '0')}</div>
                     <div style="font-size: 10px; color:#000;">Original: ${data.date_time}</div>
                 </div>
                 <div style="border-bottom: 1px solid #000; padding-bottom: 10px;">
@@ -262,27 +263,27 @@
             setTimeout(() => { w.print(); w.close(); }, 500);
         }
 
-        function closeKotModal() {
-            document.getElementById('kotModal').classList.remove('active');
+        function closeTokenModal() {
+            document.getElementById('tokenModal').classList.remove('active');
         }
 
         function resetFilters() {
             document.getElementById('searchInput').value = '';
-            loadKotHistory(true);
+            loadTokenHistory(true);
         }
 
-        document.getElementById('kotModal').addEventListener('click', (e) => {
-            if (e.target.id === 'kotModal') closeKotModal();
+        document.getElementById('tokenModal').addEventListener('click', (e) => {
+            if (e.target.id === 'tokenModal') closeTokenModal();
         });
 
         // Initial load
-        loadKotHistory(true);
+        loadTokenHistory(true);
 
         // Auto-refresh every 5 seconds
         setInterval(() => {
             // Only auto-refresh if the search input is empty to avoid interrupting the user
             if (!document.getElementById('searchInput').value) {
-                loadKotHistory(false);
+                loadTokenHistory(false);
             }
         }, 5000);
     </script>

@@ -231,16 +231,16 @@
                         <p class="text-gray-500 text-sm" style="line-height:1.5;">View past orders and reprint receipts</p>
                     </a>
 
-                    <!-- KOT History Card -->
-                    <a href="{{ route('kot.history') }}" class="module-card p-6" style="background: #dbeafe;">
+                    <!-- Token History Card -->
+                    <a href="{{ route('token.history') }}" class="module-card p-6" style="background: #dbeafe;">
                         <div class="flex items-start justify-between mb-4">
                             <div class="module-icon">
                                 <i class="fas fa-receipt"></i>
                             </div>
                             <i class="fas fa-arrow-right" style="color:rgba(0,0,0,0.2); font-size:14px; margin-top:4px;"></i>
                         </div>
-                        <h3 class="text-base font-bold text-gray-900 mb-1">KOT & BOT History</h3>
-                        <p class="text-gray-500 text-sm" style="line-height:1.5;">Reprint kitchen and bar orders</p>
+                        <h3 class="text-base font-bold text-gray-900 mb-1">Token History</h3>
+                        <p class="text-gray-500 text-sm" style="line-height:1.5;">Reprint kitchen tokens</p>
                     </a>
                 </div>
             </div>

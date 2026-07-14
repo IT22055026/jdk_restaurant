@@ -15,30 +15,6 @@
 
             <div class="nav-divider hidden sm:block"></div>
 
-            <!-- QR order notifications -->
-            <div style="position:relative;">
-                <button type="button" id="qrOrderBell" class="nav-bell" onclick="toggleQrOrderDropdown()" title="Orders placed via QR">
-                    <i class="fas fa-receipt" id="qrOrderBellIcon" style="font-size:15px; color:{{ $qrOrderCount > 0 ? '#dc2626' : '#64748b' }};"></i>
-                    @if($qrOrderCount > 0)
-                        <span class="nav-bell-badge" id="qrOrderBellBadge">{{ $qrOrderCount > 99 ? '99+' : $qrOrderCount }}</span>
-                    @else
-                        <span class="nav-bell-badge" id="qrOrderBellBadge" style="display:none;"></span>
-                    @endif
-                </button>
-
-                <div id="qrOrderDropdown" class="nav-dropdown qr-order-dropdown">
-                    <div style="padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:space-between;">
-                        <div style="font-size:13px; font-weight:700; color:#f1f5f9;">
-                            <i class="fas fa-qrcode" style="margin-right:6px; color:#dc2626;"></i>QR Orders
-                        </div>
-                        <button type="button" onclick="markAllQrOrdersSeen()" style="font-size:11px; color:#94a3b8; background:none; border:none; cursor:pointer;">Mark all read</button>
-                    </div>
-                    <div id="qrOrderList" style="max-height:360px; overflow-y:auto;">
-                        <div style="padding:24px 16px; text-align:center; font-size:12px; color:#64748b;">Loading…</div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Low stock bell -->
             <a href="{{ route('inventory.dashboard') }}" class="nav-bell" title="{{ $lowStockCount > 0 ? $lowStockCount . ' low stock alert(s)' : 'Inventory' }}">
                 <i class="fas fa-bell" style="font-size:16px; color:{{ $lowStockCount > 0 ? '#f59e0b' : '#64748b' }};"></i>
@@ -161,25 +137,6 @@
         border-radius: 9px; display: flex; align-items: center; justify-content: center;
         padding: 0 4px; border: 2px solid #0f172a;
     }
-    #qrOrderBellBadge { background: #dc2626; }
-    #qrOrderBell.has-new { animation: qrPulse 1.4s ease-in-out infinite; }
-    @keyframes qrPulse {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.45); }
-        50%      { box-shadow: 0 0 0 6px rgba(220,38,38,0); }
-    }
-    .qr-order-dropdown { width: 340px; right: -4px; }
-    .qr-order-item {
-        display: block; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.06);
-        text-decoration: none; cursor: pointer; transition: background 0.15s;
-    }
-    .qr-order-item:hover { background: rgba(255,255,255,0.06); }
-    .qr-order-item.unseen { background: rgba(220,38,38,0.08); }
-    .qr-order-item .qoi-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:3px; }
-    .qr-order-item .qoi-table { font-size:13px; font-weight:700; color:#f1f5f9; }
-    .qr-order-item .qoi-time { font-size:10px; color:#64748b; }
-    .qr-order-item .qoi-items { font-size:11px; color:#94a3b8; line-height:1.4; }
-    .qr-order-item .qoi-total { font-size:12px; font-weight:700; color:#fb923c; margin-top:3px; }
-    .qr-order-item .qoi-dot { width:7px; height:7px; border-radius:50%; background:#dc2626; display:inline-block; margin-right:6px; }
 </style>
 
 <script>
@@ -192,87 +149,4 @@
             dd.classList.remove('open');
         }
     });
-
-    // ── QR order notifications ──
-    (function () {
-        const POLL_MS = 12000;
-        const dropdown = document.getElementById('qrOrderDropdown');
-        const bell     = document.getElementById('qrOrderBell');
-        const icon     = document.getElementById('qrOrderBellIcon');
-        const badge    = document.getElementById('qrOrderBellBadge');
-        const listEl   = document.getElementById('qrOrderList');
-        if (!dropdown) return;
-
-        let lastUnseenCount = {{ $qrOrderCount ?? 0 }};
-
-        function setBadge(count) {
-            if (count > 0) {
-                badge.textContent = count > 99 ? '99+' : count;
-                badge.style.display = 'flex';
-                icon.style.color = '#dc2626';
-                bell.classList.add('has-new');
-            } else {
-                badge.style.display = 'none';
-                icon.style.color = '#64748b';
-                bell.classList.remove('has-new');
-            }
-        }
-
-        function renderOrders(orders) {
-            if (!orders.length) {
-                listEl.innerHTML = '<div style="padding:24px 16px; text-align:center; font-size:12px; color:#64748b;">No QR orders yet.</div>';
-                return;
-            }
-            listEl.innerHTML = orders.map(function (o) {
-                const tableLabel = o.table_name || (o.table_number ? ('Table ' + o.table_number) : 'Table');
-                return '<a href="{{ url('/pos') }}?order=' + o.id + '" class="qr-order-item' + (o.seen ? '' : ' unseen') + '" data-order-id="' + o.id + '">'
-                    + '<div class="qoi-top">'
-                    +   '<span class="qoi-table">' + (o.seen ? '' : '<span class="qoi-dot"></span>') + tableLabel + '</span>'
-                    +   '<span class="qoi-time">' + o.created_at_human + '</span>'
-                    + '</div>'
-                    + '<div class="qoi-items">' + (o.items_summary || (o.items_count + ' item(s)')) + '</div>'
-                    + '<div class="qoi-total">LKR ' + o.total.toFixed(2) + (o.customer_name ? ' · ' + o.customer_name : '') + '</div>'
-                    + '</a>';
-            }).join('');
-        }
-
-        async function refresh() {
-            try {
-                const res  = await fetch('{{ route('pos.qr_orders.notifications') }}');
-                if (!res.ok) return;
-                const data = await res.json();
-                setBadge(data.unseen_count);
-                lastUnseenCount = data.unseen_count;
-                if (dropdown.classList.contains('open')) {
-                    renderOrders(data.orders);
-                }
-            } catch (e) { /* silent — non-critical */ }
-        }
-
-        window.toggleQrOrderDropdown = function () {
-            const isOpen = dropdown.classList.toggle('open');
-            if (isOpen) refresh();
-        };
-
-        window.markAllQrOrdersSeen = async function (e) {
-            if (e) e.stopPropagation();
-            try {
-                await fetch('{{ route('pos.qr_orders.seen_all') }}', {
-                    method: 'POST',
-                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
-                });
-                setBadge(0);
-                refresh();
-            } catch (e) { /* silent */ }
-        };
-
-        document.addEventListener('click', function (e) {
-            if (!e.target.closest('#qrOrderBell') && !e.target.closest('.qr-order-dropdown')) {
-                dropdown.classList.remove('open');
-            }
-        });
-
-        refresh();
-        setInterval(refresh, POLL_MS);
-    })();
 </script>

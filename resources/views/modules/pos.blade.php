@@ -18,7 +18,7 @@
         .menu-panel    { background: #f8fafc; display: flex; flex-direction: column; overflow: hidden; }
         .bill-panel    { background: #fff; border-left: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* ── Table cards ── */
+        /* ── Token cards ── */
         .table-card {
             cursor: pointer;
             border: 2px solid #e2e8f0;
@@ -27,27 +27,12 @@
             text-align: center;
             transition: all 0.18s ease;
             position: relative;
-            background: #fff;
+            background: linear-gradient(135deg,#fff7ed,#ffedd5);
+            border-color: #fb923c;
             user-select: none;
         }
-        .table-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .table-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-color: #ea580c; }
         .table-card.selected { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
-
-        /* Status colours */
-        .table-card.available { border-color: #22c55e; background: linear-gradient(135deg,#f0fdf4,#dcfce7); }
-        .table-card.available:hover { border-color: #16a34a; }
-        .table-card.occupied  { border-color: #ef4444; background: linear-gradient(135deg,#fff1f1,#fee2e2); }
-        .table-card.occupied:hover  { border-color: #dc2626; }
-        .table-card.reserved  { border-color: #f59e0b; background: linear-gradient(135deg,#fffbeb,#fef3c7); }
-        .table-card.reserved:hover  { border-color: #d97706; }
-        .table-card.cleaning  { border-color: #94a3b8; background: #f8fafc; }
-
-        /* Status badge on card */
-        .table-status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
-        .dot-available { background: #22c55e; }
-        .dot-occupied  { background: #ef4444; }
-        .dot-reserved  { background: #f59e0b; }
-        .dot-cleaning  { background: #94a3b8; }
 
         /* Bottom action bar that expands on click */
         .table-card-actions {
@@ -174,11 +159,7 @@
         html.dark-mode .bill-panel { background: #10162a; border-color: #1f2942; }
         html.dark-mode .menu-panel { background: #0d1220; }
 
-        html.dark-mode .table-card { background: #10162a; border-color: #1f2942; }
-        html.dark-mode .table-card.available { background: linear-gradient(135deg,#0c1c14,#0f2318); border-color: #16a34a; }
-        html.dark-mode .table-card.occupied  { background: linear-gradient(135deg,#1c1010,#241212); border-color: #ef4444; }
-        html.dark-mode .table-card.reserved  { background: linear-gradient(135deg,#20180a,#291d0c); border-color: #f59e0b; }
-        html.dark-mode .table-card.cleaning  { background: #131a2e; border-color: #26314d; }
+        html.dark-mode .table-card { background: linear-gradient(135deg,#201607,#2b1c09); border-color: #ea580c; }
         html.dark-mode .table-card.selected  { border-color: #2f5bff; box-shadow: 0 0 0 3px rgba(47,91,255,0.25); }
 
         html.dark-mode .cat-pill { background: #10162a; border-color: #26314d; color: #9aa7c2; }
@@ -206,8 +187,7 @@
         html.dark-mode #searchInput { background: #101627; }
 
         html.dark-mode h2, html.dark-mode h3 { color: #f1f5f9 !important; }
-        html.dark-mode #selectedTableLabel,
-        html.dark-mode #tableStatusBadge { color: #9aa7c2 !important; }
+        html.dark-mode #selectedTokenLabel { color: #9aa7c2 !important; }
 
         html.dark-mode #customerInfoSection,
         html.dark-mode [style*="background:#f8fafc"] { background: #0d1324 !important; }
@@ -241,7 +221,7 @@
 <!-- Hidden print area -->
 <div id="printArea"></div>
 
-<div class="pos-grid" style="margin-top: 0; height: calc(100vh - 64px);">
+<div class="pos-grid" style="margin-top: 64px; height: calc(100vh - 64px);">
 
     <!-- ════════════════════════════════════════
          COLUMN 1 — TABLES PANEL
@@ -252,35 +232,27 @@
         <div style="padding: 16px; border-bottom: 1px solid #e2e8f0; flex-shrink: 0;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
                 <h2 style="font-size:16px; font-weight:800; color:#0f172a; margin:0;">
-                    <i class="fas fa-chair" style="color:#dc2626; margin-right:6px;"></i>Tables
+                    <i class="fas fa-ticket" style="color:#dc2626; margin-right:6px;"></i>Open Tokens
                 </h2>
-                <span id="tableStatusBadge" style="font-size:11px; color:#64748b; font-weight:600;"></span>
             </div>
-            <!-- Legend -->
-            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
-                <span style="font-size:10px; font-weight:600; color:#16a34a;"><span class="table-status-dot dot-available"></span>Free</span>
-                <span style="font-size:10px; font-weight:600; color:#dc2626;"><span class="table-status-dot dot-occupied"></span>Occupied</span>
-                <span style="font-size:10px; font-weight:600; color:#d97706;"><span class="table-status-dot dot-reserved"></span>Reserved</span>
-            </div>
-            <!-- Filter tabs -->
+            <!-- Find by token number -->
             <div style="display:flex; gap:6px; margin-bottom:10px;">
-                <button onclick="filterTables('all', this)" class="cat-pill active" style="padding:4px 12px;">All</button>
-                <button onclick="filterTables('main', this)" class="cat-pill" style="padding:4px 12px;">Main</button>
-                <button onclick="filterTables('vip', this)" class="cat-pill" style="padding:4px 12px;">VIP</button>
+                <input type="number" id="findTokenInput" placeholder="Token #"
+                       style="flex:1; min-width:0; font-size:12px; border:1.5px solid #e2e8f0; border-radius:8px; padding:8px; outline:none; background:#f8fafc;"
+                       onkeydown="if(event.key==='Enter'){findOrderByToken();event.preventDefault();}">
+                <button onclick="findOrderByToken()" class="btn-secondary" style="padding:8px 12px; font-size:12px;">
+                    <i class="fas fa-search"></i>
+                </button>
             </div>
-            <!-- QR Scanner Button -->
-            <button onclick="openQrScanner()" class="btn-blue" style="width:100%; padding:10px; font-size:12px; font-weight:700; margin-bottom:6px; background:#3b82f6;">
-                <i class="fas fa-qrcode" style="margin-right:6px;"></i>Scan Table QR
-            </button>
-            <!-- Takeaway Order Button -->
-            <button onclick="startTakeawayOrder()" class="btn-primary" style="width:100%; padding:10px; font-size:12px; font-weight:700;">
-                <i class="fas fa-shopping-bag" style="margin-right:6px;"></i>Takeaway Order
+            <!-- New Order Button -->
+            <button onclick="createNewOrder()" class="btn-primary" style="width:100%; padding:10px; font-size:12px; font-weight:700;">
+                <i class="fas fa-plus" style="margin-right:6px;"></i>New Order
             </button>
         </div>
 
-        <!-- Tables list -->
-        <div style="flex:1; overflow-y:auto; padding:10px; display:grid; grid-template-columns: repeat(2, 1fr); gap: 7px; align-content: start;" id="tablesContainer">
-            <p style="grid-column:1/-1; text-align:center; color:#94a3b8; padding:32px 0; font-size:13px;">Loading tables…</p>
+        <!-- Open tokens list -->
+        <div style="flex:1; overflow-y:auto; padding:10px; display:grid; grid-template-columns: repeat(2, 1fr); gap: 7px; align-content: start;" id="openTokensContainer">
+            <p style="grid-column:1/-1; text-align:center; color:#94a3b8; padding:32px 0; font-size:13px;">Loading tokens…</p>
         </div>
 
     </div>
@@ -292,15 +264,6 @@
 
         <!-- Toolbar -->
         <div style="padding:16px; background:#fff; border-bottom:1px solid #e2e8f0; flex-shrink:0;">
-            <div style="display:flex; gap:10px; margin-bottom:12px; align-items:center;">
-                <select id="orderTypeSelect"
-                        style="padding:9px 12px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:13px; background:#f8fafc; color:#374151; outline:none; cursor:pointer;">
-                    <option value="dine_in">Dine In</option>
-                    <option value="takeaway">Takeaway</option>
-                    <option value="delivery">Delivery</option>
-                    <option value="vip_room">VIP Room</option>
-                </select>
-            </div>
             <!-- Categories -->
             <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px;" id="categoriesContainer">
                 <button class="cat-pill active" data-category="0" onclick="selectCategory(0, this)">All</button>
@@ -318,7 +281,7 @@
         <div id="activeOrderBanner" style="display:none; background:linear-gradient(90deg,#fef2f2,#fff1f1); border-bottom:1px solid #fecaca; padding:8px 16px; flex-shrink:0;">
             <span style="font-size:12px; font-weight:600; color:#dc2626; flex:1;">
                 <i class="fas fa-circle-dot" style="margin-right:4px;"></i>
-                <span id="activeOrderText">Adding to Table —</span>
+                <span id="activeOrderText">Token —</span>
                 <span style="color:#374151; font-weight:500; margin-left:4px;">tap a product to add it</span>
             </span>
             <button id="closeOrderBtn" onclick="closeCurrentOrder(); event.stopPropagation();" style="background:none; border:none; color:#dc2626; cursor:pointer; font-size:18px; padding:0 8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; transition:all 0.2s; flex-shrink:0;">
@@ -350,8 +313,8 @@
                     <i class="fas fa-pause-circle" style="margin-right:2px;"></i>Held <span id="heldCount" style="background:#f59e0b;color:#fff;border-radius:8px;padding:0px 5px; font-size:9px;">0</span>
                 </button>
             </div>
-            <div id="selectedTableLabel" style="font-size:12px; font-weight:700; color:#64748b;">
-                <i class="fas fa-arrow-left" style="font-size:10px; margin-right:4px;"></i>Select a table to begin
+            <div id="selectedTokenLabel" style="font-size:12px; font-weight:700; color:#64748b;">
+                <i class="fas fa-arrow-left" style="font-size:10px; margin-right:4px;"></i>Tap New Order to begin
             </div>
         </div>
 
@@ -381,7 +344,7 @@
             <div id="billItems">
                 <div style="text-align:center; padding:48px 0; color:#cbd5e1;">
                     <i class="fas fa-utensils" style="font-size:36px; margin-bottom:12px; display:block;"></i>
-                    <p style="font-size:12px; margin:0;">Select a table, then add items</p>
+                    <p style="font-size:12px; margin:0;">Start a new order, then add items</p>
                 </div>
             </div>
         </div>
@@ -501,10 +464,10 @@
             <!-- Action buttons -->
             <div id="orderControls" style="display:flex; flex-direction:column; gap:6px;">
 
-                <!-- Row 1: KOT -->
+                <!-- Row 1: Print Token -->
                 <div style="display:flex; gap:6px;">
-                    <button onclick="printKot()" class="btn-orange" style="flex:1; padding:8px 6px; font-size:11px;">
-                        <i class="fas fa-receipt" style="margin-right:3px;"></i>KOT
+                    <button onclick="printToken()" class="btn-orange" style="flex:1; padding:8px 6px; font-size:11px;">
+                        <i class="fas fa-receipt" style="margin-right:3px;"></i>Print Token
                     </button>
                 </div>
 
@@ -546,22 +509,22 @@
 </div>
 
 <!-- ══════════════════════════════════════════════════
-     MODAL: KOT
+     MODAL: Token
 ══════════════════════════════════════════════════ -->
-<div id="kotModal" class="modal-overlay">
+<div id="tokenModal" class="modal-overlay">
     <div class="modal-box" style="max-width:400px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2 style="font-size:18px; font-weight:800; color:#0f172a; margin:0;"><i class="fas fa-utensils" style="color:#ea580c; margin-right:6px;"></i>Kitchen Order</h2>
-            <button onclick="closeModal('kotModal')" style="background:none; border:none; font-size:22px; cursor:pointer; color:#94a3b8;">&times;</button>
+            <h2 style="font-size:18px; font-weight:800; color:#0f172a; margin:0;"><i class="fas fa-ticket" style="color:#ea580c; margin-right:6px;"></i>Token</h2>
+            <button onclick="closeModal('tokenModal')" style="background:none; border:none; font-size:22px; cursor:pointer; color:#94a3b8;">&times;</button>
         </div>
         <div style="background:#f8fafc; border-radius:10px; padding:12px; margin-bottom:16px;">
-            <p style="font-size:13px; font-weight:700; margin:0 0 3px;" id="kotOrderNumber">Order #—</p>
-            <p style="font-size:13px; color:#64748b; margin:0;" id="kotTableNumber">Table —</p>
+            <p style="font-size:24px; font-weight:900; margin:0 0 3px; color:#ea580c;" id="tokenNumberDisplay">Token —</p>
+            <p style="font-size:13px; color:#64748b; margin:0;" id="tokenOrderNumber">Order #—</p>
         </div>
-        <div id="kotItems" style="max-height:260px; overflow-y:auto; background:#fff; border:1.5px solid #e2e8f0; border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:10px;"></div>
+        <div id="tokenItems" style="max-height:260px; overflow-y:auto; background:#fff; border:1.5px solid #e2e8f0; border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:10px;"></div>
         <div style="display:flex; gap:10px; margin-top:20px;">
-            <button onclick="closeModal('kotModal')" class="btn-secondary" style="flex:1;">Close</button>
-            <button onclick="printKotContent()" class="btn-orange" style="flex:1;"><i class="fas fa-print" style="margin-right:4px;"></i>Print</button>
+            <button onclick="closeModal('tokenModal')" class="btn-secondary" style="flex:1;">Close</button>
+            <button onclick="printTokenContent()" class="btn-orange" style="flex:1;"><i class="fas fa-print" style="margin-right:4px;"></i>Print</button>
         </div>
     </div>
 </div>
@@ -606,71 +569,24 @@
     </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════
-     MODAL: QR Code Scanner
-══════════════════════════════════════════════════ -->
-<div id="qrScannerModal" class="modal-overlay">
-    <div class="modal-box" style="max-width: 450px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-            <h2 style="font-size:18px; font-weight:800; color:#0f172a; margin:0;"><i class="fas fa-qrcode" style="color:#3b82f6; margin-right:6px;"></i>Scan Table QR Code</h2>
-            <button onclick="closeQrScanner()" style="background:none; border:none; font-size:22px; cursor:pointer; color:#94a3b8; line-height:1;">&times;</button>
-        </div>
-
-        <div style="background:#f8fafc; border-radius:10px; padding:16px; margin-bottom:16px; text-align:center;">
-            <p style="font-size:13px; color:#64748b; margin:0 0 12px;">Point your camera at the table QR code</p>
-            <video id="qrVideo" style="width:100%; max-width:300px; border-radius:8px; border:2px solid #e2e8f0; display:none;"></video>
-            <div id="qrCanvasContainer" style="display:none;">
-                <canvas id="qrCanvas" style="display:none;"></canvas>
-            </div>
-            <div id="qrLoadingState" style="padding:32px 0; text-align:center;">
-                <div style="font-size:14px; color:#94a3b8; margin-bottom:8px;">Initializing camera...</div>
-                <i class="fas fa-circle-notch fa-spin" style="color:#3b82f6; font-size:24px;"></i>
-            </div>
-        </div>
-
-        <div style="background:#fef3c7; border-left:4px solid #f59e0b; border-radius:6px; padding:12px; margin-bottom:16px;">
-            <p style="font-size:12px; color:#92400e; margin:0;">
-                <i class="fas fa-info-circle" style="margin-right:6px;"></i>
-                Scanned QR data will appear below
-            </p>
-        </div>
-
-        <input type="hidden" id="scannedQrData">
-        <div id="qrScanResult" style="display:none; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px; margin-bottom:16px;">
-            <p style="font-size:12px; color:#16a34a; margin:0 0 8px; font-weight:600;">✓ QR Scanned Successfully</p>
-            <div id="qrResultDetails" style="font-size:11px; color:#65a30d; margin-bottom:8px;"></div>
-        </div>
-
-        <div style="display:flex; gap:10px;">
-            <button onclick="closeQrScanner()" class="btn-secondary" style="flex:1;">Cancel</button>
-            <button onclick="confirmQrScan()" id="confirmQrBtn" class="btn-primary" style="flex:1; display:none;">
-                <i class="fas fa-check" style="margin-right:4px;"></i>Confirm & Open Table
-            </button>
-        </div>
-    </div>
-</div>
-
 <!-- Toast notification -->
 <div id="toast"></div>
 
 <script>
     // ── State ──
     let currentOrder  = null;
-    let currentTable  = null;
-    let allTables     = [];
     let allProducts   = [];
     let allCategories = @json($categories);
     let selectedPaymentMethod = 'cash';
-    let currentKotContent     = '';
+    let currentTokenContent   = '';
     let currentBillContent    = '';
-    let tableFilter           = 'all';
     let stockCache            = {}; // { productId: remainingQty } for non-unlimited products
     let openDiscountRows      = new Set(); // item IDs whose discount input row is open
     let qtyLock               = {}; // { itemId: true } — prevents overlapping qty updates
 
     // ── Bootstrap ──
     async function initPos() {
-        await loadTables();
+        await loadOpenTokens();
         loadCategories();
         await loadProducts();
         loadHeldOrders();
@@ -698,220 +614,106 @@
     }
 
     // ═══════════════════════════════════════════
-    // TABLES
+    // OPEN TOKENS
     // ═══════════════════════════════════════════
 
-    async function loadTables() {
+    async function loadOpenTokens() {
         try {
-            const res = await fetch('{{ route("pos.tables") }}');
-            if (!res.ok) { toast('Failed to load tables', 'error'); return; }
-            allTables = await res.json();
-            renderTables();
-            updateTableStatusBadge();
+            const res = await fetch('{{ route("pos.tokens") }}');
+            if (!res.ok) { toast('Failed to load open tokens', 'error'); return; }
+            renderOpenTokens(await res.json());
         } catch (e) {
-            console.error('Load tables error:', e);
-            toast('Error loading tables', 'error');
+            console.error('Load open tokens error:', e);
+            toast('Error loading open tokens', 'error');
         }
     }
 
-    function updateTableStatusBadge() {
-        const occupied = allTables.filter(t => t.status === 'occupied').length;
-        const total    = allTables.length;
-        document.getElementById('tableStatusBadge').textContent = occupied + '/' + total + ' occupied';
-    }
+    function renderOpenTokens(tokens) {
+        const container = document.getElementById('openTokensContainer');
 
-    function filterTables(section, btn) {
-        tableFilter = section;
-        const panel = document.querySelector('.tables-panel');
-        if (panel) panel.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
-        if (btn) btn.classList.add('active');
-        renderTables();
-    }
-
-    function renderTables() {
-        const container = document.getElementById('tablesContainer');
-        const filtered  = tableFilter === 'all'
-            ? allTables
-            : allTables.filter(t => t.section === tableFilter);
-
-        if (filtered.length === 0) {
-            container.innerHTML = '<p style="text-align:center; color:#94a3b8; padding:32px 0; font-size:13px;">No tables found</p>';
+        if (tokens.length === 0) {
+            container.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#94a3b8; padding:32px 0; font-size:13px;">No open tokens</p>';
             return;
         }
 
-        container.innerHTML = filtered.map(function(table) {
-            const isOccupied = table.status === 'occupied' || table.status === 'reserved';
-            const isSelected = currentTable && currentTable.id === table.id;
+        container.innerHTML = tokens.map(function(t) {
+            const isSelected = currentOrder && currentOrder.id === t.id;
+            const time = new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
 
-            let itemBadge = '';
-            if (table.has_order && table.order_items_count > 0) {
-                itemBadge = '<div style="font-size:11px; font-weight:800; color:#dc2626; margin-top:4px;">'
+            const itemBadge = t.items_count > 0
+                ? '<div style="font-size:11px; font-weight:800; color:#dc2626; margin-top:4px;">'
                     + '<i class="fas fa-circle-dot" style="font-size:8px;"></i> '
-                    + table.order_items_count + ' item' + (table.order_items_count !== 1 ? 's' : '')
-                    + '</div>';
-            }
-
-            let timeLabel = '';
-            if (table.occupied_at) {
-                const t = new Date(table.occupied_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-                timeLabel = '<div style="font-size:10px; color:#94a3b8; margin-top:2px;"><i class="fas fa-clock" style="font-size:9px;"></i> ' + t + '</div>';
-            }
-
-            let actionBar = '';
-            if (isOccupied && table.has_order) {
-                actionBar = '<div class="table-card-actions">'
-                    + '<button onclick="printKotForTable(' + table.order_id + '); event.stopPropagation();" '
-                    + 'style="flex:1; font-size:11px; font-weight:700; background:#ea580c; color:#fff; border:none; border-radius:7px; padding:6px 4px; cursor:pointer;">'
-                    + '<i class="fas fa-print" style="margin-right:3px;"></i>KOT</button>'
-                    + '</div>';
-            }
-
-            const clickFn = isOccupied && table.has_order
-                ? 'viewTableOrder(' + table.order_id + ')'
-                : (isOccupied ? 'expandTableCard(' + table.id + ', event)' : 'startNewOrder(' + table.id + ')');
-
-            const vipBadge = table.section === 'vip'
-                ? '<div style="position:absolute; top:6px; left:6px; font-size:9px; font-weight:800; background:#7c3aed; color:#fff; padding:2px 6px; border-radius:6px;">VIP</div>'
+                    + t.items_count + ' item' + (t.items_count !== 1 ? 's' : '')
+                    + '</div>'
                 : '';
 
-            return '<div id="tc-' + table.id + '" class="table-card ' + table.status + (isSelected ? ' selected' : '') + '" onclick="' + clickFn + '">'
-                + vipBadge
-                + '<div style="font-size:16px; font-weight:900; color:#0f172a; line-height:1;">' + table.table_number + '</div>'
-                + '<div style="font-size:10px; font-weight:600; color:#64748b; margin-top:2px;">' + escapeHtml(table.name) + '</div>'
-                
-                + itemBadge + timeLabel + actionBar
+            const actionBar = t.items_count > 0
+                ? '<div class="table-card-actions" style="display:flex;">'
+                    + '<button onclick="printTokenForOrder(' + t.id + '); event.stopPropagation();" '
+                    + 'style="flex:1; font-size:11px; font-weight:700; background:#ea580c; color:#fff; border:none; border-radius:7px; padding:6px 4px; cursor:pointer;">'
+                    + '<i class="fas fa-print" style="margin-right:3px;"></i>Token</button>'
+                    + '</div>'
+                : '';
+
+            return '<div id="tok-' + t.id + '" class="table-card' + (isSelected ? ' selected' : '') + '" onclick="reopenOrder(' + t.id + ')">'
+                + '<div style="font-size:20px; font-weight:900; color:#ea580c; line-height:1;">#' + String(t.token_number).padStart(2, '0') + '</div>'
+                + '<div style="font-size:10px; font-weight:600; color:#64748b; margin-top:2px;">Rs. ' + t.total.toFixed(2) + '</div>'
+                + itemBadge
+                + '<div style="font-size:10px; color:#94a3b8; margin-top:2px;"><i class="fas fa-clock" style="font-size:9px;"></i> ' + time + '</div>'
+                + actionBar
                 + '</div>';
         }).join('');
     }
 
-    function expandTableCard(tableId, event) {
-        event.stopPropagation();
-        const card       = document.getElementById('tc-' + tableId);
-        const isExpanded = card.classList.contains('expanded');
-        document.querySelectorAll('.table-card.expanded').forEach(function(c) { c.classList.remove('expanded'); });
-        if (!isExpanded) {
-            card.classList.add('expanded');
-        }
-    }
-
-    async function viewTableOrder(orderId) {
+    async function reopenOrder(orderId) {
         try {
             showLoading();
             const res   = await fetch('{{ route("pos.order.show", ":id") }}'.replace(':id', orderId));
             if (!res.ok) { toast('Failed to load order', 'error'); hideLoading(); return; }
-            const order = await res.json();
-            currentOrder = order;
-            currentTable = allTables.find(function(t) { return t.id === order.table_id; }) || null;
-            // Collapse all expanded cards, mark selected
-            document.querySelectorAll('.table-card.expanded').forEach(function(c) { c.classList.remove('expanded'); });
+            currentOrder = await res.json();
             document.querySelectorAll('.table-card.selected').forEach(function(c) { c.classList.remove('selected'); });
-            if (currentTable) {
-                const card = document.getElementById('tc-' + currentTable.id);
-                if (card) card.classList.add('selected');
-            }
-            renderTableView();
+            const card = document.getElementById('tok-' + orderId);
+            if (card) card.classList.add('selected');
+            renderOrderHeader();
             renderBill();
             hideLoading();
         } catch (e) {
-            console.error('View order error:', e);
+            console.error('Reopen order error:', e);
             hideLoading();
             toast('Error loading order', 'error');
         }
     }
 
-    async function startNewOrder(tableId) {
-        const table = allTables.find(function(t) { return t.id === tableId; });
-        if (!table) return;
+    async function findOrderByToken() {
+        const input = document.getElementById('findTokenInput');
+        const tokenNumber = parseInt(input.value);
+        if (!tokenNumber) { toast('Enter a token number', 'error'); return; }
 
-        // If clicking the same table that's already selected and no items, deselect it
-        if (currentTable && currentTable.id === tableId && (!currentOrder || !currentOrder.items || currentOrder.items.length === 0)) {
-            resetOrder();
-            await loadTables();
-            return;
+        try {
+            const res = await fetch('{{ route("pos.order.by_token", ":tokenNumber") }}'.replace(':tokenNumber', tokenNumber));
+            const data = await res.json();
+            if (!data.success) { toast(data.message || 'Token not found', 'error'); return; }
+            input.value = '';
+            await reopenOrder(data.order_id);
+        } catch (e) {
+            console.error('Find order by token error:', e);
+            toast('Error finding token', 'error');
         }
-
-        // If switching to a different table while the current order is empty, release the old table first
-        if (currentOrder && currentOrder.id && (!currentOrder.items || currentOrder.items.length === 0)) {
-            const oldTableId = currentTable ? currentTable.id : null;
-            try {
-                await fetch('{{ route("pos.order.close_table", ":id") }}'.replace(':id', currentOrder.id), {
-                    method: 'POST',
-                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
-                });
-            } catch (e) {
-                console.error('Failed to release empty table:', e);
-            }
-            // Immediately show the old table as available in frontend for instant feedback
-            if (oldTableId) {
-                const oldCard = document.getElementById('tc-' + oldTableId);
-                if (oldCard) {
-                    oldCard.classList.remove('occupied', 'selected', 'expanded');
-                    oldCard.classList.add('available');
-                }
-            }
-            currentOrder = null;
-            currentTable = null;
-        }
-
-        showLoading();
-        currentTable = table;
-        const res  = await fetch('{{ route("pos.order.create") }}', {
-            method: 'POST',
-            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                table_id: tableId,
-                order_type: 'dine_in'
-            })
-        });
-        if (!res.ok) {
-            hideLoading();
-            toast('Failed to open table', 'error');
-            return;
-        }
-        const data = await res.json();
-        currentOrder = {
-            id: data.order_id, order_number: data.order_number,
-            items: [], subtotal: 0, total: 0,
-            discount_amount: 0, live_bill_enabled: false,
-            customer_name: null, customer_phone: null,
-            table_id: tableId,
-        };
-        renderTableView();
-        renderBill();
-        await loadTables();
-        hideLoading();
-        toast('Table ' + table.table_number + ' opened', 'success');
     }
 
-    async function startTakeawayOrder(forceType) {
+    async function createNewOrder() {
         showLoading();
         try {
-            // Deselect any previously selected table
-            document.querySelectorAll('.table-card.selected').forEach(function(c) { c.classList.remove('selected'); });
-            currentTable = null;
-
-            let orderType = 'takeaway';
-            if (typeof forceType === 'string' && ['takeaway', 'delivery', 'vip_room'].includes(forceType)) {
-                orderType = forceType;
-            }
-
-            const selectEl = document.getElementById('orderTypeSelect');
-            if (selectEl && selectEl.value !== orderType) {
-                selectEl.value = orderType;
-            }
-
             const res = await fetch('{{ route("pos.order.create") }}', {
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    order_type: orderType
-                })
+                body: JSON.stringify({})
             });
 
             if (!res.ok) {
                 hideLoading();
                 console.error('Order creation HTTP error. Status:', res.status, 'Text:', res.statusText);
-                let errorMessage = 'Failed to create ' + orderType + ' order';
+                let errorMessage = 'Failed to create order';
 
                 if (res.status === 419) {
                     errorMessage = 'Session expired. Please reload the page and try again.';
@@ -956,13 +758,15 @@
             if (!data || !data.order_id) {
                 hideLoading();
                 console.error('Missing order_id in response:', data);
-                toast('Failed to create ' + orderType + ' order: Invalid response from server', 'error');
+                toast('Failed to create order: Invalid response from server', 'error');
                 return false;
             }
 
             currentOrder = {
                 id: data.order_id,
                 order_number: data.order_number,
+                token_number: data.token_number,
+                token_date: data.token_date,
                 items: [],
                 subtotal: 0,
                 total: 0,
@@ -970,21 +774,17 @@
                 live_bill_enabled: false,
                 customer_name: null,
                 customer_phone: null,
-                table_id: null,
-                order_type: orderType,
-                table_number: null,
-                table_name: null
             };
 
-            renderTableView();
+            renderOrderHeader();
             renderBill();
+            await loadOpenTokens();
             hideLoading();
 
-            const typeLabel = orderType.charAt(0).toUpperCase() + orderType.slice(1);
-            toast(typeLabel + ' order created — ready to add items', 'success');
+            toast('Token #' + String(data.token_number).padStart(2, '0') + ' created — ready to add items', 'success');
             return true;
         } catch (e) {
-            console.error('startTakeawayOrder error:', e);
+            console.error('createNewOrder error:', e);
             hideLoading();
             toast('Error creating order: ' + e.message, 'error');
             return false;
@@ -1088,20 +888,13 @@
         }
 
         if (!currentOrder || !currentOrder.id) {
-            const selectEl = document.getElementById('orderTypeSelect');
-            const orderType = selectEl ? selectEl.value : 'dine_in';
-            if (orderType === 'takeaway' || orderType === 'delivery' || orderType === 'vip_room') {
-                const created = await startTakeawayOrder(orderType);
-                if (!created) {
-                    toast('Failed to create order. Please try again.', 'error');
-                    return;
-                }
-                // Small delay to ensure order is created
-                await new Promise(resolve => setTimeout(resolve, 100));
-            } else {
-                toast('Please select a table or create a takeaway order first', 'error');
+            const created = await createNewOrder();
+            if (!created) {
+                toast('Failed to create order. Please try again.', 'error');
                 return;
             }
+            // Small delay to ensure order is created
+            await new Promise(resolve => setTimeout(resolve, 100));
         }
 
         // Verify order is valid before adding items
@@ -1357,46 +1150,31 @@
     // BILL PANEL RENDER
     // ═══════════════════════════════════════════
 
-    function renderTableView() {
-        if (!currentTable && !currentOrder) {
-            document.getElementById('selectedTableLabel').innerHTML =
-                '<i class="fas fa-arrow-left" style="font-size:11px; margin-right:4px;"></i>Select a table or create takeaway order';
+    function renderOrderHeader() {
+        if (!currentOrder) {
+            document.getElementById('selectedTokenLabel').innerHTML =
+                '<i class="fas fa-arrow-left" style="font-size:11px; margin-right:4px;"></i>Tap New Order to begin';
             document.getElementById('customerInfoToggle').style.display = 'none';
             document.getElementById('activeOrderBanner').style.display   = 'none';
             return;
         }
 
-        if (!currentTable && currentOrder) {
-            const displayType = currentOrder.order_type ? 
-                                currentOrder.order_type.charAt(0).toUpperCase() + currentOrder.order_type.slice(1) : 
-                                'Takeaway';
-                                
-            document.getElementById('selectedTableLabel').innerHTML =
-                '🛍 <strong>' + displayType + ' Order</strong> — ' + (currentOrder.order_number || '—');
-            document.getElementById('customerInfoToggle').style.display = 'flex';
-            document.getElementById('activeOrderBanner').style.display   = 'flex';
-            document.getElementById('activeOrderText').textContent = displayType + ' — adding items';
-            return;
-        }
-
-        const sectionLabel = currentTable.section === 'vip' ? '🟣 VIP' : '🍽';
-        document.getElementById('selectedTableLabel').innerHTML =
-            sectionLabel + ' <strong>Table ' + currentTable.table_number + '</strong> — ' + escapeHtml(currentTable.name);
+        const tokenLabel = 'Token #' + String(currentOrder.token_number).padStart(2, '0');
+        document.getElementById('selectedTokenLabel').innerHTML =
+            '🎫 <strong>' + tokenLabel + '</strong> — ' + (currentOrder.order_number || '—');
         document.getElementById('customerInfoToggle').style.display = 'flex';
         document.getElementById('activeOrderBanner').style.display   = 'flex';
-        document.getElementById('activeOrderText').textContent = 'Adding to Table ' + currentTable.table_number;
+        document.getElementById('activeOrderText').textContent = tokenLabel + ' — adding items';
 
-        if (currentOrder) {
-            document.getElementById('customerName').value  = currentOrder.customer_name  || '';
-            document.getElementById('customerPhone').value = currentOrder.customer_phone || '';
-        }
+        document.getElementById('customerName').value  = currentOrder.customer_name  || '';
+        document.getElementById('customerPhone').value = currentOrder.customer_phone || '';
     }
 
     function renderBill() {
         const billEl = document.getElementById('billItems');
         if (!currentOrder || !currentOrder.items) {
             billEl.style.display = 'block';
-            billEl.innerHTML = '<div style="text-align:center; padding:48px 0; color:#cbd5e1;"><i class="fas fa-utensils" style="font-size:36px; margin-bottom:12px; display:block;"></i><p style="font-size:13px; margin:0;">Select a table or create takeaway order</p></div>';
+            billEl.innerHTML = '<div style="text-align:center; padding:48px 0; color:#cbd5e1;"><i class="fas fa-utensils" style="font-size:36px; margin-bottom:12px; display:block;"></i><p style="font-size:13px; margin:0;">Tap New Order to begin</p></div>';
             setBottomControls(false);
             updateCloseButtonVisibility(false);
             return;
@@ -1716,8 +1494,8 @@
         const data = await res.json();
         if (data.success) {
             showPaidBill(data);
-            await loadTables();          // refreshes tables panel (table now shows as Available)
-            toast('Payment received — table closed!', 'success');
+            await loadOpenTokens();       // refreshes open-tokens panel (this token is now closed)
+            toast('Payment received!', 'success');
         } else {
             toast(data.error || 'Payment failed', 'error');
         }
@@ -1759,7 +1537,7 @@
             + '<div style="text-align:center; font-size:13px; letter-spacing:3px; color:#000; margin-bottom:5px;">RECEIPT</div>'
             + '<table width="100%" cellspacing="0" cellpadding="2" style="font-size:11px; color:#000; width:100%; table-layout:fixed;">'
             + '<tr><td style="width:35%;">Order</td><td style="text-align:right; width:65%; word-break:break-all;">' + d.order_number + '</td></tr>'
-            + '<tr><td>Type</td><td style="text-align:right;">T-' + d.table_number + (d.table_name ? ' ' + escapeHtml(d.table_name) : '') + '</td></tr>'
+            + '<tr><td>Token</td><td style="text-align:right;">#' + String(d.token_number).padStart(2, '0') + '</td></tr>'
             + (d.customer_name  ? '<tr><td>Customer</td><td style="text-align:right;">' + escapeHtml(d.customer_name) + '</td></tr>' : '')
             + (d.customer_phone ? '<tr><td>Phone</td><td style="text-align:right;">' + d.customer_phone + '</td></tr>' : '')
             + '<tr><td>Date</td><td style="text-align:right;">' + dateStr + '</td></tr>'
@@ -1846,7 +1624,7 @@
             + '<div style="text-align:center; font-size:13px; letter-spacing:3px; color:#000; margin-bottom:5px;">WAITER BILL</div>'
             + '<table width="100%" cellspacing="0" cellpadding="2" style="font-size:11px; color:#000; width:100%; table-layout:fixed;">'
             + '<tr><td style="width:35%;">Order</td><td style="text-align:right; width:65%; word-break:break-all;">' + data.order_number + '</td></tr>'
-            + '<tr><td>Type</td><td style="text-align:right;">T-' + data.table_number + '</td></tr>'
+            + '<tr><td>Token</td><td style="text-align:right;">#' + String(data.token_number).padStart(2, '0') + '</td></tr>'
             + (data.customer_name  ? '<tr><td>Customer</td><td style="text-align:right;">' + escapeHtml(data.customer_name) + '</td></tr>' : '')
             + (data.customer_phone ? '<tr><td>Phone</td><td style="text-align:right;">' + data.customer_phone + '</td></tr>' : '')
             + '<tr><td>Date</td><td style="text-align:right;">' + dateStr + '</td></tr>'
@@ -1878,19 +1656,19 @@
 
 
     // ═══════════════════════════════════════════
-    // KOT
+    // TOKEN (kitchen ticket)
     // ═══════════════════════════════════════════
 
-    async function printKot() {
+    async function printToken() {
         if (!currentOrder || !currentOrder.id) { toast('No active order', 'error'); return; }
-        const res  = await fetch('{{ route("pos.order.kot", ":id") }}'.replace(':id', currentOrder.id), {
+        const res  = await fetch('{{ route("pos.order.token", ":id") }}'.replace(':id', currentOrder.id), {
             method: 'POST',
             headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
         });
         const data = await res.json();
 
         if (!data.success) {
-            toast(data.message || 'KOT already printed', 'warning');
+            toast(data.message || 'Token already printed', 'warning');
             return;
         }
 
@@ -1909,19 +1687,18 @@
             renderProducts();
         }
 
-        const tableNum = currentTable ? currentTable.table_number : '—';
-        printReceipt(buildKotHtml(data, tableNum));
+        printReceipt(buildTokenHtml(data));
     }
 
-    async function printKotForTable(orderId) {
-        const res  = await fetch('{{ route("pos.order.kot", ":id") }}'.replace(':id', orderId), {
+    async function printTokenForOrder(orderId) {
+        const res  = await fetch('{{ route("pos.order.token", ":id") }}'.replace(':id', orderId), {
             method: 'POST',
             headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
         });
         const data = await res.json();
 
         if (!data.success) {
-            toast(data.message || 'KOT already printed', 'warning');
+            toast(data.message || 'Token already printed', 'warning');
             return;
         }
 
@@ -1930,7 +1707,7 @@
             return;
         }
 
-        // Update local stock cache for finished goods when printing for a table
+        // Update local stock cache for finished goods when printing from the open-tokens list
         if (Array.isArray(data.product_changes) && data.product_changes.length > 0) {
             data.product_changes.forEach(function(ch) {
                 if (ch.product_id && stockCache.hasOwnProperty(ch.product_id)) {
@@ -1940,15 +1717,15 @@
             renderProducts();
         }
 
-        document.getElementById('kotOrderNumber').textContent = 'Order #' + data.order_number;
-        document.getElementById('kotTableNumber').textContent = 'Table ' + (data.table_number || '—');
-        renderKotItems(data.items);
-        currentKotContent = buildKotHtml(data, data.table_number || '—');
-        openModal('kotModal');
+        document.getElementById('tokenNumberDisplay').textContent = 'Token #' + String(data.token_number).padStart(2, '0');
+        document.getElementById('tokenOrderNumber').textContent = 'Order #' + data.order_number;
+        renderTokenItems(data.items);
+        currentTokenContent = buildTokenHtml(data);
+        openModal('tokenModal');
     }
 
-    function renderKotItems(items) {
-        document.getElementById('kotItems').innerHTML = items.map(function(item) {
+    function renderTokenItems(items) {
+        document.getElementById('tokenItems').innerHTML = items.map(function(item) {
             return '<div style="display:flex; justify-content:space-between; align-items:flex-start; padding:8px 0; border-bottom:1px dashed #e2e8f0;">'
                 + '<div>'
                 + '<p style="font-size:14px; font-weight:800; margin:0; color:#0f172a;">' + escapeHtml(item.product_name) + '</p>'
@@ -1959,10 +1736,9 @@
         }).join('');
     }
 
-    function buildKotHtml(data, tableNum) {
-        return '<div style="text-align:center; font-weight:900; font-size:16px; border-bottom:2px solid #000; padding-bottom:8px; margin-bottom:10px; color:#000;">KITCHEN ORDER</div>'
+    function buildTokenHtml(data) {
+        return '<div style="text-align:center; font-weight:900; font-size:32px; border-bottom:2px solid #000; padding-bottom:8px; margin-bottom:10px; color:#000;">#' + String(data.token_number).padStart(2, '0') + '</div>'
             + '<div style="font-size:13px; font-weight:800; color:#000;">Order: ' + data.order_number + '</div>'
-            + '<div style="font-size:14px; font-weight:900; margin:4px 0; color:#000;">Table ' + tableNum + '</div>'
             + '<div style="font-size:10px; color:#000; margin-bottom:10px;">' + new Date().toLocaleString() + '</div>'
             + '<div style="border-top:1px solid #000; padding-top:10px;">'
             + data.items.map(function(i) {
@@ -1975,9 +1751,9 @@
             + '</div>';
     }
 
-    function printKotContent() {
-        printReceipt(currentKotContent);
-        closeModal('kotModal');
+    function printTokenContent() {
+        printReceipt(currentTokenContent);
+        closeModal('tokenModal');
     }
 
     function printBillContent() {
@@ -1996,7 +1772,7 @@
         });
         toast('Order held');
         resetOrder();
-        await loadTables();
+        await loadOpenTokens();
         loadHeldOrders(true);
     }
 
@@ -2021,7 +1797,7 @@
                         + '<div style="display:flex; justify-content:space-between; align-items:flex-start;">'
                         + '<div>'
                         + '<p style="font-size:13px; font-weight:800; color:#0f172a; margin:0;">' + o.order_number + '</p>'
-                        + '<p style="font-size:12px; color:#64748b; margin:3px 0 0;">Table ' + (o.table_number || '—') + ' &nbsp;&middot;&nbsp; ' + o.items_count + ' item' + (o.items_count !== 1 ? 's' : '') + '</p>'
+                        + '<p style="font-size:12px; color:#64748b; margin:3px 0 0;">Token #' + String(o.token_number).padStart(2, '0') + ' &nbsp;&middot;&nbsp; ' + o.items_count + ' item' + (o.items_count !== 1 ? 's' : '') + '</p>'
                         + '</div>'
                         + '<span style="font-size:14px; font-weight:900; color:#dc2626;">Rs. ' + o.total.toFixed(2) + '</span>'
                         + '</div></div>';
@@ -2039,33 +1815,32 @@
     async function resumeOrder(orderId) {
         const res    = await fetch('{{ route("pos.order.show", ":id") }}'.replace(':id', orderId));
         currentOrder = await res.json();
-        currentTable = allTables.find(function(t) { return t.id === currentOrder.table_id; }) || null;
-        renderTableView();
+        renderOrderHeader();
         renderBill();
         closeModal('heldOrdersModal');
-        await loadTables();
+        await loadOpenTokens();
         toast('Order resumed');
     }
 
     async function closeCurrentOrder() {
         if (!currentOrder || !currentOrder.id) return;
         if (currentOrder.items && currentOrder.items.length > 0) {
-            if (!confirm('This order has items. Close anyway and discard all items?')) return;
+            if (!confirm('This order has items. Cancel anyway and discard all items?')) return;
         }
 
-        // Call backend to cancel the order and free the table
+        // Call backend to cancel the order
         try {
-            const res = await fetch('{{ route("pos.order.close_table", ":id") }}'.replace(':id', currentOrder.id), {
+            const res = await fetch('{{ route("pos.order.cancel", ":id") }}'.replace(':id', currentOrder.id), {
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
             });
             if (!res.ok) {
-                toast('Failed to close table', 'error');
+                toast('Failed to cancel order', 'error');
                 return;
             }
         } catch (e) {
             console.error('Close order error:', e);
-            toast('Error closing table', 'error');
+            toast('Error cancelling order', 'error');
             return;
         }
 
@@ -2079,8 +1854,8 @@
         }
         resetOrder();
         renderProducts();
-        await loadTables();
-        toast('Table deselected', 'success');
+        await loadOpenTokens();
+        toast('Order cancelled', 'success');
     }
 
     // ═══════════════════════════════════════════
@@ -2089,13 +1864,12 @@
 
     function resetOrder() {
         currentOrder = null;
-        currentTable = null;
         selectedPaymentMethod = 'cash';
 
         const billEl = document.getElementById('billItems');
         billEl.style.display = 'block';
-        billEl.innerHTML = '<div style="text-align:center; padding:48px 0; color:#cbd5e1;"><i class="fas fa-utensils" style="font-size:36px; margin-bottom:12px; display:block;"></i><p style="font-size:13px; margin:0;">Select a table or create takeaway order</p></div>';
-        document.getElementById('selectedTableLabel').innerHTML = '<i class="fas fa-arrow-left" style="font-size:11px; margin-right:4px;"></i>Select a table or create takeaway order';
+        billEl.innerHTML = '<div style="text-align:center; padding:48px 0; color:#cbd5e1;"><i class="fas fa-utensils" style="font-size:36px; margin-bottom:12px; display:block;"></i><p style="font-size:13px; margin:0;">Tap New Order to begin</p></div>';
+        document.getElementById('selectedTokenLabel').innerHTML = '<i class="fas fa-arrow-left" style="font-size:11px; margin-right:4px;"></i>Tap New Order to begin';
         document.getElementById('customerInfoToggle').style.display     = 'none';
         document.getElementById('customerInfoSection').style.display    = 'none';
         document.getElementById('activeOrderBanner').style.display      = 'none';
@@ -2120,11 +1894,7 @@
             b.classList.toggle('active', b.dataset.method === 'cash');
         });
         document.getElementById('cashSection').style.display = 'flex';
-        document.querySelectorAll('.table-card.expanded').forEach(function(c) { c.classList.remove('expanded'); });
-        document.querySelectorAll('.table-card.selected').forEach(function(c) {
-            c.classList.remove('selected', 'occupied');
-            c.classList.add('available');
-        });
+        document.querySelectorAll('.table-card.selected').forEach(function(c) { c.classList.remove('selected'); });
     }
 
     function printReceipt(html) {
@@ -2200,173 +1970,6 @@
     }
 
     window.addEventListener('load', initPos);
-
-    // ═══════════════════════════════════════════
-    // QR CODE SCANNER
-    // ═══════════════════════════════════════════
-
-    let qrScanner = null;
-    let qrStream = null;
-
-    function openQrScanner() {
-        openModal('qrScannerModal');
-        initQrScanner();
-    }
-
-    function closeQrScanner() {
-        closeModal('qrScannerModal');
-        stopQrScanner();
-        resetQrScanner();
-    }
-
-    function stopQrScanner() {
-        if (qrStream) {
-            qrStream.getTracks().forEach(track => track.stop());
-            qrStream = null;
-        }
-    }
-
-    function resetQrScanner() {
-        document.getElementById('scannedQrData').value = '';
-        document.getElementById('qrScanResult').style.display = 'none';
-        document.getElementById('confirmQrBtn').style.display = 'none';
-        document.getElementById('qrLoadingState').style.display = 'block';
-        document.getElementById('qrVideo').style.display = 'none';
-        document.getElementById('qrResultDetails').innerHTML = '';
-    }
-
-    async function initQrScanner() {
-        resetQrScanner();
-        try {
-            const video = document.getElementById('qrVideo');
-            const canvas = document.getElementById('qrCanvas');
-            const ctx = canvas.getContext('2d');
-
-            // Request camera permission
-            qrStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment' }
-            });
-
-            video.srcObject = qrStream;
-            video.style.display = 'block';
-            document.getElementById('qrLoadingState').style.display = 'none';
-
-            // Start scanning
-            const scanQrCode = () => {
-                if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-                    try {
-                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                        const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                            inversionAttempts: 'dontInvert',
-                        });
-
-                        if (code) {
-                            const qrData = code.data;
-                            document.getElementById('scannedQrData').value = qrData;
-
-                            // Try to parse and display
-                            try {
-                                const data = JSON.parse(qrData);
-                                if (data.type === 'table' && data.table_id) {
-                                    displayQrResult(data);
-                                    stopQrScanner();
-                                }
-                            } catch (e) {
-                                console.warn('QR data is not JSON, treating as raw:', qrData);
-                                displayQrResult({ type: 'unknown', raw_data: qrData });
-                                stopQrScanner();
-                            }
-                        }
-                    } catch (err) {
-                        // jsQR not found yet, continue scanning
-                    }
-                }
-                if (qrStream) {
-                    requestAnimationFrame(scanQrCode);
-                }
-            };
-
-            // Load jsQR library
-            if (typeof jsQR === 'undefined') {
-                const script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
-                script.onload = scanQrCode;
-                document.head.appendChild(script);
-            } else {
-                scanQrCode();
-            }
-        } catch (err) {
-            toast('Camera access denied or not available: ' + err.message, 'error');
-            closeQrScanner();
-        }
-    }
-
-    function displayQrResult(data) {
-        const resultDiv = document.getElementById('qrScanResult');
-        const detailsDiv = document.getElementById('qrResultDetails');
-        const confirmBtn = document.getElementById('confirmQrBtn');
-
-        if (data.type === 'table') {
-            detailsDiv.innerHTML = `
-                <strong>Table ${data.table_number}</strong><br>
-                ID: ${data.table_id}
-            `;
-            confirmBtn.style.display = 'block';
-        } else {
-            detailsDiv.innerHTML = `Raw Data: ${data.raw_data}`;
-            confirmBtn.style.display = 'none';
-        }
-
-        resultDiv.style.display = 'block';
-    }
-
-    async function confirmQrScan() {
-        const qrData = document.getElementById('scannedQrData').value;
-        if (!qrData) {
-            toast('No QR code scanned', 'error');
-            return;
-        }
-
-        showLoading();
-        try {
-            const response = await fetch('{{ route("pos.scan.qr") }}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ qr_data: qrData })
-            });
-
-            const result = await response.json();
-            hideLoading();
-
-            if (!result.success) {
-                toast(result.message || 'Failed to scan QR code', 'error');
-                return;
-            }
-
-            const table = result.table;
-            toast(`Table ${table.table_number} loaded successfully`, 'success');
-            closeQrScanner();
-
-            if (result.order && result.order.has_active_order) {
-                // Load existing order
-                await viewTableOrder(result.order.id);
-            } else {
-                // Start new order for this table
-                await startNewOrder(table.id);
-            }
-        } catch (error) {
-            hideLoading();
-            console.error('QR scan error:', error);
-            toast('Error processing QR code: ' + error.message, 'error');
-        }
-    }
 
     // ── Numeric-only guard for amount / quantity inputs ──
     document.addEventListener('DOMContentLoaded', function () {

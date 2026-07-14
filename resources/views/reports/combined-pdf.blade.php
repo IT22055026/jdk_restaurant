@@ -253,7 +253,7 @@
                 <thead>
                     <tr>
                         <th>Order #</th>
-                        <th>Table</th>
+                        <th>Token</th>
                         <th>Customer</th>
                         <th class="text-right">Amount</th>
                         <th>Payment</th>
@@ -264,7 +264,7 @@
                     @foreach($recentSales as $sale)
                     <tr>
                         <td class="mono">{{ $sale->order_number }}</td>
-                        <td>{{ $sale->table?->name ?? ($sale->table?->table_number ? 'T'.$sale->table->table_number : '—') }}</td>
+                        <td>{{ $sale->token_number ? '#' . str_pad($sale->token_number, 2, '0', STR_PAD_LEFT) : '—' }}</td>
                         <td>{{ $sale->customer_name ?? '—' }}</td>
                         <td class="text-right">LKR {{ number_format($sale->total, 0) }}</td>
                         <td>

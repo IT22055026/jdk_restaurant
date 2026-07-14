@@ -24,10 +24,7 @@
             font-weight: 600;
         }
 
-        .badge-dine_in { background: #dcfce7; color: #166534; }
-        .badge-takeaway { background: #fef3c7; color: #92400e; }
-        .badge-delivery { background: #dbeafe; color: #1e40af; }
-        .badge-vip_room { background: #f3e8ff; color: #6b21a8; }
+        .badge-token { background: #ffedd5; color: #9a3412; }
 
         .btn {
             padding: 6px 12px;
@@ -115,16 +112,6 @@
                         <input type="text" id="searchInput" placeholder="Order #, customer name, phone..."
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Order Type</label>
-                        <select id="orderTypeFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
-                            <option value="all">All Types</option>
-                            <option value="dine_in">Dine In</option>
-                            <option value="takeaway">Takeaway</option>
-                            <option value="delivery">Delivery</option>
-                            <option value="vip_room">VIP Room</option>
-                        </select>
-                    </div>
                     <div style="display: flex; align-items: flex-end; gap: 8px;">
                         <button onclick="loadOrders(true)" class="flex-1 btn btn-primary">
                             <i class="fas fa-search"></i> Search
@@ -151,7 +138,7 @@
                             <tr>
                                 <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 13px; color: #475569;">Order #</th>
                                 <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 13px; color: #475569;">Customer</th>
-                                <th style="text-align: center; padding: 12px 16px; font-weight: 600; font-size: 13px; color: #475569;">Type</th>
+                                <th style="text-align: center; padding: 12px 16px; font-weight: 600; font-size: 13px; color: #475569;">Token</th>
                                 <th style="text-align: right; padding: 12px 16px; font-weight: 600; font-size: 13px; color: #475569;">Total</th>
                                 <th style="text-align: center; padding: 12px 16px; font-weight: 600; font-size: 13px; color: #475569;">Items</th>
                                 <th style="text-align: left; padding: 12px 16px; font-weight: 600; font-size: 13px; color: #475569;">Date</th>
@@ -191,7 +178,6 @@
     <script>
         function loadOrders(showSpinner = false) {
             const search = document.getElementById('searchInput').value;
-            const orderType = document.getElementById('orderTypeFilter').value;
             const tbody = document.getElementById('ordersTableBody');
 
             if (showSpinner) {
@@ -200,7 +186,6 @@
 
             let url = '/api/order-history?';
             if (search) url += `search=${encodeURIComponent(search)}&`;
-            if (orderType !== 'all') url += `order_type=${orderType}&`;
 
             fetch(url)
                 .then(res => res.json())
@@ -223,7 +208,7 @@
                                 ${order.customer_phone ? `<div style="font-size: 12px; color: #94a3b8;">${order.customer_phone}</div>` : ''}
                             </td>
                             <td style="padding: 12px 16px; text-align: center;">
-                                <span class="badge badge-${order.order_type}">${order.order_type.replace('_', ' ')}</span>
+                                ${order.token_number ? `<span class="badge badge-token">#${String(order.token_number).padStart(2, '0')}</span>` : '<span style="color:#cbd5e1;">—</span>'}
                             </td>
                             <td style="padding: 12px 16px; text-align: right; font-weight: 600; color: #1e293b;">LKR ${parseFloat(order.total).toFixed(2)}</td>
                             <td style="padding: 12px 16px; text-align: center; color: #475569;">${order.items_count}</td>
@@ -283,7 +268,7 @@
                     <div style="text-align:center; font-size:14px; letter-spacing:2px; margin-bottom:5px;">FINAL BILL</div>
                     <table width="100%" cellspacing="0" cellpadding="2" style="font-size:12px; font-weight:900;">
                         <tr><td style="width:35%;">Order</td><td style="text-align:right; width:65%;">${d.order_number}</td></tr>
-                        ${d.table_number ? `<tr><td>Table</td><td style="text-align:right;">${d.table_number}</td></tr>` : ''}
+                        ${d.token_number ? `<tr><td>Token</td><td style="text-align:right;">#${String(d.token_number).padStart(2, '0')}</td></tr>` : ''}
                         ${d.customer_name ? `<tr><td>Customer</td><td style="text-align:right;">${d.customer_name}</span></td></tr>` : ''}
                         <tr><td>Date</td><td style="text-align:right;">${d.printed_at}</td></tr>
                     </table>
@@ -331,7 +316,6 @@
 
         function resetFilters() {
             document.getElementById('searchInput').value = '';
-            document.getElementById('orderTypeFilter').value = 'all';
             loadOrders();
         }
 

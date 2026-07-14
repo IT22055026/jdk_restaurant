@@ -12,18 +12,18 @@ class ProductStockService
 {
     /**
      * Deduct finished-good product stock for order items being newly confirmed to the
-     * kitchen (KOT print). Mirrors IngredientStockService but operates on products.quantity
+     * kitchen (token print). Mirrors IngredientStockService but operates on products.quantity
      * for items that are their own stock unit (e.g. bottled drinks), not ingredient-tracked.
      *
      * $itemDeltas is an array of ['item' => OrderItem, 'delta' => int] where delta is the
-     * newly-confirmed quantity for that item in this KOT batch (not the item's total quantity).
+     * newly-confirmed quantity for that item in this token print batch (not the item's total quantity).
      *
      * Validates every product's stock across the whole batch before writing anything,
      * so a shortfall on one item never leaves another item's stock half-deducted.
      *
      * @throws InsufficientStockException
      */
-    public function deductForKot(array $itemDeltas, ?int $userId): array
+    public function deductForToken(array $itemDeltas, ?int $userId): array
     {
         $required = [];
 
@@ -59,7 +59,7 @@ class ProductStockService
         }
 
         if (!empty($shortfalls)) {
-            throw new InsufficientStockException('Not enough stock to send KOT: ' . implode('; ', $shortfalls));
+            throw new InsufficientStockException('Not enough stock to print token: ' . implode('; ', $shortfalls));
         }
 
         $applied = [];
@@ -78,8 +78,8 @@ class ProductStockService
                 'product_id' => $product->id,
                 'change_type' => 'decrease',
                 'quantity' => $delta,
-                'reason' => 'KOT sent',
-                'source' => 'kot',
+                'reason' => 'Token printed',
+                'source' => 'token',
                 'reference_type' => OrderItem::class,
                 'reference_id' => $item->id,
                 'user_id' => $userId,

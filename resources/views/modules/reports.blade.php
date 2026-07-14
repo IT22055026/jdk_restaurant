@@ -30,6 +30,9 @@
                 <a href="{{ route('reports.export.products') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition text-sm font-medium">
                     <i class="fas fa-download"></i> Products PDF
                 </a>
+                <a href="{{ route('reports.export.stock') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition text-sm font-medium">
+                    <i class="fas fa-boxes-stacked"></i> Stock Report
+                </a>
                 <a href="{{ route('reports.export.combined') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm font-medium">
                     <i class="fas fa-download"></i> Complete PDF
                 </a>
@@ -106,9 +109,8 @@
                 <thead class="bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     <tr>
                         <th class="px-4 py-3 text-left">Order #</th>
-                        <th class="px-4 py-3 text-left">Table</th>
+                        <th class="px-4 py-3 text-left">Token</th>
                         <th class="px-4 py-3 text-left">Customer</th>
-                        <th class="px-4 py-3 text-left">Type</th>
                         <th class="px-4 py-3 text-left">Items</th>
                         <th class="px-4 py-3 text-right">Bill Total</th>
                         <th class="px-4 py-3 text-center">Status</th>
@@ -129,10 +131,9 @@
                     <tr class="hover:bg-amber-50 transition-colors">
                         <td class="px-4 py-3 font-mono text-xs text-gray-700">{{ $pending->order_number }}</td>
                         <td class="px-4 py-3 text-gray-600">
-                            {{ $pending->table?->name ?? ($pending->table?->table_number ? 'T'.$pending->table->table_number : '—') }}
+                            {{ $pending->token_number ? '#' . str_pad($pending->token_number, 2, '0', STR_PAD_LEFT) : '—' }}
                         </td>
                         <td class="px-4 py-3 text-gray-600">{{ $pending->customer_name ?? '—' }}</td>
-                        <td class="px-4 py-3 text-gray-500 capitalize">{{ str_replace('_', ' ', $pending->order_type) }}</td>
                         <td class="px-4 py-3 text-gray-500 max-w-xs truncate" title="{{ $itemList }}">
                             {{ $itemList ?: '—' }}
                         </td>
@@ -149,7 +150,7 @@
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="8" class="px-4 py-10 text-center text-gray-400">No pending bills right now — all clear!</td></tr>
+                    <tr><td colspan="7" class="px-4 py-10 text-center text-gray-400">No pending bills right now — all clear!</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -228,9 +229,8 @@
                 <thead class="bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     <tr>
                         <th class="px-4 py-3 text-left">Order #</th>
-                        <th class="px-4 py-3 text-left">Table</th>
+                        <th class="px-4 py-3 text-left">Token</th>
                         <th class="px-4 py-3 text-left">Customer</th>
-                        <th class="px-4 py-3 text-left">Type</th>
                         <th class="px-4 py-3 text-center">Payment</th>
                         <th class="px-4 py-3 text-right">Total</th>
                         <th class="px-4 py-3 text-right">Date</th>
@@ -244,10 +244,9 @@
                     <tr class="hover:bg-gray-50 transition-colors">
                         <td class="px-4 py-3 font-mono text-xs text-gray-700">{{ $sale->order_number }}</td>
                         <td class="px-4 py-3 text-gray-600">
-                            {{ $sale->table?->name ?? ($sale->table?->table_number ? 'T'.$sale->table->table_number : '—') }}
+                            {{ $sale->token_number ? '#' . str_pad($sale->token_number, 2, '0', STR_PAD_LEFT) : '—' }}
                         </td>
                         <td class="px-4 py-3 text-gray-600">{{ $sale->customer_name ?? '—' }}</td>
-                        <td class="px-4 py-3 text-gray-500 capitalize text-xs">{{ str_replace('_',' ',$sale->order_type ?? '—') }}</td>
                         <td class="px-4 py-3 text-center">
                             <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium {{ $pc }}">
                                 {{ ucfirst(str_replace('_',' ',$sale->payment_method ?? '—')) }}
@@ -257,7 +256,7 @@
                         <td class="px-4 py-3 text-right text-gray-400 text-xs whitespace-nowrap">{{ $sale->created_at->format('d M Y, H:i') }}</td>
                     </tr>
                     @empty
-                    <tr><td colspan="7" class="px-4 py-10 text-center text-gray-400">No completed sales found.</td></tr>
+                    <tr><td colspan="6" class="px-4 py-10 text-center text-gray-400">No completed sales found.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -319,7 +318,7 @@
                     <thead class="bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         <tr>
                             <th class="px-4 py-3 text-left">Order #</th>
-                            <th class="px-4 py-3 text-left">Table</th>
+                            <th class="px-4 py-3 text-left">Token</th>
                             <th class="px-4 py-3 text-left">Customer</th>
                             <th class="px-4 py-3 text-right">Total</th>
                             <th class="px-4 py-3 text-center">Payment</th>
@@ -331,7 +330,7 @@
                         <tr class="hover:bg-gray-50 transition-colors">
                             <td class="px-4 py-3 font-mono text-xs text-gray-700">{{ $sale->order_number }}</td>
                             <td class="px-4 py-3 text-gray-600">
-                                {{ $sale->table?->name ?? ($sale->table?->table_number ? 'T'.$sale->table->table_number : '—') }}
+                                {{ $sale->token_number ? '#' . str_pad($sale->token_number, 2, '0', STR_PAD_LEFT) : '—' }}
                             </td>
                             <td class="px-4 py-3 text-gray-600">{{ $sale->customer_name ?? '—' }}</td>
                             <td class="px-4 py-3 text-right font-semibold text-gray-900">

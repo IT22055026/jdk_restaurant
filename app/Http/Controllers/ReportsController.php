@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Ingredient;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
@@ -66,7 +67,7 @@ class ReportsController extends Controller
         $from = $fromStr ? Carbon::parse($fromStr)->startOfDay() : null;
         $to   = $toStr   ? Carbon::parse($toStr)->endOfDay()     : null;
 
-        $query = Order::where('status', 'completed')->with('table')->latest();
+        $query = Order::where('status', 'completed')->latest();
         if ($from && $to) {
             $query->whereBetween('created_at', [$from, $to]);
         }
@@ -98,7 +99,6 @@ class ReportsController extends Controller
 
         $sales = Order::where('status', 'completed')
                       ->whereBetween('created_at', [$from, $to])
-                      ->with('table')
                       ->latest()
                       ->get();
 
@@ -155,13 +155,13 @@ class ReportsController extends Controller
 
         $pendingSales = Order::whereIn('status', ['pending', 'hold', 'confirmed'])
                              ->whereHas('items')
-                             ->with(['table', 'items'])
+                             ->with('items')
                              ->latest()
                              ->get();
         $pendingCount = $pendingSales->count();
         $pendingTotal = $pendingSales->sum('total');
 
-        $recentSales = Order::where('status', 'completed')->with('table')->latest()->limit(20)->get();
+        $recentSales = Order::where('status', 'completed')->latest()->limit(20)->get();
 
         $topProducts = OrderItem::select(
                            'product_name',
@@ -200,7 +200,6 @@ class ReportsController extends Controller
         $avgOrderValue = $totalOrders > 0 ? round($totalRevenue / $totalOrders, 2) : 0;
 
         $recentSales = Order::where('status', 'completed')
-                            ->with('table')
                             ->latest()
                             ->limit(100)
                             ->get();
@@ -255,6 +254,37 @@ class ReportsController extends Controller
         return $pdf->download('products-report-' . now()->format('Y-m-d-His') . '.pdf');
     }
 
+    public function exportStockPdf()
+    {
+        $products = Product::with('category', 'ingredients')->orderBy('name')->get();
+        $ingredients = Ingredient::orderBy('name')->get();
+
+        $lowStockProducts = $products->filter(fn($p) => $p->isLowStock())->count();
+        $outOfStockProducts = $products->filter(function ($p) {
+            if ($p->is_unlimited_stock) {
+                return false;
+            }
+            return $p->availableStock() === 0;
+        })->count();
+
+        $lowStockIngredients = $ingredients->filter(fn($i) => $i->isLowStock())->count();
+        $outOfStockIngredients = $ingredients->filter(fn($i) => (float) $i->quantity <= 0)->count();
+
+        $pdf = Pdf::loadView('reports.stock-pdf', [
+            'products' => $products,
+            'ingredients' => $ingredients,
+            'totalProducts' => $products->count(),
+            'lowStockProducts' => $lowStockProducts,
+            'outOfStockProducts' => $outOfStockProducts,
+            'totalIngredients' => $ingredients->count(),
+            'lowStockIngredients' => $lowStockIngredients,
+            'outOfStockIngredients' => $outOfStockIngredients,
+            'generatedAt' => now()->format('d M Y, H:i'),
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download('stock-report-' . now()->format('Y-m-d-His') . '.pdf');
+    }
+
     public function exportCombinedPdf()
     {
         $totalRevenue  = Order::where('status', 'completed')->sum('total');
@@ -267,7 +297,6 @@ class ReportsController extends Controller
         $avgOrderValue = $totalOrders > 0 ? round($totalRevenue / $totalOrders, 2) : 0;
 
         $recentSales = Order::where('status', 'completed')
-                            ->with('table')
                             ->latest()
                             ->limit(50)
                             ->get();

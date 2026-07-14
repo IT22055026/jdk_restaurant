@@ -11,17 +11,17 @@ use Illuminate\Support\Facades\DB;
 class IngredientStockService
 {
     /**
-     * Deduct ingredient stock for order items being newly confirmed to the kitchen (KOT print).
+     * Deduct ingredient stock for order items being newly confirmed to the kitchen (token print).
      *
      * $itemDeltas is an array of ['item' => OrderItem, 'delta' => int] where delta is the
-     * newly-confirmed quantity for that item in this KOT batch (not the item's total quantity).
+     * newly-confirmed quantity for that item in this token print batch (not the item's total quantity).
      *
      * Validates every ingredient requirement across the whole batch before writing anything,
      * so a shortfall on one item never leaves another item's stock half-deducted.
      *
      * @throws InsufficientStockException
      */
-    public function deductForKot(array $itemDeltas, ?int $userId): array
+    public function deductForToken(array $itemDeltas, ?int $userId): array
     {
         $required = [];
         foreach ($itemDeltas as $entry) {
@@ -36,7 +36,7 @@ class IngredientStockService
             $recipe = $product->ingredients()->get();
             if ($recipe->isEmpty()) {
                 throw new InsufficientStockException(
-                    "No recipe defined for \"{$item->product_name}\". Add its ingredients under Products → Recipe before sending KOT."
+                    "No recipe defined for \"{$item->product_name}\". Add its ingredients under Products → Recipe before printing the token."
                 );
             }
 
@@ -74,7 +74,7 @@ class IngredientStockService
         }
 
         if (!empty($shortfalls)) {
-            throw new InsufficientStockException('Not enough stock to send KOT: ' . implode('; ', $shortfalls));
+            throw new InsufficientStockException('Not enough stock to print token: ' . implode('; ', $shortfalls));
         }
 
         $applied = [];
@@ -99,8 +99,8 @@ class IngredientStockService
                     'ingredient_id' => $ingredient->id,
                     'change_type' => 'decrease',
                     'quantity' => $qty,
-                    'reason' => 'KOT sent',
-                    'source' => 'kot',
+                    'reason' => 'Token printed',
+                    'source' => 'token',
                     'reference_type' => OrderItem::class,
                     'reference_id' => $item->id,
                     'user_id' => $userId,

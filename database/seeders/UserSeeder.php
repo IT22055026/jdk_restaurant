@@ -15,7 +15,7 @@ class UserSeeder extends Seeder
         $managerRoleId = DB::table('roles')->where('name', 'Manager')->first()->id;
         $cashierRoleId = DB::table('roles')->where('name', 'Cashier')->first()->id;
 
-        DB::table('users')->insert([
+        DB::table('users')->upsert([
             [
                 'name' => 'Admin User',
                 'email' => 'admin@restaurant.local',
@@ -43,11 +43,15 @@ class UserSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-        ]);
+        ], ['email'], ['name', 'password', 'role_id', 'status', 'updated_at']);
 
-        DB::table('employees')->insert([
+        $adminUserId = DB::table('users')->where('email', 'admin@restaurant.local')->first()->id;
+        $managerUserId = DB::table('users')->where('email', 'manager@restaurant.local')->first()->id;
+        $cashierUserId = DB::table('users')->where('email', 'cashier@restaurant.local')->first()->id;
+
+        DB::table('employees')->upsert([
             [
-                'user_id' => 1,
+                'user_id' => $adminUserId,
                 'phone' => '555-0001',
                 'address' => '123 Admin Street',
                 'city' => 'Restaurant City',
@@ -59,7 +63,7 @@ class UserSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'user_id' => 2,
+                'user_id' => $managerUserId,
                 'phone' => '555-0002',
                 'address' => '456 Manager Avenue',
                 'city' => 'Restaurant City',
@@ -71,7 +75,7 @@ class UserSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'user_id' => 3,
+                'user_id' => $cashierUserId,
                 'phone' => '555-0003',
                 'address' => '789 Cashier Road',
                 'city' => 'Restaurant City',
@@ -82,6 +86,6 @@ class UserSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-        ]);
+        ], ['user_id'], ['phone', 'address', 'city', 'state', 'postal_code', 'hire_date', 'salary', 'updated_at']);
     }
 }

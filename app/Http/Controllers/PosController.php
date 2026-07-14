@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\InsufficientStockException;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\RestaurantTable;
@@ -9,7 +10,10 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Shift;
 use App\Models\ShiftTransaction;
+use App\Services\IngredientStockService;
+use App\Services\ProductStockService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class PosController extends Controller
@@ -70,7 +74,7 @@ class PosController extends Controller
             $query->where('category_id', $request->input('category_id'));
         }
 
-        $products = $query->get()->map(function ($product) {
+        $products = $query->with('ingredients')->get()->map(function ($product) {
             return [
                 'id' => $product->id,
                 'name' => $product->name,
@@ -79,7 +83,7 @@ class PosController extends Controller
                 'category_id' => $product->category_id,
                 'barcode' => $product->barcode,
                 'is_unlimited_stock' => $product->is_unlimited_stock,
-                'quantity' => $product->quantity,
+                'quantity' => $product->is_unlimited_stock ? 0 : $product->availableStock(),
                 'image' => $product->image,
             ];
         });
@@ -201,33 +205,23 @@ class PosController extends Controller
             ]);
         }
 
-        if (!$product->is_unlimited_stock) {
-            $product->decrement('quantity', $validated['quantity']);
-        }
-
+        // Ingredient stock is no longer touched here — it's only deducted once the
+        // item is actually confirmed to the kitchen (see printKot()).
         $this->updateOrderTotals($order);
-
-        $product->refresh();
-        $lowStockAlert = null;
-        if ($product->isLowStock()) {
-            $lowStockAlert = "\"{$product->name}\" is low on stock — only {$product->quantity} unit(s) left.";
-        }
 
         return response()->json([
             'success' => true,
             'item_id' => $item->id,
             'item_kot_printed' => (bool) $item->kot_printed,
             'message' => $product->name . ' added to order',
-            'low_stock_alert' => $lowStockAlert,
         ]);
     }
 
     public function removeItem(Request $request, Order $order, OrderItem $item)
     {
-        Product::where('id', $item->product_id)
-            ->where('is_unlimited_stock', false)
-            ->increment('quantity', $item->quantity);
-
+        // Nothing to restore: ingredient stock is only committed once the item is
+        // confirmed to the kitchen via printKot(), and removing an already-printed
+        // item doesn't un-cook it.
         $item->delete();
         $this->updateOrderTotals($order);
 
@@ -242,17 +236,9 @@ class PosController extends Controller
             'discount_percent' => 'nullable|numeric|min:0|max:100',
         ]);
 
-        $diff = $validated['quantity'] - $item->quantity;
-        if ($diff > 0) {
-            Product::where('id', $item->product_id)
-                ->where('is_unlimited_stock', false)
-                ->decrement('quantity', $diff);
-        } elseif ($diff < 0) {
-            Product::where('id', $item->product_id)
-                ->where('is_unlimited_stock', false)
-                ->increment('quantity', abs($diff));
-        }
-
+        // Quantity increases beyond what's already been printed are picked up as a
+        // delta the next time printKot() runs; decreases below printed_qty don't
+        // refund ingredients since that portion may already be cooking.
         $discountPercent = $validated['discount_percent'] ?? $item->discount_percent;
         $subtotal = $item->unit_price * $validated['quantity'] * (1 - $discountPercent / 100);
 
@@ -323,7 +309,7 @@ class PosController extends Controller
 
     public function printKot(Order $order)
     {
-        $order->load('items');
+        $order->load('items.product.ingredients');
 
         // Get kitchen items (not bar items) that have quantity > printed_qty
         $printableItems = $order->items
@@ -352,12 +338,39 @@ class PosController extends Controller
             ], 422);
         }
 
+        // Deduct stock for the delta being newly confirmed to the kitchen. Finished
+        // goods (e.g. bottled drinks) deduct their own quantity; recipe-tracked dishes
+        // deduct ingredients instead. Both run inside one transaction so a shortfall in
+        // either never leaves the other half-deducted.
+        $itemDeltas = $printableItems->map(function ($item) {
+            return ['item' => $item, 'delta' => $item->quantity - $item->printed_qty];
+        })->all();
+
+        $userId = $this->currentUser()->id;
+
+        try {
+            $productChanges = [];
+            $ingredientChanges = [];
+            DB::transaction(function () use ($itemDeltas, $userId, &$productChanges, &$ingredientChanges) {
+                $productChanges = app(ProductStockService::class)->deductForKot($itemDeltas, $userId);
+                $ingredientChanges = app(IngredientStockService::class)->deductForKot($itemDeltas, $userId);
+            });
+        } catch (InsufficientStockException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'order_number' => $order->order_number,
+            ], 422);
+        }
+
         // Prepare items to print and update printed_qty
         $itemsToPrint = [];
         foreach ($printableItems as $item) {
             $qtyToPrint = $item->quantity - $item->printed_qty;
 
             $itemsToPrint[] = [
+                'product_id' => $item->product_id,
+                'is_finished_good' => $item->product?->is_finished_good ? true : false,
                 'product_name' => $item->product_name,
                 'quantity' => $qtyToPrint,
                 'kitchen_notes' => $item->kitchen_notes,
@@ -377,6 +390,8 @@ class PosController extends Controller
             'success' => true,
             'order_number' => $order->order_number,
             'items' => $itemsToPrint,
+            'product_changes' => $productChanges ?? [],
+            'ingredient_changes' => $ingredientChanges ?? [],
         ]);
     }
 
@@ -505,13 +520,8 @@ class PosController extends Controller
 
     public function closeTable(Order $order)
     {
-        $order->load('items');
-        foreach ($order->items as $item) {
-            Product::where('id', $item->product_id)
-                ->where('is_unlimited_stock', false)
-                ->increment('quantity', $item->quantity);
-        }
-
+        // No ingredient stock to restore: unprinted items never consumed any, and
+        // printed items already went to the kitchen, so their ingredients stay spent.
         $order->update(['status' => 'cancelled']);
         if ($order->table_id) {
             RestaurantTable::find($order->table_id)->update([

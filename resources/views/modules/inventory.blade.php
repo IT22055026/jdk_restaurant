@@ -6,7 +6,16 @@
 <div>
     {{-- Header --}}
     <div class="mb-8">
-        <h1 class="text-4xl font-bold text-gray-900">Inventory & Products</h1>
+                @section('breadcrumb')
+                    <nav class="text-sm text-gray-600" aria-label="Breadcrumb">
+                        <ol class="inline-flex items-center space-x-2">
+                            <li><a href="{{ route('dashboard') }}" class="text-gray-500 hover:text-gray-700">Dashboard</a></li>
+                            <li class="text-gray-300">/</li>
+                            <li class="text-gray-900 font-semibold">Inventory & Products</li>
+                        </ol>
+                    </nav>
+                <h1 class="text-4xl font-bold text-gray-900">Inventory & Products</h1>
+                @endsection
         <p class="text-gray-600 mt-2">Overview of stock levels and product alerts</p>
     </div>
 
@@ -26,7 +35,7 @@
 
     {{-- Stats Cards --}}
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
+            <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
             <div class="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
                 <i class="fas fa-boxes text-blue-600 text-lg"></i>
             </div>
@@ -62,7 +71,7 @@
             </div>
             <div>
                 <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">Low Stock</p>
-                <p class="text-2xl font-bold text-gray-900 mt-0.5">{{ $lowStockProducts->count() }}</p>
+                <p class="text-2xl font-bold text-gray-900 mt-0.5">{{ $lowStockProducts->count() + ($lowStockIngredients->count() ?? 0) }}</p>
             </div>
         </div>
     </div>
@@ -90,14 +99,15 @@
                 <i class="fas fa-triangle-exclamation text-amber-500"></i>
             </div>
             <h2 class="text-base font-bold text-gray-900">Low Stock Alerts</h2>
-            @if($lowStockProducts->count() > 0)
+            @php $totalLow = $lowStockProducts->count() + ($lowStockIngredients->count() ?? 0); @endphp
+            @if($totalLow > 0)
                 <span class="ml-auto bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">
-                    {{ $lowStockProducts->count() }} {{ Str::plural('product', $lowStockProducts->count()) }}
+                    {{ $totalLow }} low stock alert(s)
                 </span>
             @endif
         </div>
 
-        @if($lowStockProducts->isEmpty())
+        @if($lowStockProducts->isEmpty() && ($lowStockIngredients->isEmpty() ?? true))
             <div class="py-12 text-center">
                 <i class="fas fa-circle-check text-green-300 text-4xl mb-3"></i>
                 <p class="text-gray-500 font-medium">All stock levels are healthy.</p>
@@ -127,9 +137,9 @@
                                 </td>
                                 <td class="px-6 py-4 text-gray-600">{{ $product->category->name ?? '—' }}</td>
                                 <td class="px-6 py-4 text-center">
-                                    <span class="font-bold {{ $product->quantity == 0 ? 'text-red-600' : 'text-amber-600' }} text-base">
-                                        {{ $product->quantity }}
-                                    </span>
+                                        <span class="font-bold {{ $product->quantity == 0 ? 'text-red-600' : 'text-amber-600' }} text-base">
+                                            {{ $product->quantity }}
+                                        </span>
                                 </td>
                                 <td class="px-6 py-4 text-center text-gray-500">{{ $product->low_stock_threshold }}</td>
                                 <td class="px-6 py-4 text-center">
@@ -150,6 +160,34 @@
                                 </td>
                             </tr>
                         @endforeach
+                            @if(isset($lowStockIngredients) && $lowStockIngredients->isNotEmpty())
+                                <tr class="bg-gray-50">
+                                    <td colspan="6" class="px-6 py-3 text-sm font-semibold text-gray-700">Low-stock Ingredients</td>
+                                </tr>
+                                @foreach($lowStockIngredients as $ingredient)
+                                    <tr class="hover:bg-amber-50/40 transition-colors">
+                                        <td class="px-6 py-4">
+                                            <div class="font-semibold text-gray-900">{{ $ingredient->name }}</div>
+                                            <div class="text-xs text-gray-400 mt-0.5">{{ $ingredient->unit }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 text-gray-600">—</td>
+                                        <td class="px-6 py-4 text-center">
+                                            <span class="font-bold text-amber-600 text-base">{{ rtrim(rtrim(number_format($ingredient->quantity, 3), '0'), '.') }}</span>
+                                        </td>
+                                        <td class="px-6 py-4 text-center text-gray-500">{{ rtrim(rtrim(number_format($ingredient->low_stock_threshold, 3), '0'), '.') }}</td>
+                                        <td class="px-6 py-4 text-center">
+                                            <span class="inline-flex items-center gap-1 bg-amber-100 text-amber-700 text-xs font-semibold px-2.5 py-1 rounded-full">
+                                                <i class="fas fa-circle text-[6px]"></i> Low Stock
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 text-right">
+                                            <a href="{{ route('ingredients.edit', $ingredient) }}" class="text-red-600 hover:text-red-700 font-semibold text-sm">
+                                                <i class="fas fa-pen-to-square mr-1"></i>Edit
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            @endif
                     </tbody>
                 </table>
             </div>
@@ -187,6 +225,15 @@
                             <td class="px-6 py-4 text-center">
                                 @if($product->is_unlimited_stock)
                                     <span class="text-blue-600 font-medium">∞</span>
+                                @elseif(!$product->is_finished_good)
+                                    @php $avail = $product->availableStock(); @endphp
+                                    @if(!$product->hasRecipe())
+                                        <div class="text-red-500 text-[10px] font-semibold mt-0.5">No recipe</div>
+                                    @elseif($avail === 0)
+                                        <span class="font-semibold text-red-600">Out of Stock</span>
+                                    @else
+                                        <span class="px-3 py-1 rounded-lg bg-blue-100 text-blue-800">BOM</span>
+                                    @endif
                                 @else
                                     <span class="font-semibold {{ $product->quantity == 0 ? 'text-red-600' : ($product->isLowStock() ? 'text-amber-600' : 'text-gray-800') }}">
                                         {{ $product->quantity }}

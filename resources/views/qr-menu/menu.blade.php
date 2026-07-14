@@ -57,6 +57,11 @@
         </div>
     </div>
 
+    <script>
+        // small SVG placeholder as data URL to avoid replacing parent HTML (keeps event handlers)
+        window.PLACEHOLDER_DATA = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="360" viewBox="0 0 600 360"><rect width="100%" height="100%" fill="#f3f4f6"/><g fill="#9ca3af"><path d="M200 120h200v20H200z"/><path d="M160 160h280v20H160z"/><path d="M120 200h360v20H120z"/></g><g fill="#d1d5db"><circle cx="480" cy="120" r="60"/></g></svg>');
+    </script>
+
     <!-- Cart Modal -->
     <div id="cartModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -202,7 +207,7 @@
 
                 const html = `
                     <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition">
-                        ${product.image ? `<img src="/storage/${product.image}" alt="${product.name}" class="w-full h-48 object-cover">` : '<div class="w-full h-48 bg-gray-200 flex items-center justify-center"><i class="fas fa-image text-gray-400 text-4xl"></i></div>'}
+                        ${product.image ? `<img src="${product.image.startsWith('http') ? product.image : '/storage/' + product.image}" alt="${product.name}" class="w-full h-48 object-cover" onerror="this.onerror=null; this.src=window.PLACEHOLDER_DATA">` : '<div class="w-full h-48 bg-gray-200 flex items-center justify-center"><i class="fas fa-image text-gray-400 text-4xl"></i></div>'}
                         <div class="p-4">
                             <h3 class="text-lg font-bold text-gray-800 mb-2">${product.name}</h3>
                             ${product.description ? `<p class="text-gray-600 text-sm mb-3">${product.description}</p>` : ''}

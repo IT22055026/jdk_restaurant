@@ -8,7 +8,16 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
+                @section('breadcrumb')
+                    <nav class="text-sm text-gray-600" aria-label="Breadcrumb">
+                        <ol class="inline-flex items-center space-x-2">
+                            <li><a href="{{ route('dashboard') }}" class="text-gray-500 hover:text-gray-700">Dashboard</a></li>
+                            <li class="text-gray-300">/</li>
+                            <li class="text-gray-900 font-semibold">Table QR Settings</li>
+                        </ol>
+                    </nav>
                 <h1 class="text-4xl font-bold text-gray-900 flex items-center gap-3">
+                @endsection
                     <i class="fas fa-qrcode text-red-600"></i>Table QR Codes
                 </h1>
                 <p class="text-gray-600 mt-2">Generate and download QR codes for each table</p>

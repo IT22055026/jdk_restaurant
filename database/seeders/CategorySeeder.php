@@ -19,7 +19,10 @@ class CategorySeeder extends Seeder
         ];
 
         foreach ($categories as $category) {
-            Category::create(array_merge($category, ['status' => 'active']));
+            Category::firstOrCreate(
+                ['name' => $category['name']],
+                array_merge($category, ['status' => 'active'])
+            );
         }
     }
 }

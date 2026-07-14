@@ -381,10 +381,10 @@
                 <div class="product-card" onclick="addToCart({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $product->price }}, '{{ $product->category_id }}')">
                     <div class="product-image">
                         @if($product->image)
-                            <img src="/storage/{{ $product->image }}" alt="{{ $product->name }}">
-                        @else
-                            <i class="fas fa-utensils" style="color: #dc2626;"></i>
-                        @endif
+                                <img src="{{ Str::startsWith($product->image, ['http://', 'https://']) ? $product->image : asset("storage/{$product->image}") }}" alt="{{ $product->name }}" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\"fas fa-utensils\" style=\"color: #dc2626; font-size:32px;\"></i>'">
+                            @else
+                                <i class="fas fa-utensils" style="color: #dc2626;"></i>
+                            @endif
                     </div>
                     <div class="product-info">
                         <div class="product-name">{{ $product->name }}</div>
@@ -583,7 +583,7 @@
         productsContainer.innerHTML = filtered.map(product => `
             <div class="product-card" onclick="addToCart(${product.id}, '${product.name.replace(/'/g, "\\'")}', ${product.price}, ${product.category_id})">
                 <div class="product-image">
-                    ${product.image ? `<img src="/storage/${product.image}" alt="${product.name}">` : '<i class="fas fa-utensils" style="color: #dc2626; font-size: 32px;"></i>'}
+                    ${product.image ? `<img src="${product.image.startsWith('http') ? product.image : '/storage/' + product.image}" alt="${product.name}" onerror="this.onerror=null; this.src=window.PLACEHOLDER_DATA">` : '<i class="fas fa-utensils" style="color: #dc2626; font-size: 32px;"></i>'}
                 </div>
                 <div class="product-info">
                     <div class="product-name">${product.name}</div>

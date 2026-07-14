@@ -1899,6 +1899,16 @@
             return;
         }
 
+        // Update local stock cache for finished goods (so POS reflects new quantities)
+        if (Array.isArray(data.product_changes) && data.product_changes.length > 0) {
+            data.product_changes.forEach(function(ch) {
+                if (ch.product_id && stockCache.hasOwnProperty(ch.product_id)) {
+                    stockCache[ch.product_id] = Math.max(0, (stockCache[ch.product_id] || 0) - ch.quantity);
+                }
+            });
+            renderProducts();
+        }
+
         const tableNum = currentTable ? currentTable.table_number : '—';
         printReceipt(buildKotHtml(data, tableNum));
     }
@@ -1918,6 +1928,16 @@
         if (!data.items || !Array.isArray(data.items)) {
             toast('No new items to print', 'warning');
             return;
+        }
+
+        // Update local stock cache for finished goods when printing for a table
+        if (Array.isArray(data.product_changes) && data.product_changes.length > 0) {
+            data.product_changes.forEach(function(ch) {
+                if (ch.product_id && stockCache.hasOwnProperty(ch.product_id)) {
+                    stockCache[ch.product_id] = Math.max(0, (stockCache[ch.product_id] || 0) - ch.quantity);
+                }
+            });
+            renderProducts();
         }
 
         document.getElementById('kotOrderNumber').textContent = 'Order #' + data.order_number;

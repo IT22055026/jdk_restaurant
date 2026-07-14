@@ -18,6 +18,7 @@ class Product extends Model
         'quantity',
         'low_stock_threshold',
         'is_unlimited_stock',
+        'is_finished_good',
         'status',
         'barcode',
         'image',
@@ -30,7 +31,10 @@ class Product extends Model
         'cost_price' => 'decimal:2',
         'selling_price' => 'decimal:2',
         'discount' => 'decimal:2',
+        'quantity' => 'integer',
         'is_unlimited_stock' => 'boolean',
+        'is_finished_good' => 'boolean',
+        'low_stock_threshold' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -60,11 +64,60 @@ class Product extends Model
         return $this->hasMany(StockMovement::class);
     }
 
+    public function ingredients()
+    {
+        return $this->belongsToMany(Ingredient::class, 'product_ingredients')
+            ->withPivot('quantity_per_unit')
+            ->withTimestamps();
+    }
+
+    public function hasRecipe(): bool
+    {
+        return $this->relationLoaded('ingredients')
+            ? $this->ingredients->isNotEmpty()
+            : $this->ingredients()->exists();
+    }
+
+    /**
+     * How many units of this item can currently be sold.
+     * - Unlimited-stock items: null (never tracked).
+     * - Finished goods (e.g. bottled drinks): their own `quantity` column.
+     * - Recipe-tracked items (e.g. cooked dishes): computed from ingredient stock on hand.
+     */
+    public function availableStock(): ?int
+    {
+        if ($this->is_unlimited_stock) {
+            return null;
+        }
+
+        if ($this->is_finished_good) {
+            return max(0, (int) $this->quantity);
+        }
+
+        $recipe = $this->relationLoaded('ingredients') ? $this->ingredients : $this->ingredients()->get();
+
+        if ($recipe->isEmpty()) {
+            return 0;
+        }
+
+        $unitsPossible = $recipe->min(function ($ingredient) {
+            $perUnit = (float) $ingredient->pivot->quantity_per_unit;
+            return $perUnit > 0 ? ((float) $ingredient->quantity / $perUnit) : INF;
+        });
+
+        return max(0, (int) floor($unitsPossible));
+    }
+
+    /**
+     * Low-stock alerting only applies to finished goods, which carry their own
+     * quantity/threshold. Recipe-tracked items are alerted on via their ingredients
+     * (see the Ingredients page) instead.
+     */
     public function isLowStock(): bool
     {
-        if ($this->is_unlimited_stock || is_null($this->low_stock_threshold)) {
+        if ($this->is_unlimited_stock || !$this->is_finished_good || is_null($this->low_stock_threshold)) {
             return false;
         }
-        return $this->quantity <= $this->low_stock_threshold;
+        return (int) $this->quantity <= $this->low_stock_threshold;
     }
 }

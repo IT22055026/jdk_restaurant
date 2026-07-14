@@ -10,6 +10,8 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\StockAdjustmentController;
+use App\Http\Controllers\IngredientController;
+use App\Http\Controllers\RecipeController;
 use App\Http\Controllers\WastageController;
 use App\Http\Controllers\PosController;
 use App\Http\Controllers\EmployeeController;
@@ -57,6 +59,13 @@ Route::middleware('auth')->group(function () {
     Route::resource('products', ProductController::class);
     Route::get('/inventory', [ProductController::class, 'index'])->name('inventory.index');
     Route::get('/inventory/dashboard', [ProductController::class, 'dashboard'])->name('inventory.dashboard');
+
+    // Recipe (Bill of Materials) management per product
+    Route::get('/products/{product}/recipe', [RecipeController::class, 'edit'])->name('products.recipe.edit');
+    Route::put('/products/{product}/recipe', [RecipeController::class, 'update'])->name('products.recipe.update');
+
+    // Ingredient (raw stock) CRUD routes
+    Route::resource('ingredients', IngredientController::class)->except(['show']);
 
     // Employee CRUD routes
     Route::resource('employees', EmployeeController::class);

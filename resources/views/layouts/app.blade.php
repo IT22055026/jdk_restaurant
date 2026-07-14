@@ -46,6 +46,13 @@
                     <a href="{{ route('inventory.index') }}" class="ml-auto text-amber-700 hover:text-amber-900 text-sm font-semibold underline whitespace-nowrap">View Inventory</a>
                 </div>
             @endif
+            {{-- Breadcrumb slot: pages can define a `breadcrumb` section to render here. --}}
+            @hasSection('breadcrumb')
+                <div class="mb-4">
+                    @yield('breadcrumb')
+                </div>
+            @endif
+
             @yield('content')
         </div>
     </div>

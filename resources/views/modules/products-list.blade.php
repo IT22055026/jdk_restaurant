@@ -6,8 +6,18 @@
     <div>
         <div class="mb-8 flex items-center justify-between flex-wrap gap-4">
             <div>
+                @section('breadcrumb')
+                    <nav class="text-sm text-gray-600" aria-label="Breadcrumb">
+                        <ol class="inline-flex items-center space-x-2">
+                            <li><a href="{{ route('dashboard') }}" class="text-gray-500 hover:text-gray-700">Dashboard</a></li>
+                            <li class="text-gray-300">/</li>
+                            <li class="text-gray-900 font-semibold">Inventory & Products</li>
+                        </ol>
+                    </nav>
+
                 <h1 class="text-4xl font-bold text-gray-900">Products & Inventory</h1>
                 <p class="text-gray-600 mt-2">Manage products and inventory stock</p>
+                @endsection
             </div>
             <div class="flex flex-wrap gap-3">
                 <a href="{{ route('categories.index') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-900 px-6 py-3 rounded-lg font-semibold transition-colors">
@@ -24,6 +34,9 @@
                 </a>
                 <a href="{{ route('stock.adjustments.index') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-900 px-6 py-3 rounded-lg font-semibold transition-colors">
                     <i class="fas fa-layer-group mr-2"></i>Stock Adjustments
+                </a>
+                <a href="{{ route('ingredients.index') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-900 px-6 py-3 rounded-lg font-semibold transition-colors">
+                    <i class="fas fa-carrot mr-2"></i>Ingredients
                 </a>
                 <a href="{{ route('products.create') }}" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
                     <i class="fas fa-plus mr-2"></i>Add Product
@@ -75,11 +88,12 @@
                                     <td class="px-6 py-4 text-sm">
                                         @if($product->image)
                                             <div class="h-12 w-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 group cursor-pointer relative">
-                                                <img src="{{ asset('storage/' . $product->image) }}"
-                                                     alt="{{ $product->name }}"
-                                                     class="h-full w-full object-cover group-hover:scale-110 transition-transform duration-200"
-                                                     onload="this.parentElement.classList.add('loaded')"
-                                                     title="{{ $product->name }}">
+                                                   <img src="{{ Str::startsWith($product->image, ['http://', 'https://']) ? $product->image : asset('storage/' . $product->image) }}"
+                                                       alt="{{ $product->name }}"
+                                                       class="h-full w-full object-cover group-hover:scale-110 transition-transform duration-200"
+                                                       onload="this.parentElement.classList.add('loaded')"
+                                                       onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27200%27 height=%27120%27 viewBox=%270 0 200 120%27%3E%3Crect width=%27100%25%27 height=%27100%25%27 fill=%27%23f3f4f6%27/%3E%3Ctext x=%2750%25%27 y=%2750%25%27 dominant-baseline=%27middle%27 text-anchor=%27middle%27 fill=%27%23888%27 font-size=%2720%27%3ENo image%3C/text%3E%3C/svg%3E'"
+                                                       title="{{ $product->name }}">
                                                 <div class="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity"></div>
                                             </div>
                                         @else
@@ -99,15 +113,28 @@
                                     <td class="px-6 py-4 text-sm text-gray-600">
                                         @if($product->is_unlimited_stock)
                                             <span class="px-3 py-1 rounded-lg bg-purple-100 text-purple-800">Unlimited</span>
-                                        @elseif($product->quantity == 0)
-                                            <span class="px-3 py-1 rounded-lg bg-red-100 text-red-800 font-semibold">0</span>
-                                        @elseif($product->isLowStock())
-                                            <span class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-amber-100 text-amber-800 font-semibold">
-                                                {{ $product->quantity }}
-                                                <i class="fas fa-triangle-exclamation text-xs"></i>
-                                            </span>
+                                        @elseif(!$product->is_finished_good)
+                                            @php $avail = $product->availableStock(); @endphp
+                                                @if(!$product->hasRecipe())
+                                                    <span class="px-3 py-1 rounded-lg bg-red-100 text-red-800 font-semibold" title="No recipe defined — this item can't be made until ingredients are assigned">
+                                                        <i class="fas fa-triangle-exclamation"></i> No recipe
+                                                    </span>
+                                                @elseif($avail === 0)
+                                                    <span class="px-3 py-1 rounded-lg bg-red-100 text-red-800 font-semibold">Out of Stock</span>
+                                                @else
+                                                    <span class="px-3 py-1 rounded-lg bg-blue-100 text-blue-800">BOM</span>
+                                                @endif
                                         @else
-                                            <span class="px-3 py-1 rounded-lg bg-blue-100 text-blue-800">{{ $product->quantity }}</span>
+                                            @if($product->quantity == 0)
+                                                <span class="px-3 py-1 rounded-lg bg-red-100 text-red-800 font-semibold">0</span>
+                                            @elseif($product->isLowStock())
+                                                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-amber-100 text-amber-800 font-semibold">
+                                                    {{ $product->quantity }}
+                                                    <i class="fas fa-triangle-exclamation text-xs"></i>
+                                                </span>
+                                            @else
+                                                <span class="px-3 py-1 rounded-lg bg-blue-100 text-blue-800">{{ $product->quantity }}</span>
+                                            @endif
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 text-sm">
@@ -120,6 +147,11 @@
                                             <a href="{{ route('products.edit', $product) }}" class="text-blue-600 hover:text-blue-800 text-sm font-semibold">
                                                 <i class="fas fa-edit mr-1"></i>Edit
                                             </a>
+                                            @if(!$product->is_finished_good)
+                                                <a href="{{ route('products.recipe.edit', $product) }}" class="text-emerald-600 hover:text-emerald-800 text-sm font-semibold">
+                                                    <i class="fas fa-flask mr-1"></i>Recipe
+                                                </a>
+                                            @endif
                                             <form action="{{ route('products.destroy', $product) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure?')">
                                                 @csrf
                                                 @method('DELETE')

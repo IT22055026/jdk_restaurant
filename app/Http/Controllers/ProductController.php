@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Supplier;
+use App\Models\Ingredient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -13,7 +14,7 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::with(['category', 'supplierRecord']);
+        $query = Product::with(['category', 'supplierRecord', 'ingredients']);
 
         if ($request->has('search') && $request->search) {
             $search = $request->search;
@@ -22,10 +23,18 @@ class ProductController extends Controller
 
         $products = $query->paginate(10);
         $modules = $this->currentUser()->role->modules()->get();
-        $lowStockCount = Product::where('is_unlimited_stock', false)
+        $lowStockProductsCount = Product::where('is_finished_good', true)
+            ->where('is_unlimited_stock', false)
             ->whereNotNull('low_stock_threshold')
+            ->whereColumn('quantity', '<=', 'low_stock_threshold')
+            ->where('quantity', '>', 0)
+            ->count();
+
+        $lowStockIngredientsCount = \App\Models\Ingredient::whereNotNull('low_stock_threshold')
             ->whereRaw('quantity <= low_stock_threshold')
             ->count();
+
+        $lowStockCount = $lowStockProductsCount + $lowStockIngredientsCount;
         return view('modules.products-list', [
             'products' => $products,
             'modules' => $modules,
@@ -39,17 +48,43 @@ class ProductController extends Controller
         $modules = $this->currentUser()->role->modules()->get();
         $totalProducts = Product::count();
         $activeProducts = Product::where('status', 'active')->count();
-        $outOfStock = Product::where('is_unlimited_stock', false)->where('quantity', 0)->count();
-        $lowStockProducts = Product::where('is_unlimited_stock', false)
+
+        // Finished-goods out-of-stock
+        $outOfStockFinished = Product::where('is_finished_good', true)
+            ->where('is_unlimited_stock', false)
+            ->where('quantity', 0)
+            ->count();
+
+        // Recipe-tracked products whose computed available stock is zero should be considered out-of-stock
+        $recipeOutOfStock = 0;
+        $recipeProducts = Product::where('is_finished_good', false)->get();
+        foreach ($recipeProducts as $rp) {
+            if ($rp->availableStock() === 0) {
+                $recipeOutOfStock++;
+            }
+        }
+
+        $outOfStock = $outOfStockFinished + $recipeOutOfStock;
+
+        // Low-stock finished goods (quantity-based)
+        $lowStockProducts = Product::where('is_finished_good', true)
+            ->where('is_unlimited_stock', false)
             ->whereNotNull('low_stock_threshold')
-            ->whereRaw('quantity <= low_stock_threshold')
+            ->whereColumn('quantity', '<=', 'low_stock_threshold')
             ->where('quantity', '>', 0)
             ->with('category')
             ->orderBy('quantity')
             ->get();
-        $recentProducts = Product::with('category')->latest()->take(8)->get();
+
+        // Low-stock ingredients (to be shown in the low-stock alerts)
+        $lowStockIngredients = Ingredient::whereNotNull('low_stock_threshold')
+            ->whereRaw('quantity <= low_stock_threshold')
+            ->orderBy('quantity')
+            ->get();
+
+        $recentProducts = Product::with(['category', 'ingredients'])->latest()->take(8)->get();
         return view('modules.inventory', compact(
-            'modules', 'totalProducts', 'activeProducts', 'outOfStock', 'lowStockProducts', 'recentProducts'
+            'modules', 'totalProducts', 'activeProducts', 'outOfStock', 'lowStockProducts', 'lowStockIngredients', 'recentProducts'
         ));
     }
 
@@ -68,6 +103,7 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $isUnlimitedStock = $request->boolean('is_unlimited_stock');
+        $isFinishedGood = $request->boolean('is_finished_good');
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -77,9 +113,10 @@ class ProductController extends Controller
             'description' => 'nullable|string|max:1000',
             'cost_price' => 'nullable|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
-            'quantity' => $isUnlimitedStock ? 'nullable|integer|min:0' : 'required|integer|min:0',
+            'quantity' => ($isUnlimitedStock || !$isFinishedGood) ? 'nullable|integer|min:0' : 'required|integer|min:0',
             'low_stock_threshold' => 'nullable|integer|min:0',
             'is_unlimited_stock' => 'nullable|boolean',
+            'is_finished_good' => 'nullable|boolean',
             'barcode' => 'nullable|string|unique:products',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
             'supplier' => 'nullable|string|max:255',
@@ -88,7 +125,8 @@ class ProductController extends Controller
         ]);
 
         $validated['is_unlimited_stock'] = $isUnlimitedStock;
-        if ($validated['is_unlimited_stock']) {
+        $validated['is_finished_good'] = $isFinishedGood;
+        if ($isUnlimitedStock || !$isFinishedGood) {
             $validated['quantity'] = 0;
         }
 
@@ -98,7 +136,15 @@ class ProductController extends Controller
             $validated['image'] = $request->file('image')->store('products', 'public');
         }
 
-        Product::create($validated);
+        $product = Product::create($validated);
+
+        // If the created product is a finished good with a low-stock level, show warning.
+        if (!($product->is_unlimited_stock) && $product->is_finished_good && $product->isLowStock()) {
+            return redirect()->route('inventory.index')
+                ->with('success', 'Product created successfully')
+                ->with('low_stock_warning', "Low stock alert: \"{$product->name}\" has only {$product->quantity} unit(s) remaining (threshold: {$product->low_stock_threshold}).");
+        }
+
         return redirect()->route('inventory.index')->with('success', 'Product created successfully');
     }
 
@@ -127,6 +173,7 @@ class ProductController extends Controller
     public function update(Request $request, Product $product)
     {
         $isUnlimitedStock = $request->boolean('is_unlimited_stock');
+        $isFinishedGood = $request->boolean('is_finished_good');
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -136,9 +183,10 @@ class ProductController extends Controller
             'description' => 'nullable|string|max:1000',
             'cost_price' => 'nullable|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
-            'quantity' => $isUnlimitedStock ? 'nullable|integer|min:0' : 'required|integer|min:0',
+            'quantity' => ($isUnlimitedStock || !$isFinishedGood) ? 'nullable|integer|min:0' : 'required|integer|min:0',
             'low_stock_threshold' => 'nullable|integer|min:0',
             'is_unlimited_stock' => 'nullable|boolean',
+            'is_finished_good' => 'nullable|boolean',
             'barcode' => 'nullable|string|unique:products,barcode,' . $product->id,
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
             'supplier' => 'nullable|string|max:255',
@@ -147,7 +195,8 @@ class ProductController extends Controller
         ]);
 
         $validated['is_unlimited_stock'] = $isUnlimitedStock;
-        if ($validated['is_unlimited_stock']) {
+        $validated['is_finished_good'] = $isFinishedGood;
+        if ($isUnlimitedStock || !$isFinishedGood) {
             $validated['quantity'] = 0;
         }
 
@@ -170,6 +219,14 @@ class ProductController extends Controller
         }
 
         $product->update($validated);
+
+        $product->refresh();
+        if (!($product->is_unlimited_stock) && $product->is_finished_good && $product->isLowStock()) {
+            return redirect()->route('inventory.index')
+                ->with('success', 'Product updated successfully')
+                ->with('low_stock_warning', "Low stock alert: \"{$product->name}\" has only {$product->quantity} unit(s) remaining (threshold: {$product->low_stock_threshold}).");
+        }
+
         return redirect()->route('inventory.index')->with('success', 'Product updated successfully');
     }
 

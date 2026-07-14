@@ -92,6 +92,15 @@ class ModuleSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            [
+                'name' => 'Ingredients',
+                'description' => 'Manage raw ingredient stock and recipes (bill of materials)',
+                'icon' => 'carrot',
+                'route' => 'ingredients.index',
+                'sort_order' => 10,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ];
 
         DB::table('modules')->upsert(

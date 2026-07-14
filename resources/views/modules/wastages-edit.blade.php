@@ -9,12 +9,21 @@
                 <a href="{{ route('wastage.index') }}" class="flex items-center justify-center w-9 h-9 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900 transition-colors mb-2" title="Back">
                     <i class="fas fa-arrow-left text-sm"></i>
                 </a>
+                @section('breadcrumb')
+                    <nav class="text-sm text-gray-600" aria-label="Breadcrumb">
+                        <ol class="inline-flex items-center space-x-2">
+                            <li><a href="{{ route('dashboard') }}" class="text-gray-500 hover:text-gray-700">Dashboard</a></li>
+                            <li class="text-gray-300">/</li>
+                            <li class="text-gray-900 font-semibold">Edit Wastage</li>
+                        </ol>
+                    </nav>
                 <h1 class="text-4xl font-bold text-gray-900">Edit Wastage</h1>
+                @endsection
             </div>
             <p class="text-gray-600 mt-2">Update wastage information</p>
         </div>
 
-        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-8 max-w-2xl">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-8 w-full">
             <form action="{{ route('wastages.update', $wastage) }}" method="POST" class="space-y-6">
                 @csrf
                 @method('PUT')
@@ -25,8 +34,9 @@
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent {{ $errors->has('product_id') ? 'border-red-600' : '' }}">
                         <option value="">Select a product</option>
                         @foreach($products as $product)
+                            @php $avail = $product->is_unlimited_stock ? null : $product->availableStock(); @endphp
                             <option value="{{ $product->id }}" {{ old('product_id', $wastage->product_id) == $product->id ? 'selected' : '' }}>
-                                {{ $product->name }} (Available: {{ $product->quantity }})
+                                {{ $product->name }} (Available: {{ $product->is_unlimited_stock ? '∞' : $avail }})
                             </option>
                         @endforeach
                     </select>

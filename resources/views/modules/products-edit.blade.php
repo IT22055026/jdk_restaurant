@@ -5,16 +5,28 @@
 @section('content')
     <div>
         <div class="mb-8">
-            <div>
+            <div class="flex items-center justify-between">
+                <div>
+                    <nav class="text-sm text-gray-600 mb-3" aria-label="Breadcrumb">
+                        <ol class="inline-flex items-center space-x-2">
+                            <li>
+                                <a href="{{ route('inventory.index') }}" class="text-gray-500 hover:text-gray-700">Inventory & Products</a>
+                            </li>
+                            <li class="text-gray-300">/</li>
+                            <li class="text-gray-900 font-semibold">Edit Product</li>
+                        </ol>
+                    </nav>
+
+                    <h1 class="text-4xl font-bold text-gray-900">Edit Product</h1>
+                    <p class="text-gray-600 mt-2">Update product information</p>
+                </div>
                 <a href="{{ route('inventory.index') }}" class="flex items-center justify-center w-9 h-9 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900 transition-colors mb-2" title="Back">
                     <i class="fas fa-arrow-left text-sm"></i>
                 </a>
-                <h1 class="text-4xl font-bold text-gray-900">Edit Product</h1>
             </div>
-            <p class="text-gray-600 mt-2">Update product information</p>
         </div>
 
-        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-8 max-w-4xl">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-8 w-full">
             <form action="{{ route('products.update', $product) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
                 @csrf
                 @method('PUT')
@@ -28,6 +40,19 @@
                         @error('name')
                             <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
                         @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Finished Good</label>
+                        <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                            <input type="checkbox" name="is_finished_good" id="is_finished_good" value="1" {{ old('is_finished_good', $product->is_finished_good) ? 'checked' : '' }}
+                                class="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500">
+                            Sold as-is (e.g. Pepsi, Coca-Cola)
+                        </label>
+                        @error('is_finished_good')
+                            <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
+                        @enderror
+                        <p class="text-xs text-gray-500 mt-2">Off = this item is cooked from ingredients (e.g. Biriyani) — stock is tracked via its Recipe instead of the Quantity field.</p>
                     </div>
 
                     <div>
@@ -120,7 +145,7 @@
                         @error('quantity')
                             <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
                         @enderror
-                        <p class="text-xs text-gray-500 mt-2">Required only when unlimited stock is off.</p>
+                        <p class="text-xs text-gray-500 mt-2">Required only for Finished Goods.</p>
                     </div>
 
                     <div>
@@ -134,16 +159,19 @@
                         <p class="text-xs text-gray-500 mt-2">Alert when stock falls to or below this number.</p>
                     </div>
 
+                    <!-- Unlimited Stock option removed; use Finished Good to indicate BOM vs tracked -->
+
                     <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Unlimited Stock</label>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Finished Good</label>
                         <label class="inline-flex items-center gap-2 text-sm text-gray-700">
-                            <input type="checkbox" name="is_unlimited_stock" value="1" {{ old('is_unlimited_stock', $product->is_unlimited_stock) ? 'checked' : '' }}
+                            <input type="checkbox" name="is_finished_good" id="is_finished_good" value="1" {{ old('is_finished_good', $product->is_finished_good) ? 'checked' : '' }}
                                 class="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500">
-                            Unlimited
+                            Sold as-is (e.g. Pepsi, Coca-Cola)
                         </label>
-                        @error('is_unlimited_stock')
+                        @error('is_finished_good')
                             <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
                         @enderror
+                        <p class="text-xs text-gray-500 mt-2">Off = this item is cooked from ingredients (e.g. Biriyani) — stock is tracked via its Recipe instead of the Quantity field.</p>
                     </div>
 
                     <div>
@@ -218,25 +246,23 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        const unlimitedCheckbox = document.querySelector('input[name="is_unlimited_stock"]');
+        const finishedGoodCheckbox = document.querySelector('input[name="is_finished_good"]');
         const quantityInput = document.getElementById('quantity');
         const thresholdInput = document.getElementById('low_stock_threshold');
 
         const toggleQuantity = () => {
-            const isUnlimited = unlimitedCheckbox.checked;
-            quantityInput.disabled = isUnlimited;
-            quantityInput.required = !isUnlimited;
-            if (isUnlimited) {
+            const tracksOwnQuantity = finishedGoodCheckbox.checked;
+            quantityInput.disabled = !tracksOwnQuantity;
+            quantityInput.required = tracksOwnQuantity;
+            thresholdInput.disabled = !tracksOwnQuantity;
+            if (!tracksOwnQuantity) {
                 quantityInput.value = 0;
-                thresholdInput.disabled = true;
                 thresholdInput.value = '';
-            } else {
-                thresholdInput.disabled = false;
             }
         };
 
         toggleQuantity();
-        unlimitedCheckbox.addEventListener('change', toggleQuantity);
+        finishedGoodCheckbox.addEventListener('change', toggleQuantity);
     });
 </script>
 @endsection

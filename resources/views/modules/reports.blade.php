@@ -7,7 +7,16 @@
     <!-- Page header -->
     <div class="mb-8 flex items-center justify-between flex-wrap gap-4">
         <div>
-            <h1 class="text-4xl font-bold text-gray-900">Reports</h1>
+                @section('breadcrumb')
+                    <nav class="text-sm text-gray-600" aria-label="Breadcrumb">
+                        <ol class="inline-flex items-center space-x-2">
+                            <li><a href="{{ route('dashboard') }}" class="text-gray-500 hover:text-gray-700">Dashboard</a></li>
+                            <li class="text-gray-300">/</li>
+                            <li class="text-gray-900 font-semibold">Reports</li>
+                        </ol>
+                    </nav>
+                <h1 class="text-4xl font-bold text-gray-900">Reports</h1>
+                @endsection
             <p class="text-gray-600 mt-2">Business analytics and sales overview</p>
         </div>
         <div class="flex items-center gap-3 flex-wrap">

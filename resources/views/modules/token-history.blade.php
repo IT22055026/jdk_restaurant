@@ -30,10 +30,10 @@
         }
 
         .btn-primary {
-            background: #dc2626;
+            background: #2563eb;
             color: #fff;
         }
-        .btn-primary:hover { background: #b91c1c; }
+        .btn-primary:hover { background: #1d4ed8; }
 
         .btn-secondary {
             background: #e2e8f0;
@@ -103,10 +103,10 @@
                     <div class="relative flex-1">
                         <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                         <input type="text" id="searchInput" placeholder="Search by order # or customer name..."
-                            class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition-all"
+                            class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                             onkeyup="if(event.key==='Enter') loadTokenHistory(true)">
                     </div>
-                    <button onclick="loadTokenHistory(true)" class="btn btn-primary px-6 py-2.5 rounded-lg shadow-md shadow-red-100">
+                    <button onclick="loadTokenHistory(true)" class="btn btn-primary px-6 py-2.5 rounded-lg shadow-md shadow-blue-100">
                          Search
                     </button>
                     <button onclick="resetFilters()" class="btn btn-secondary px-6 py-2.5 rounded-lg">
@@ -161,7 +161,7 @@
             </div>
 
             <div id="tokenModalContent" style="text-align: center; padding: 20px;">
-                <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #dc2626;"></i>
+                <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #2563eb;"></i>
             </div>
         </div>
     </div>
@@ -229,7 +229,8 @@
         function printTicket(data, title) {
             const html = `
                 <div style="text-align:center; padding: 10px 0; border-bottom: 2px solid #000; margin-bottom: 10px;">
-                    <div style="font-size: 24px; font-weight: 900; color: #dc2626; border: 3px solid #dc2626; display: inline-block; padding: 4px 15px; margin-bottom: 10px; border-radius: 8px; letter-spacing: 2px;">RE-PRINT</div>
+                    <img src="/images/KDJ_logo.png" style="max-width:70px; max-height:70px; margin-bottom: 6px; display: inline-block;" />
+                    <div style="font-size: 24px; font-weight: 900; color: #2563eb; border: 3px solid #2563eb; display: inline-block; padding: 4px 15px; margin-bottom: 10px; border-radius: 8px; letter-spacing: 2px;">RE-PRINT</div>
                     <div style="font-weight: 900; font-size: 16px; color:#000;">${title}</div>
                     <div style="font-size: 13px; font-weight: 800; color:#000; margin-top: 5px;">Order: ${data.order_number}</div>
                     <div style="font-size: 32px; font-weight: 900; margin:4px 0; color:#000;">#${String(data.token_number).padStart(2, '0')}</div>

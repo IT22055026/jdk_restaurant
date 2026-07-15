@@ -30,7 +30,7 @@
                 <div>
                     <label for="name" class="block text-sm font-semibold text-gray-900 mb-2">Category Name <span class="text-red-600">*</span></label>
                     <input type="text" name="name" id="name" value="{{ old('name') }}" required
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent {{ $errors->has('name') ? 'border-red-600' : '' }}"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent {{ $errors->has('name') ? 'border-red-600' : '' }}"
                         placeholder="Category name">
                     @error('name')
                         <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
@@ -41,7 +41,7 @@
                     <div>
                         <label for="sort_order" class="block text-sm font-semibold text-gray-900 mb-2">Sort Order</label>
                         <input type="number" name="sort_order" id="sort_order" value="{{ old('sort_order', 0) }}" min="0"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent {{ $errors->has('sort_order') ? 'border-red-600' : '' }}"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent {{ $errors->has('sort_order') ? 'border-red-600' : '' }}"
                             placeholder="0">
                         @error('sort_order')
                             <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
@@ -51,7 +51,7 @@
                     <div>
                         <label for="status" class="block text-sm font-semibold text-gray-900 mb-2">Status <span class="text-red-600">*</span></label>
                         <select name="status" id="status" required
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent {{ $errors->has('status') ? 'border-red-600' : '' }}">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent {{ $errors->has('status') ? 'border-red-600' : '' }}">
                             <option value="">Select status</option>
                             <option value="active" {{ old('status') === 'active' ? 'selected' : '' }}>Active</option>
                             <option value="inactive" {{ old('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
@@ -63,7 +63,7 @@
                 </div>
 
                 <div class="flex gap-4 pt-4">
-                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
                         <i class="fas fa-save mr-2"></i>Save Category
                     </button>
                     <a href="{{ route('categories.index') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-900 px-6 py-2 rounded-lg font-semibold transition-colors">

@@ -6,6 +6,7 @@ use App\Models\Ingredient;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -139,6 +140,10 @@ class ReportsController extends Controller
         $totalOrders   = Order::where('status', 'completed')->count();
         $avgOrderValue = $totalOrders > 0 ? round($totalRevenue / $totalOrders, 2) : 0;
 
+        $activeOrders   = Order::whereIn('status', ['pending', 'confirmed', 'hold'])->count();
+        $inventoryItems = Product::where('status', 'active')->count();
+        $activeUsers    = User::where('status', 'active')->count() ?: User::count();
+
         $topProductRow = OrderItem::select('product_name', DB::raw('SUM(quantity) as total_qty'))
                                   ->groupBy('product_name')->orderByDesc('total_qty')->first();
         $topProduct = $topProductRow?->product_name ?? 'N/A';
@@ -183,6 +188,7 @@ class ReportsController extends Controller
 
         return compact(
             'totalRevenue', 'todaySales', 'monthRevenue', 'totalOrders', 'avgOrderValue', 'topProduct',
+            'activeOrders', 'inventoryItems', 'activeUsers',
             'chartLabels', 'chartData', 'recentSales', 'topProducts', 'paymentBreakdown',
             'pendingSales', 'pendingCount', 'pendingTotal'
         );

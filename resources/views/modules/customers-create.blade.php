@@ -30,7 +30,7 @@
                 <div>
                     <label for="name" class="block text-sm font-semibold text-gray-900 mb-2">Name <span class="text-red-600">*</span></label>
                     <input type="text" name="name" id="name" value="{{ old('name') }}" required
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent {{ $errors->has('name') ? 'border-red-600' : '' }}"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent {{ $errors->has('name') ? 'border-red-600' : '' }}"
                         placeholder="Customer name">
                     @error('name')
                         <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
@@ -40,7 +40,7 @@
                 <div class="relative">
                     <label for="phone_number" class="block text-sm font-semibold text-gray-900 mb-2">Phone Number <span class="text-red-600">*</span></label>
                     <input type="tel" name="phone_number" id="phone_number" value="{{ old('phone_number') }}" required autocomplete="off"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent {{ $errors->has('phone_number') ? 'border-red-600' : '' }}"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent {{ $errors->has('phone_number') ? 'border-red-600' : '' }}"
                         placeholder="0771234567">
                     <div id="phone-suggestions" class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 hidden"></div>
                     @error('phone_number')
@@ -51,7 +51,7 @@
                 <div>
                     <label for="email" class="block text-sm font-semibold text-gray-900 mb-2">Email <span class="text-gray-500">(Optional)</span></label>
                     <input type="email" name="email" id="email" value="{{ old('email') }}"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent {{ $errors->has('email') ? 'border-red-600' : '' }}"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent {{ $errors->has('email') ? 'border-red-600' : '' }}"
                         placeholder="customer@example.com">
                     @error('email')
                         <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
@@ -61,7 +61,7 @@
                 <div>
                     <label for="address" class="block text-sm font-semibold text-gray-900 mb-2">Address <span class="text-gray-500">(Optional)</span></label>
                     <textarea name="address" id="address" rows="3"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         placeholder="Customer address">{{ old('address') }}</textarea>
                     @error('address')
                         <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
@@ -71,7 +71,7 @@
                 <div>
                     <label for="status" class="block text-sm font-semibold text-gray-900 mb-2">Status <span class="text-red-600">*</span></label>
                     <select name="status" id="status" required
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent {{ $errors->has('status') ? 'border-red-600' : '' }}">
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent {{ $errors->has('status') ? 'border-red-600' : '' }}">
                         <option value="">Select status</option>
                         <option value="active" {{ old('status') === 'active' ? 'selected' : '' }}>Active</option>
                         <option value="inactive" {{ old('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
@@ -82,7 +82,7 @@
                 </div>
 
                 <div class="flex gap-4 pt-4">
-                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
                         <i class="fas fa-save mr-2"></i>Save Customer
                     </button>
                     <a href="{{ route('customers.index') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-900 px-6 py-2 rounded-lg font-semibold transition-colors">

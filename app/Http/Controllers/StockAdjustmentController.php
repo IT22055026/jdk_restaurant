@@ -40,7 +40,7 @@ class StockAdjustmentController extends Controller
             $allMovements = $allMovements->concat(
                 IngredientStockMovement::with(['ingredient', 'user'])->latest()->take(100)->get()
                     ->map(fn ($m) => [
-                        'type' => 'Ingredient',
+                        'type' => 'Included Item',
                         'name' => $m->ingredient?->name ?? 'N/A',
                         'unit' => $m->ingredient?->unit ?? '',
                         'change_type' => $m->change_type,
@@ -108,7 +108,7 @@ class StockAdjustmentController extends Controller
         $product = Product::find($validated['product_id']);
 
         if (!$product->is_finished_good) {
-            return back()->withErrors(['product_id' => 'Only finished goods carry their own stock — recipe-tracked items are adjusted via their ingredients instead.']);
+            return back()->withErrors(['product_id' => 'Only finished goods carry their own stock — recipe-tracked items are adjusted via their included items instead.']);
         }
 
         if (floor($validated['quantity']) != $validated['quantity']) {

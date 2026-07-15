@@ -36,9 +36,9 @@
                     <i class="fas fa-layer-group mr-2"></i>Stock Adjustments
                 </a>
                 <a href="{{ route('ingredients.index') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-900 px-6 py-3 rounded-lg font-semibold transition-colors">
-                    <i class="fas fa-carrot mr-2"></i>Ingredients
+                    <i class="fas fa-carrot mr-2"></i>Included Items
                 </a>
-                <a href="{{ route('products.create') }}" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+                <a href="{{ route('products.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
                     <i class="fas fa-plus mr-2"></i>Add Product
                 </a>
             </div>
@@ -56,7 +56,7 @@
                 <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
                 <input type="text" name="search" placeholder="Search by product name…"
                        value="{{ $searchQuery ?? '' }}"
-                       class="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                       class="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                        onkeypress="if(event.key=='Enter') this.form.submit()">
                 @if($searchQuery)
                     <a href="{{ route('inventory.index') }}" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -175,7 +175,7 @@
                     <i class="fas fa-boxes text-gray-300 text-5xl mb-4"></i>
                     <h3 class="text-lg font-semibold text-gray-900 mb-2">No products yet</h3>
                     <p class="text-gray-600 mb-4">Start by adding your first product</p>
-                    <a href="{{ route('products.create') }}" class="inline-block bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
+                    <a href="{{ route('products.create') }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
                         <i class="fas fa-plus mr-2"></i>Add Product
                     </a>
                 </div>

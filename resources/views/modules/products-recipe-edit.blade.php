@@ -22,7 +22,7 @@
                 <h1 class="text-4xl font-bold text-gray-900">Recipe: {{ $product->name }}</h1>
                 @endsection
             </div>
-            <p class="text-gray-600 mt-2">Ingredients consumed per 1 unit sold. Deducted automatically when a KOT is sent for this item.</p>
+            <p class="text-gray-600 mt-2">Included items consumed per 1 unit sold. Deducted automatically when a token is sent for this item.</p>
         </div>
 
         @if(session('success'))
@@ -34,7 +34,7 @@
         @if($ingredients->isEmpty())
             <div class="mb-6 bg-amber-50 border border-amber-300 text-amber-800 rounded-lg px-5 py-3 flex items-center gap-3">
                 <i class="fas fa-triangle-exclamation text-amber-500 flex-shrink-0"></i>
-                <span class="text-sm font-medium">No ingredients exist yet. <a href="{{ route('ingredients.create') }}" class="underline font-semibold">Add an ingredient</a> before building a recipe.</span>
+                <span class="text-sm font-medium">No included items exist yet. <a href="{{ route('ingredients.create') }}" class="underline font-semibold">Add an included item</a> before building a recipe.</span>
             </div>
         @endif
 
@@ -47,7 +47,7 @@
                     @forelse($product->ingredients as $ingredient)
                         <div class="recipe-row grid grid-cols-1 md:grid-cols-[1fr_180px_40px] gap-3 items-start">
                             <select name="ingredient_id[]" required
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 @foreach($ingredients as $option)
                                     <option value="{{ $option->id }}" {{ $option->id == $ingredient->id ? 'selected' : '' }}>
                                         {{ $option->name }} ({{ $option->unit }})
@@ -56,7 +56,7 @@
                             </select>
                             <input type="number" name="quantity_per_unit[]" step="0.0001" min="0.0001" required
                                 value="{{ $ingredient->pivot->quantity_per_unit }}"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 placeholder="Qty per unit">
                             <button type="button" onclick="this.closest('.recipe-row').remove()"
                                 class="w-full h-full flex items-center justify-center text-red-600 hover:text-red-800" title="Remove">
@@ -68,11 +68,11 @@
                 </div>
 
                 <button type="button" id="add-recipe-row" class="text-red-600 hover:text-red-800 text-sm font-semibold">
-                    <i class="fas fa-plus mr-1"></i>Add Ingredient
+                    <i class="fas fa-plus mr-1"></i>Add Included Item
                 </button>
 
                 <div class="flex gap-4 pt-4 border-t border-gray-100">
-                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
                         <i class="fas fa-save mr-2"></i>Save Recipe
                     </button>
                     <a href="{{ route('products.index') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-900 px-6 py-2 rounded-lg font-semibold transition-colors">
@@ -88,14 +88,14 @@
 <template id="recipe-row-template">
     <div class="recipe-row grid grid-cols-1 md:grid-cols-[1fr_180px_40px] gap-3 items-start">
         <select name="ingredient_id[]" required
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
-            <option value="">Select ingredient</option>
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <option value="">Select item</option>
             @foreach($ingredients as $option)
                 <option value="{{ $option->id }}">{{ $option->name }} ({{ $option->unit }})</option>
             @endforeach
         </select>
         <input type="number" name="quantity_per_unit[]" step="0.0001" min="0.0001" required
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="Qty per unit">
         <button type="button" onclick="this.closest('.recipe-row').remove()"
             class="w-full h-full flex items-center justify-center text-red-600 hover:text-red-800" title="Remove">

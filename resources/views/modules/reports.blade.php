@@ -10,12 +10,10 @@
                 @section('breadcrumb')
                     <nav class="text-sm text-gray-600" aria-label="Breadcrumb">
                         <ol class="inline-flex items-center space-x-2">
-                            <li><a href="{{ route('dashboard') }}" class="text-gray-500 hover:text-gray-700">Dashboard</a></li>
-                            <li class="text-gray-300">/</li>
-                            <li class="text-gray-900 font-semibold">Reports</li>
+                            <li class="text-gray-900 font-semibold">Dashboard</li>
                         </ol>
                     </nav>
-                <h1 class="text-4xl font-bold text-gray-900">Reports</h1>
+                <h1 class="text-4xl font-bold text-gray-900">Dashboard</h1>
                 @endsection
             <p class="text-gray-600 mt-2">Business analytics and sales overview</p>
         </div>
@@ -24,18 +22,77 @@
                 <i class="fas fa-clock mr-1"></i>As of {{ now()->format('d M Y, H:i') }}
             </span>
             <div class="flex gap-2">
-                <a href="{{ route('reports.export.sales') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-medium">
+                <a href="{{ route('reports.export.sales') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium">
                     <i class="fas fa-download"></i> Sales PDF
                 </a>
-                <a href="{{ route('reports.export.products') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition text-sm font-medium">
+                <a href="{{ route('reports.export.products') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition text-sm font-medium">
                     <i class="fas fa-download"></i> Products PDF
                 </a>
                 <a href="{{ route('reports.export.stock') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition text-sm font-medium">
                     <i class="fas fa-boxes-stacked"></i> Stock Report
                 </a>
-                <a href="{{ route('reports.export.combined') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm font-medium">
+                <a href="{{ route('reports.export.combined') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition text-sm font-medium">
                     <i class="fas fa-download"></i> Complete PDF
                 </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── OVERVIEW STATS ── -->
+    <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-4">
+        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 text-xs font-semibold uppercase tracking-wide">Total Sales</p>
+                    <p class="text-lg font-bold text-gray-900 mt-1">LKR {{ number_format($totalRevenue, 2) }}</p>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-sack-dollar text-blue-600 text-sm"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 text-xs font-semibold uppercase tracking-wide">Active Orders</p>
+                    <p class="text-lg font-bold text-gray-900 mt-1">{{ $activeOrders }}</p>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-shopping-cart text-amber-500 text-sm"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 text-xs font-semibold uppercase tracking-wide">Inventory Items</p>
+                    <p class="text-lg font-bold text-gray-900 mt-1">{{ $inventoryItems }}</p>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-boxes text-emerald-600 text-sm"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 text-xs font-semibold uppercase tracking-wide">Active Users</p>
+                    <p class="text-lg font-bold text-gray-900 mt-1">{{ $activeUsers }}</p>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-users text-purple-600 text-sm"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 text-xs font-semibold uppercase tracking-wide">This Month</p>
+                    <p class="text-lg font-bold text-gray-900 mt-1">LKR {{ number_format($monthRevenue, 2) }}</p>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-calendar-check text-teal-600 text-sm"></i>
+                </div>
             </div>
         </div>
     </div>
@@ -47,7 +104,7 @@
         <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
             <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Total Revenue</p>
             <p class="text-xl font-bold text-gray-900">LKR {{ number_format($totalRevenue, 2) }}</p>
-            <div class="mt-2 w-8 h-1 rounded-full bg-red-500"></div>
+            <div class="mt-2 w-8 h-1 rounded-full bg-blue-500"></div>
         </div>
 
         <!-- Today's Sales -->
@@ -164,7 +221,7 @@
         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
             <div class="flex items-center justify-between flex-wrap gap-4 mb-0">
                 <h2 class="text-lg font-bold text-gray-900">
-                    <i class="fas fa-receipt text-red-500 mr-2"></i>Sales Report
+                    <i class="fas fa-receipt text-blue-500 mr-2"></i>Sales Report
                     @if($from && $to)
                         <span class="ml-2 text-sm font-normal text-gray-400">{{ $from->format('d M Y') }} — {{ $to->format('d M Y') }}</span>
                     @else
@@ -181,7 +238,7 @@
                         <input type="hidden" name="to"   id="toHidden"   value="{{ $to   ? $to->format('Y-m-d')   : '' }}">
                     </div>
                     <button type="submit"
-                        class="inline-flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-xl hover:bg-red-700 transition shadow-sm">
+                        class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shadow-sm">
                         <i class="fas fa-filter text-xs"></i> Filter
                     </button>
                     @if($from && $to)
@@ -276,7 +333,7 @@
                 @endif
                 @foreach($sales->getUrlRange(max(1,$sales->currentPage()-2), min($sales->lastPage(),$sales->currentPage()+2)) as $page => $url)
                     @if($page == $sales->currentPage())
-                        <span class="px-3 py-1.5 text-sm font-semibold bg-red-600 text-white rounded-lg">{{ $page }}</span>
+                        <span class="px-3 py-1.5 text-sm font-semibold bg-blue-600 text-white rounded-lg">{{ $page }}</span>
                     @else
                         <a href="{{ $url }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition">{{ $page }}</a>
                     @endif
@@ -295,7 +352,7 @@
     <!-- ── REVENUE CHART (last 7 days) ── -->
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-8">
         <h2 class="text-lg font-bold text-gray-900 mb-4">
-            <i class="fas fa-chart-bar text-red-500 mr-2"></i>Revenue — Last 7 Days
+            <i class="fas fa-chart-bar text-blue-500 mr-2"></i>Revenue — Last 7 Days
         </h2>
         <div style="position:relative; height:260px;">
             <canvas id="revenueChart"></canvas>
@@ -309,7 +366,7 @@
         <div class="xl:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h2 class="text-lg font-bold text-gray-900">
-                    <i class="fas fa-receipt text-red-500 mr-2"></i>Recent Sales
+                    <i class="fas fa-receipt text-blue-500 mr-2"></i>Recent Sales
                 </h2>
                 <span class="text-xs text-gray-400">Last 20 completed orders</span>
             </div>
@@ -366,7 +423,7 @@
         <div class="xl:col-span-1 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100">
                 <h2 class="text-lg font-bold text-gray-900 mb-3">
-                    <i class="fas fa-credit-card text-red-500 mr-2"></i>Payment Methods
+                    <i class="fas fa-credit-card text-blue-500 mr-2"></i>Payment Methods
                 </h2>
                 <!-- Date range filter -->
                 <div class="flex items-center gap-2">
@@ -405,7 +462,7 @@
                     </div>
                     <div class="flex items-center gap-3">
                         <div class="flex-1 bg-gray-100 rounded-full h-2">
-                            <div class="bg-red-500 h-2 rounded-full transition-all" style="width: {{ $pct }}%"></div>
+                            <div class="bg-blue-500 h-2 rounded-full transition-all" style="width: {{ $pct }}%"></div>
                         </div>
                         <span class="text-xs text-gray-400 w-10 text-right">{{ $pct }}%</span>
                     </div>
@@ -589,7 +646,7 @@
                 </div>
                 <div class="flex items-center gap-3">
                     <div class="flex-1 bg-gray-100 rounded-full h-2">
-                        <div class="bg-red-500 h-2 rounded-full transition-all" style="width:${pm.pct}%"></div>
+                        <div class="bg-blue-500 h-2 rounded-full transition-all" style="width:${pm.pct}%"></div>
                     </div>
                     <span class="text-xs text-gray-400 w-10 text-right">${pm.pct}%</span>
                 </div>

@@ -55,7 +55,7 @@ class IngredientController extends Controller
 
         Ingredient::create($validated);
 
-        return redirect()->route('ingredients.index')->with('success', 'Ingredient created successfully');
+        return redirect()->route('ingredients.index')->with('success', 'Included item created successfully');
     }
 
     public function edit(Ingredient $ingredient)
@@ -84,13 +84,13 @@ class IngredientController extends Controller
 
         $ingredient->update($validated);
 
-        return redirect()->route('ingredients.index')->with('success', 'Ingredient updated successfully');
+        return redirect()->route('ingredients.index')->with('success', 'Included item updated successfully');
     }
 
     public function destroy(Ingredient $ingredient)
     {
         $ingredient->delete();
 
-        return redirect()->route('ingredients.index')->with('success', 'Ingredient deleted successfully');
+        return redirect()->route('ingredients.index')->with('success', 'Included item deleted successfully');
     }
 }

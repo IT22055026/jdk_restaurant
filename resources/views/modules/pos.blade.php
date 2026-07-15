@@ -11,7 +11,7 @@
         body { background: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
 
         /* ── Layout ── */
-        .pos-grid { display: grid; grid-template-columns: 320px 1fr 520px; flex: 1; min-height: 0; }
+        .pos-grid { display: grid; grid-template-columns: 320px 1fr 580px; flex: 1; min-height: 0; }
 
         /* ── Panels ── */
         .tables-panel  { background: #fff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; }
@@ -46,19 +46,19 @@
 
         /* ── Category pills ── */
         .cat-pill {
-            padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+            padding: 9px 18px; border-radius: 20px; font-size: 13px; font-weight: 600;
             border: 2px solid #e2e8f0; cursor: pointer; white-space: nowrap; transition: all 0.15s;
             background: #fff; color: #64748b;
         }
-        .cat-pill:hover { border-color: #dc2626; color: #dc2626; }
-        .cat-pill.active { background: #dc2626; color: #fff; border-color: #dc2626; }
+        .cat-pill:hover { border-color: #2563eb; color: #2563eb; }
+        .cat-pill.active { background: #2563eb; color: #fff; border-color: #2563eb; }
 
         /* ── Product cards ── */
         .product-card {
             background: #fff; border: 2px solid #e2e8f0; border-radius: 12px;
-            padding: 14px 10px; cursor: pointer; transition: all 0.18s; text-align: center;
+            padding: 18px 14px; cursor: pointer; transition: all 0.18s; text-align: center;
         }
-        .product-card:hover { border-color: #dc2626; box-shadow: 0 4px 16px rgba(220,38,38,0.15); transform: translateY(-2px); }
+        .product-card:hover { border-color: #2563eb; box-shadow: 0 4px 16px rgba(37,99,235,0.15); transform: translateY(-2px); }
         .product-card:active { transform: scale(0.97); }
 
         /* ── Bill items ── */
@@ -67,12 +67,12 @@
             border-bottom: 1px solid #f1f5f9; gap: 8px;
         }
         .qty-btn {
-            width: 26px; height: 26px; border: 1.5px solid #e2e8f0; border-radius: 6px;
+            width: 32px; height: 32px; border: 1.5px solid #e2e8f0; border-radius: 8px;
             background: #f8fafc; cursor: pointer; font-size: 13px; font-weight: bold;
             display: flex; align-items: center; justify-content: center; transition: all 0.12s;
             color: #374151;
         }
-        .qty-btn:hover { background: #dc2626; color: #fff; border-color: #dc2626; }
+        .qty-btn:hover { background: #2563eb; color: #fff; border-color: #2563eb; }
 
         /* ── Payment method buttons ── */
         .pay-method-btn {
@@ -81,7 +81,7 @@
             background: #fff; transition: all 0.15s; color: #64748b;
         }
         .pay-method-btn:hover { border-color: #3b82f6; color: #3b82f6; }
-        .pay-method-btn.active { border-color: #dc2626; background: #fef2f2; color: #dc2626; }
+        .pay-method-btn.active { border-color: #2563eb; background: #eff6ff; color: #2563eb; }
 
         /* ── Modals ── */
         .modal-overlay {
@@ -114,13 +114,13 @@
         .live-bill-overlay.open { display: flex; }
 
         /* ── Buttons ── */
-        .btn-primary   { background: #dc2626; color: #fff; border: none; border-radius: 10px; padding: 10px 16px; font-weight: 700; cursor: pointer; transition: background 0.15s; font-size: 13px; }
-        .btn-primary:hover   { background: #b91c1c; }
+        .btn-primary   { background: #2563eb; color: #fff; border: none; border-radius: 10px; padding: 13px 18px; font-weight: 700; cursor: pointer; transition: background 0.15s; font-size: 14px; }
+        .btn-primary:hover   { background: #1d4ed8; }
         .btn-secondary { background: #f1f5f9; color: #374151; border: none; border-radius: 10px; padding: 10px 16px; font-weight: 600; cursor: pointer; transition: background 0.15s; font-size: 13px; }
         .btn-secondary:hover { background: #e2e8f0; }
-        .btn-green   { background: #16a34a; color: #fff; border: none; border-radius: 10px; padding: 10px 16px; font-weight: 700; cursor: pointer; transition: background 0.15s; font-size: 13px; }
+        .btn-green   { background: #16a34a; color: #fff; border: none; border-radius: 10px; padding: 13px 18px; font-weight: 700; cursor: pointer; transition: background 0.15s; font-size: 14px; }
         .btn-green:hover   { background: #15803d; }
-        .btn-blue    { background: #2563eb; color: #fff; border: none; border-radius: 10px; padding: 10px 16px; font-weight: 700; cursor: pointer; transition: background 0.15s; font-size: 13px; }
+        .btn-blue    { background: #2563eb; color: #fff; border: none; border-radius: 10px; padding: 13px 18px; font-weight: 700; cursor: pointer; transition: background 0.15s; font-size: 14px; }
         .btn-blue:hover    { background: #1d4ed8; }
         .btn-orange  { background: #ea580c; color: #fff; border: none; border-radius: 10px; padding: 10px 14px; font-weight: 700; cursor: pointer; transition: background 0.15s; font-size: 12px; }
         .btn-orange:hover  { background: #c2410c; }
@@ -141,7 +141,7 @@
         }
         #toast.show { opacity: 1; }
         #toast.success { background: #166534; }
-        #toast.error   { background: #991b1b; }
+        #toast.error   { background: #1e3a8a; }
         #toast.warning { background: #92400e; }
 
         /* ── Print ── */
@@ -232,7 +232,7 @@
         <div style="padding: 16px; border-bottom: 1px solid #e2e8f0; flex-shrink: 0;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
                 <h2 style="font-size:16px; font-weight:800; color:#0f172a; margin:0;">
-                    <i class="fas fa-ticket" style="color:#dc2626; margin-right:6px;"></i>Open Tokens
+                    <i class="fas fa-ticket" style="color:#2563eb; margin-right:6px;"></i>Open Tokens
                 </h2>
             </div>
             <!-- Find by token number -->
@@ -272,26 +272,26 @@
             <div style="position:relative;">
                 <i class="fas fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:13px;"></i>
                 <input type="text" id="searchInput" placeholder="Search by product name…"
-                       style="width:100%; padding:9px 12px 9px 36px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:13px; outline:none; background:#f8fafc;"
-                       onfocus="this.style.borderColor='#dc2626'" onblur="this.style.borderColor='#e2e8f0'">
+                       style="width:100%; padding:11px 14px 11px 38px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:14px; outline:none; background:#f8fafc;"
+                       onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
             </div>
         </div>
 
         <!-- Active order indicator -->
-        <div id="activeOrderBanner" style="display:none; background:linear-gradient(90deg,#fef2f2,#fff1f1); border-bottom:1px solid #fecaca; padding:8px 16px; flex-shrink:0;">
-            <span style="font-size:12px; font-weight:600; color:#dc2626; flex:1;">
+        <div id="activeOrderBanner" style="display:none; background:linear-gradient(90deg,#eff6ff,#fff1f1); border-bottom:1px solid #fecaca; padding:8px 16px; flex-shrink:0;">
+            <span style="font-size:12px; font-weight:600; color:#2563eb; flex:1;">
                 <i class="fas fa-circle-dot" style="margin-right:4px;"></i>
                 <span id="activeOrderText">Token —</span>
                 <span style="color:#374151; font-weight:500; margin-left:4px;">tap a product to add it</span>
             </span>
-            <button id="closeOrderBtn" onclick="closeCurrentOrder(); event.stopPropagation();" style="background:none; border:none; color:#dc2626; cursor:pointer; font-size:18px; padding:0 8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; transition:all 0.2s; flex-shrink:0;">
+            <button id="closeOrderBtn" onclick="closeCurrentOrder(); event.stopPropagation();" style="background:none; border:none; color:#2563eb; cursor:pointer; font-size:18px; padding:0 8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; transition:all 0.2s; flex-shrink:0;">
                 <i class="fas fa-times-circle" style="font-size:18px;"></i>
             </button>
         </div>
 
         <!-- Products grid -->
         <div style="flex:1; overflow-y:auto; padding:16px;">
-            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap:12px;" id="productsContainer">
+            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:18px;" id="productsContainer">
                 <p style="grid-column:1/-1; text-align:center; color:#94a3b8; padding:48px 0; font-size:13px;">Loading products…</p>
             </div>
         </div>
@@ -306,14 +306,14 @@
         <!-- Zone 1: Header with Table Info -->
         <div style="padding:12px 16px; border-bottom:1px solid #e2e8f0; flex-shrink:0; background:#fff;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
-                <h3 style="font-size:14px; font-weight:800; color:#0f172a; margin:0;">
-                    <i class="fas fa-receipt" style="color:#dc2626; margin-right:6px;"></i>Order
+                <h3 style="font-size:17px; font-weight:800; color:#0f172a; margin:0;">
+                    <i class="fas fa-receipt" style="color:#2563eb; margin-right:6px;"></i>Order
                 </h3>
                 <button onclick="loadHeldOrders(true)" style="font-size:10px; background:#fef3c7; color:#92400e; border:none; padding:4px 8px; border-radius:6px; cursor:pointer; font-weight:700;">
                     <i class="fas fa-pause-circle" style="margin-right:2px;"></i>Held <span id="heldCount" style="background:#f59e0b;color:#fff;border-radius:8px;padding:0px 5px; font-size:9px;">0</span>
                 </button>
             </div>
-            <div id="selectedTokenLabel" style="font-size:12px; font-weight:700; color:#64748b;">
+            <div id="selectedTokenLabel" style="font-size:14px; font-weight:700; color:#64748b;">
                 <i class="fas fa-arrow-left" style="font-size:10px; margin-right:4px;"></i>Tap New Order to begin
             </div>
         </div>
@@ -323,17 +323,17 @@
             <button id="customerInfoToggle" onclick="toggleCustomerInfo()" style="width:100%; padding:10px 16px; background:none; border:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; text-align:left;">
                 <div style="display:flex; align-items:center;">
                     <i class="fas fa-user-circle" style="color:#1d4ed8; margin-right:6px; font-size:13px;"></i>
-                    <span style="font-size:11px; font-weight:700; color:#1d4ed8; text-transform:uppercase;">Customer</span>
+                    <span style="font-size:12px; font-weight:700; color:#1d4ed8; text-transform:uppercase;">Customer</span>
                 </div>
                 <i class="fas fa-chevron-down" id="customerInfoChevron" style="font-size:11px; color:#64748b;"></i>
             </button>
             <div id="customerInfoSection" style="display:none; padding:8px 16px; border-top:1px solid #e2e8f0;">
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
                     <input type="text" id="customerName" placeholder="Name"
-                           style="font-size:11px; border:1.5px solid #bfdbfe; border-radius:6px; padding:6px 8px; background:#fff; outline:none; width:100%;"
+                           style="font-size:13px; border:1.5px solid #bfdbfe; border-radius:8px; padding:9px 10px; background:#fff; outline:none; width:100%;"
                            onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#bfdbfe'; saveCustomerInfo()">
                     <input type="text" id="customerPhone" placeholder="Phone"
-                           style="font-size:11px; border:1.5px solid #bfdbfe; border-radius:6px; padding:6px 8px; background:#fff; outline:none; width:100%;"
+                           style="font-size:13px; border:1.5px solid #bfdbfe; border-radius:8px; padding:9px 10px; background:#fff; outline:none; width:100%;"
                            onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#bfdbfe'; saveCustomerInfo()">
                 </div>
             </div>
@@ -350,40 +350,40 @@
         </div>
 
         <!-- Zone 4: Fixed bottom controls -->
-        <div style="border-top:1px solid #e2e8f0; padding:10px 16px; background:#fff; flex-shrink:0; display:flex; flex-direction:column; gap:6px;">
+        <div style="border-top:1px solid #e2e8f0; padding:14px 18px; background:#fff; flex-shrink:0; display:flex; flex-direction:column; gap:8px;">
 
             <!-- Totals + Payment summary — single 4-column row -->
             <div style="display:grid; grid-template-columns: 1fr 1.25fr 1fr 1.1fr; gap:8px; align-items:start;">
                 <!-- Subtotal -->
                 <div>
-                    <div style="font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:#94a3b8; margin-bottom:2px;">Subtotal</div>
-                    <div id="subtotalDisplay" style="font-size:12px; font-weight:600; color:#374151;">Rs. 0.00</div>
+                    <div style="font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:#94a3b8; margin-bottom:3px;">Subtotal</div>
+                    <div id="subtotalDisplay" style="font-size:15px; font-weight:600; color:#374151;">Rs. 0.00</div>
                 </div>
                 <!-- Discount -->
                 <div>
-                    <div style="font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:#94a3b8; margin-bottom:2px;">Discount</div>
+                    <div style="font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:#94a3b8; margin-bottom:3px;">Discount</div>
                     <div style="display:flex; gap:4px;">
                         <select id="discountType" onchange="recalcTotal()"
-                                style="flex:1; min-width:0; font-size:10px; border:1px solid #e2e8f0; border-radius:5px; padding:3px 4px; background:#f8fafc; outline:none; cursor:pointer;">
+                                style="flex:1; min-width:0; font-size:12px; border:1px solid #e2e8f0; border-radius:6px; padding:5px 6px; background:#f8fafc; outline:none; cursor:pointer;">
                             <option value="">None</option>
                             <option value="percentage">%</option>
                             <option value="fixed">Rs</option>
                         </select>
                         <input type="number" id="discountValue" placeholder="0" min="0" oninput="recalcTotal()"
-                               style="width:42px; font-size:10px; border:1px solid #e2e8f0; border-radius:5px; padding:3px 4px; outline:none; background:#f8fafc;">
+                               style="width:48px; font-size:12px; border:1px solid #e2e8f0; border-radius:6px; padding:5px 6px; outline:none; background:#f8fafc;">
                     </div>
                 </div>
                 <!-- Total -->
                 <div>
-                    <div style="font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:#dc2626; margin-bottom:2px;">Total</div>
-                    <div id="totalDisplay" style="font-size:14px; font-weight:800; color:#dc2626;">Rs. 0.00</div>
+                    <div style="font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:#2563eb; margin-bottom:3px;">Total</div>
+                    <div id="totalDisplay" style="font-size:20px; font-weight:800; color:#2563eb;">Rs. 0.00</div>
                 </div>
                 <!-- Payment toggle (hidden until items exist) -->
                 <button type="button" id="paymentToggle" onclick="togglePaymentSection()" style="display:none; flex-direction:column; align-items:flex-start; gap:2px; background:none; border:none; padding:0; cursor:pointer; text-align:left;">
-                    <span style="font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:#94a3b8;">Payment</span>
-                    <span style="font-size:12px; font-weight:700; color:#dc2626; display:flex; align-items:center; gap:4px;">
+                    <span style="font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:#94a3b8;">Payment</span>
+                    <span style="font-size:14px; font-weight:700; color:#2563eb; display:flex; align-items:center; gap:4px;">
                         <span id="paymentMethodSummary">Cash</span>
-                        <i class="fas fa-chevron-down" id="paymentChevron" style="font-size:9px; color:#64748b; transition:transform 0.15s;"></i>
+                        <i class="fas fa-chevron-down" id="paymentChevron" style="font-size:10px; color:#64748b; transition:transform 0.15s;"></i>
                     </span>
                 </button>
             </div>
@@ -392,30 +392,30 @@
             <div id="paymentSection" style="display:none;">
                 <div id="paymentBody" style="display:none; padding-top:8px; margin-top:2px; border-top:1px solid #e2e8f0;">
                 <div style="display:flex; gap:5px; margin-bottom:8px;">
-                    <button class="pay-method-btn active" data-method="cash" onclick="selectPaymentMethod('cash')" style="flex:1; padding:6px 4px; font-size:10px;">
-                        <i class="fas fa-money-bill-wave" style="display:block; font-size:13px; margin-bottom:2px;"></i>Cash
+                    <button class="pay-method-btn active" data-method="cash" onclick="selectPaymentMethod('cash')" style="flex:1; padding:10px 6px; font-size:12px;">
+                        <i class="fas fa-money-bill-wave" style="display:block; font-size:16px; margin-bottom:3px;"></i>Cash
                     </button>
-                    <button class="pay-method-btn" data-method="card" onclick="selectPaymentMethod('card')" style="flex:1; padding:6px 4px; font-size:10px;">
-                        <i class="fas fa-credit-card" style="display:block; font-size:13px; margin-bottom:2px;"></i>Card
+                    <button class="pay-method-btn" data-method="card" onclick="selectPaymentMethod('card')" style="flex:1; padding:10px 6px; font-size:12px;">
+                        <i class="fas fa-credit-card" style="display:block; font-size:16px; margin-bottom:3px;"></i>Card
                     </button>
-                    <button class="pay-method-btn" data-method="bank_transfer" onclick="selectPaymentMethod('bank_transfer')" style="flex:1; padding:6px 4px; font-size:10px;">
-                        <i class="fas fa-university" style="display:block; font-size:13px; margin-bottom:2px;"></i>Bank
+                    <button class="pay-method-btn" data-method="bank_transfer" onclick="selectPaymentMethod('bank_transfer')" style="flex:1; padding:10px 6px; font-size:12px;">
+                        <i class="fas fa-university" style="display:block; font-size:16px; margin-bottom:3px;"></i>Bank
                     </button>
-                    <button class="pay-method-btn" data-method="split" onclick="selectPaymentMethod('split')" style="flex:1; padding:6px 4px; font-size:10px;">
-                        <i class="fas fa-code-branch" style="display:block; font-size:13px; margin-bottom:2px;"></i>Split
+                    <button class="pay-method-btn" data-method="split" onclick="selectPaymentMethod('split')" style="flex:1; padding:10px 6px; font-size:12px;">
+                        <i class="fas fa-code-branch" style="display:block; font-size:16px; margin-bottom:3px;"></i>Split
                     </button>
                 </div>
                 <!-- Cash amount input -->
                 <div id="cashSection" style="display:flex; gap:6px;">
                     <div style="flex:1;">
-                        <label style="font-size:9px; font-weight:600; color:#64748b; display:block; margin-bottom:2px;">Paid</label>
+                        <label style="font-size:10px; font-weight:600; color:#64748b; display:block; margin-bottom:3px;">Paid</label>
                         <input type="number" id="amountPaid" placeholder="0.00" min="0" oninput="updateChange()"
-                               style="width:100%; font-size:11px; font-weight:700; border:1px solid #e2e8f0; border-radius:5px; padding:5px 6px; outline:none;"
-                               onfocus="this.style.borderColor='#dc2626'" onblur="this.style.borderColor='#e2e8f0'">
+                               style="width:100%; font-size:14px; font-weight:700; border:1px solid #e2e8f0; border-radius:6px; padding:8px 10px; outline:none;"
+                               onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
                     </div>
                     <div style="flex:1;">
-                        <label style="font-size:9px; font-weight:600; color:#64748b; display:block; margin-bottom:2px;">Change</label>
-                        <div id="changeDisplay" style="font-size:12px; font-weight:700; color:#16a34a; padding:5px 6px; background:#f0fdf4; border-radius:5px; border:1px solid #bbf7d0; text-align:center;">Rs. 0.00</div>
+                        <label style="font-size:10px; font-weight:600; color:#64748b; display:block; margin-bottom:3px;">Change</label>
+                        <div id="changeDisplay" style="font-size:14px; font-weight:700; color:#16a34a; padding:8px 10px; background:#f0fdf4; border-radius:6px; border:1px solid #bbf7d0; text-align:center;">Rs. 0.00</div>
                     </div>
                 </div>
 
@@ -466,23 +466,20 @@
 
                 <!-- Row 1: Print Token -->
                 <div style="display:flex; gap:6px;">
-                    <button onclick="printToken()" class="btn-orange" style="flex:1; padding:8px 6px; font-size:11px;">
+                    <button onclick="printToken()" class="btn-orange" style="flex:1; padding:13px 8px; font-size:14px;">
                         <i class="fas fa-receipt" style="margin-right:3px;"></i>Print Token
                     </button>
                 </div>
 
-                <!-- Row 2: Waiter Bill + Pay (side by side) -->
+                <!-- Row 2: Pay -->
                 <div id="waiterPayRow" style="display:none; gap:6px; display:flex;">
-                    <button onclick="printBill()" id="waiterBillBtn" class="btn-blue" style="flex:1; padding:8px 6px; font-size:11px;">
-                        <i class="fas fa-file-invoice" style="margin-right:3px;"></i>Bill
-                    </button>
-                    <button onclick="initiatePayment()" id="payBtn" class="btn-green" style="flex:1; padding:8px 6px; font-size:11px;">
+                    <button onclick="initiatePayment()" id="payBtn" class="btn-green" style="flex:1; padding:13px 8px; font-size:14px;">
                         <i class="fas fa-check-circle" style="margin-right:3px;"></i>Pay
                     </button>
                 </div>
 
                 <!-- Row 3: Hold -->
-                <button onclick="holdCurrentOrder()" id="holdBtn" class="btn-secondary" style="display:none; width:100%; padding:8px; font-size:11px;">
+                <button onclick="holdCurrentOrder()" id="holdBtn" class="btn-secondary" style="display:none; width:100%; padding:13px; font-size:14px;">
                     <i class="fas fa-pause" style="margin-right:3px;"></i>Hold Order
                 </button>
 
@@ -547,7 +544,7 @@
     <div class="modal-box" style="max-width: 400px;">
         <div style="text-align: center; margin-bottom: 20px;">
             <div style="font-size: 48px; margin-bottom: 12px;">
-                <i class="fas fa-exclamation-circle" style="color: #dc2626;"></i>
+                <i class="fas fa-exclamation-circle" style="color: #2563eb;"></i>
             </div>
             <h2 style="font-size: 18px; font-weight: 800; color: #0f172a; margin: 0 0 8px;">No Active Shift</h2>
             <p style="font-size: 14px; color: #64748b; margin: 0;">You must start a shift before processing orders</p>
@@ -562,7 +559,7 @@
             <button onclick="closeModal('shiftModal')" style="flex: 1; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; background: #fff; color: #374151; font-weight: 700; cursor: pointer; transition: all 0.2s;">
                 Cancel
             </button>
-            <a href="{{ route('shifts.index') }}" style="flex: 1; padding: 10px; border: none; border-radius: 8px; background: #dc2626; color: #fff; font-weight: 700; cursor: pointer; text-align: center; text-decoration: none; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
+            <a href="{{ route('shifts.index') }}" style="flex: 1; padding: 10px; border: none; border-radius: 8px; background: #2563eb; color: #fff; font-weight: 700; cursor: pointer; text-align: center; text-decoration: none; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
                 <i class="fas fa-arrow-right" style="margin-right: 6px;"></i> Go to Shifts
             </a>
         </div>
@@ -580,9 +577,42 @@
     let selectedPaymentMethod = 'cash';
     let currentTokenContent   = '';
     let currentBillContent    = '';
-    let stockCache            = {}; // { productId: remainingQty } for non-unlimited products
+    let stockCache            = {}; // { productId: remainingQty } for finished-goods (independent stock)
+    let ingredientStockCache  = {}; // { ingredientId: remainingRawQty } for recipe-tracked products
+    let productRecipes        = {}; // { productId: [{ingredient_id, quantity_per_unit}] } for recipe-tracked products
     let openDiscountRows      = new Set(); // item IDs whose discount input row is open
     let qtyLock               = {}; // { itemId: true } — prevents overlapping qty updates
+
+    // Recipe-tracked products (e.g. two combos that both use the same Paratha Roti)
+    // share one pool of ingredient stock. getStock() derives a product's available
+    // quantity from that shared pool; adjustStock() is the single place that deducts
+    // or restores it so every sibling product reflects the change immediately.
+    function getStock(productId) {
+        const recipe = productRecipes[productId];
+        if (recipe && recipe.length > 0) {
+            let unitsPossible = Infinity;
+            recipe.forEach(function(r) {
+                const remaining = ingredientStockCache.hasOwnProperty(r.ingredient_id) ? ingredientStockCache[r.ingredient_id] : 0;
+                const possible = r.quantity_per_unit > 0 ? Math.floor(remaining / r.quantity_per_unit) : Infinity;
+                if (possible < unitsPossible) unitsPossible = possible;
+            });
+            return Math.max(0, unitsPossible === Infinity ? 0 : unitsPossible);
+        }
+        return stockCache.hasOwnProperty(productId) ? stockCache[productId] : null;
+    }
+
+    function adjustStock(productId, deltaUnits) {
+        const recipe = productRecipes[productId];
+        if (recipe && recipe.length > 0) {
+            recipe.forEach(function(r) {
+                if (ingredientStockCache.hasOwnProperty(r.ingredient_id)) {
+                    ingredientStockCache[r.ingredient_id] -= r.quantity_per_unit * deltaUnits;
+                }
+            });
+        } else if (stockCache.hasOwnProperty(productId)) {
+            stockCache[productId] = Math.max(0, stockCache[productId] - deltaUnits);
+        }
+    }
 
     // ── Bootstrap ──
     async function initPos() {
@@ -641,7 +671,7 @@
             const time = new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
 
             const itemBadge = t.items_count > 0
-                ? '<div style="font-size:11px; font-weight:800; color:#dc2626; margin-top:4px;">'
+                ? '<div style="font-size:11px; font-weight:800; color:#2563eb; margin-top:4px;">'
                     + '<i class="fas fa-circle-dot" style="font-size:8px;"></i> '
                     + t.items_count + ' item' + (t.items_count !== 1 ? 's' : '')
                     + '</div>'
@@ -805,10 +835,34 @@
             const res = await fetch('{{ route("pos.products") }}?' + params);
             if (!res.ok) { toast('Failed to load products', 'error'); return; }
             allProducts = await res.json();
-            stockCache = {};
+            // A filtered search only returns a subset of products, but ingredient
+            // reservations made against products outside that subset (e.g. added
+            // before the search) must keep counting — so refresh whatever's in this
+            // response instead of wiping caches for products we can no longer see.
             allProducts.forEach(function(p) {
-                if (!p.is_unlimited_stock) stockCache[p.id] = p.quantity;
+                if (Array.isArray(p.recipe) && p.recipe.length > 0) {
+                    productRecipes[p.id] = p.recipe;
+                    p.recipe.forEach(function(r) {
+                        ingredientStockCache[r.ingredient_id] = r.ingredient_stock;
+                    });
+                    delete stockCache[p.id];
+                } else if (!p.is_unlimited_stock) {
+                    stockCache[p.id] = p.quantity;
+                    delete productRecipes[p.id];
+                } else {
+                    delete stockCache[p.id];
+                    delete productRecipes[p.id];
+                }
             });
+            // loadProducts() re-fetches fresh baselines from the server (e.g. on every
+            // search keystroke), which doesn't know about items already sitting unprinted
+            // in the current cart. Re-apply that reservation on top of the fresh baseline
+            // so searching mid-order never makes reserved stock look available again.
+            if (currentOrder && Array.isArray(currentOrder.items)) {
+                currentOrder.items.forEach(function(item) {
+                    if (item.product_id) adjustStock(item.product_id, item.quantity);
+                });
+            }
             renderProducts();
         } catch (e) {
             console.error('Load products error:', e);
@@ -847,10 +901,10 @@
                 imageHtml = '<img src="/storage/' + p.image + '" alt="' + escapeHtml(p.name) + '" '
                     + 'style="width:100%; height:100%; object-fit:cover;">';
             } else {
-                imageHtml = '<i class="fas fa-utensils" style="color:#dc2626; font-size:18px;"></i>';
+                imageHtml = '<i class="fas fa-utensils" style="color:#2563eb; font-size:18px;"></i>';
             }
 
-            const availableQty = p.is_unlimited_stock ? null : (stockCache.hasOwnProperty(p.id) ? stockCache[p.id] : p.quantity);
+            const availableQty = p.is_unlimited_stock ? null : getStock(p.id);
             const isOutOfStock = !p.is_unlimited_stock && availableQty <= 0;
             let stockBadge;
             if (p.is_unlimited_stock) {
@@ -865,11 +919,11 @@
                 : 'onclick="addProductToOrder(' + p.id + ', \'' + escapeJs(p.name) + '\', ' + p.price + ')"';
 
             return '<div class="product-card" ' + cardExtra + '>'
-                + '<div style="height:80px; background:linear-gradient(135deg,#fef2f2,#fee2e2); border-radius:10px; display:flex; align-items:center; justify-content:center; margin-bottom:10px; overflow:hidden; position:relative;">'
+                + '<div style="height:130px; background:linear-gradient(135deg,#eff6ff,#fee2e2); border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; overflow:hidden; position:relative;">'
                 + imageHtml
                 + '</div>'
-                + '<p style="font-size:12px; font-weight:700; color:#0f172a; margin:0 0 4px; line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">' + escapeHtml(p.name) + '</p>'
-                + '<p style="font-size:14px; font-weight:900; color:#dc2626; margin:0;">Rs. ' + p.price.toFixed(2) + '</p>'
+                + '<p style="font-size:14px; font-weight:700; color:#0f172a; margin:0 0 5px; line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">' + escapeHtml(p.name) + '</p>'
+                + '<p style="font-size:16px; font-weight:900; color:#2563eb; margin:0;">Rs. ' + p.price.toFixed(2) + '</p>'
                 + stockBadge
                 + '</div>';
         }).join('');
@@ -904,7 +958,8 @@
         }
 
         // Check stock before adding
-        if (stockCache.hasOwnProperty(productId) && stockCache[productId] <= 0) {
+        const availBeforeAdd = getStock(productId);
+        if (availBeforeAdd !== null && availBeforeAdd <= 0) {
             toast('This item is out of stock', 'error');
             return;
         }
@@ -923,9 +978,7 @@
             });
         }
         // Deduct from stock cache
-        if (stockCache.hasOwnProperty(productId)) {
-            stockCache[productId] = Math.max(0, stockCache[productId] - 1);
-        }
+        adjustStock(productId, 1);
         recalcOrderTotals();
         renderBill();
         renderProducts();
@@ -966,7 +1019,7 @@
                         return !(i.product_id === productId && i.id === null);
                     });
                 }
-                if (stockCache.hasOwnProperty(productId)) stockCache[productId]++;
+                adjustStock(productId, -1);
                 recalcOrderTotals();
                 renderBill();
                 renderProducts();
@@ -995,13 +1048,14 @@
         const item = currentOrder.items.find(function(i) { return i.id === itemId; });
         if (!item) return;
 
-        if (stockCache.hasOwnProperty(item.product_id) && stockCache[item.product_id] <= 0) {
+        const availForIncrease = getStock(item.product_id);
+        if (availForIncrease !== null && availForIncrease <= 0) {
             toast('No more stock available for this item', 'error');
             return;
         }
 
         qtyLock[itemId] = true;
-        if (stockCache.hasOwnProperty(item.product_id)) stockCache[item.product_id]--;
+        adjustStock(item.product_id, 1);
         item.quantity++;
         item.subtotal = item.unit_price * item.quantity * (1 - (item.discount_percent || 0) / 100);
         recalcOrderTotals();
@@ -1021,7 +1075,7 @@
         if (!item || item.quantity <= 1) return;
 
         qtyLock[itemId] = true;
-        if (stockCache.hasOwnProperty(item.product_id)) stockCache[item.product_id]++;
+        adjustStock(item.product_id, -1);
         item.quantity--;
         item.subtotal = item.unit_price * item.quantity * (1 - (item.discount_percent || 0) / 100);
         recalcOrderTotals();
@@ -1044,9 +1098,10 @@
         const diff = newQty - item.quantity;
 
         // Enforce stock cap when increasing
-        if (diff > 0 && stockCache.hasOwnProperty(item.product_id)) {
-            if (stockCache[item.product_id] < diff) {
-                newQty = item.quantity + Math.max(0, stockCache[item.product_id]);
+        const availForSet = getStock(item.product_id);
+        if (diff > 0 && availForSet !== null) {
+            if (availForSet < diff) {
+                newQty = item.quantity + Math.max(0, availForSet);
                 if (newQty === item.quantity) {
                     toast('No more stock available for this item', 'error');
                     renderBill();
@@ -1057,10 +1112,7 @@
         }
 
         qtyLock[itemId] = true;
-        if (stockCache.hasOwnProperty(item.product_id)) {
-            stockCache[item.product_id] -= (newQty - item.quantity);
-            stockCache[item.product_id] = Math.max(0, stockCache[item.product_id]);
-        }
+        adjustStock(item.product_id, newQty - item.quantity);
         item.quantity = newQty;
         item.subtotal = item.unit_price * newQty * (1 - (item.discount_percent || 0) / 100);
         recalcOrderTotals();
@@ -1125,8 +1177,8 @@
 
     async function removeItem(itemId) {
         const removedItem = currentOrder.items.find(function(i) { return i.id === itemId; });
-        if (removedItem && stockCache.hasOwnProperty(removedItem.product_id)) {
-            stockCache[removedItem.product_id] += removedItem.quantity;
+        if (removedItem) {
+            adjustStock(removedItem.product_id, -removedItem.quantity);
         }
         currentOrder.items = currentOrder.items.filter(function(i) { return i.id !== itemId; });
         recalcOrderTotals();
@@ -1194,7 +1246,8 @@
             billEl.innerHTML = currentOrder.items.map(function(item) {
                 const discPercent   = item.discount_percent || 0;
                 const discRowOpen   = item.id && openDiscountRows.has(item.id);
-                const atStockLimit  = stockCache.hasOwnProperty(item.product_id) && stockCache[item.product_id] <= 0;
+                const itemAvailStock = getStock(item.product_id);
+                const atStockLimit  = itemAvailStock !== null && itemAvailStock <= 0;
 
                 // Discount badge next to product name
                 const discBadge = discPercent > 0
@@ -1204,7 +1257,7 @@
                 // Editable quantity input (replaces static span)
                 const qtyControl = item.id
                     ? '<input type="number" min="1" value="' + item.quantity + '" '
-                      + 'style="width:38px; text-align:center; border:1.5px solid #e2e8f0; border-radius:6px; font-size:13px; font-weight:800; color:#0f172a; padding:2px 0; outline:none; background:#fff;" '
+                      + 'style="width:46px; text-align:center; border:1.5px solid #e2e8f0; border-radius:8px; font-size:15px; font-weight:800; color:#0f172a; padding:2px 0; outline:none; background:#fff;" '
                       + 'onblur="setQty(' + item.id + ', this.value)" '
                       + 'onkeydown="if(event.key===\'Enter\'){this.blur();event.preventDefault();}" '
                       + 'onclick="this.select();event.stopPropagation();" />'
@@ -1217,8 +1270,8 @@
                     ? '<button type="button" class="qty-btn" onclick="increaseQty(' + item.id + ')"' + (atStockLimit ? ' disabled title="No more stock" style="opacity:0.4; cursor:not-allowed;"' : '') + '>+</button>'
                     : '<button type="button" class="qty-btn" style="opacity:0.4;" disabled>+</button>';
 
-                const stockLeft = stockCache.hasOwnProperty(item.product_id)
-                    ? '<div style="font-size:9px; color:#94a3b8; text-align:center; margin-top:2px;">' + stockCache[item.product_id] + ' left</div>'
+                const stockLeft = itemAvailStock !== null
+                    ? '<div style="font-size:9px; color:#94a3b8; text-align:center; margin-top:2px;">' + itemAvailStock + ' left</div>'
                     : '';
 
                 const noteHtml = item.kitchen_notes
@@ -1256,7 +1309,7 @@
 
                 let thumbHtml = '';
                 if (item.image) {
-                    thumbHtml = '<div style="width:30px; height:30px; border-radius:7px; overflow:hidden; flex-shrink:0; background:#f1f5f9;">'
+                    thumbHtml = '<div style="width:44px; height:44px; border-radius:9px; overflow:hidden; flex-shrink:0; background:#f1f5f9;">'
                         + '<img src="/storage/' + item.image + '" alt="' + escapeHtml(item.product_name) + '" style="width:100%; height:100%; object-fit:cover;">'
                         + '</div>';
                 }
@@ -1267,7 +1320,7 @@
                     + thumbHtml
                     + '<div style="flex:1; min-width:0;">'
                     + '<div style="display:flex; align-items:center; gap:4px; overflow:hidden;">'
-                    + '<p style="font-size:13px; font-weight:700; color:#0f172a; margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(item.product_name) + '</p>'
+                    + '<p style="font-size:15px; font-weight:700; color:#0f172a; margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(item.product_name) + '</p>'
                     + discBadge
                     + '</div>'
                     + noteHtml
@@ -1282,7 +1335,7 @@
                     + stockLeft
                     + '</div>'
                     + '<div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; min-width:0;">'
-                    + '<p style="font-size:13px; font-weight:800; color:#0f172a; margin:0; white-space:nowrap;">Rs. ' + item.subtotal.toFixed(2) + '</p>'
+                    + '<p style="font-size:15px; font-weight:800; color:#0f172a; margin:0; white-space:nowrap;">Rs. ' + item.subtotal.toFixed(2) + '</p>'
                     + '<div style="display:flex; align-items:center; gap:6px;">' + discBtn + removeBtn + '</div>'
                     + '</div>'
                     + '</div>'
@@ -1507,10 +1560,10 @@
         const dateStr = now.toLocaleDateString('en-GB') + ', ' + now.toLocaleTimeString('en-GB');
 
         // ── Update these values to match your restaurant ──
-        const CO_NAME    = 'Suasa Family Restaurant';
-        const CO_CONTACT = '071 979 9799';
-        const CO_ADDRESS = '583 Avissawella Road, mulleriyawa';
-        const CO_EMAIL   = 'info@suasafamily.com';
+        const CO_NAME    = "Cafe' Kdj - BBQ";
+        const CO_TAGLINE = 'Fusion Food Court';
+        const CO_CONTACT = '07777-04555';
+        const CO_ADDRESS = '#9, Galle Road, Dehiwala';
 
         const itemRows = d.items.map(function(i) {
             const discLabel = i.discount_percent > 0 ? ' (-' + i.discount_percent + '%)' : '';
@@ -1525,11 +1578,11 @@
         // ── HEADER: Logo + Company Details ──
         const html =
             '<div style="text-align:center; padding-bottom:8px;">'
-            + '<img src="/images/logo.jpeg" style="max-width:150px; max-height:150px; margin-bottom:6px; display:block; margin-left:auto; margin-right:auto;" />'
+            + '<img src="/images/KDJ_logo.png" style="max-width:150px; max-height:150px; margin-bottom:6px; display:block; margin-left:auto; margin-right:auto;" />'
             + '<div style="font-size:14px; letter-spacing:1px; color:#000; font-weight:bold;">' + CO_NAME + '</div>'
-            + '<div style="font-size:11px; color:#000;">' + CO_CONTACT + '</div>'
-            + '<div style="font-size:11px; color:#000;">' + CO_EMAIL + '</div>'
+            + '<div style="font-size:11px; color:#000;">' + CO_TAGLINE + '</div>'
             + '<div style="font-size:11px; color:#000;">' + CO_ADDRESS + '</div>'
+            + '<div style="font-size:11px; color:#000;">' + CO_CONTACT + '</div>'
             + '</div>'
 
             // ── RECEIPT METADATA ──
@@ -1574,86 +1627,6 @@
         printReceipt(html);
         resetOrder();
     }
-
-    // ═══════════════════════════════════════════
-    // BILL
-    // ═══════════════════════════════════════════
-
-    async function printBill() {
-        if (!currentOrder || !currentOrder.id) return;
-        await saveCustomerInfo();
-        const res  = await fetch('{{ route("pos.order.waiter_bill", ":id") }}'.replace(':id', currentOrder.id), {
-            method: 'POST',
-            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
-        });
-        const data = await res.json();
-        if (!data.success) { toast('Could not generate bill', 'error'); return; }
-
-        const now = new Date();
-        const dateStr = now.toLocaleDateString('en-GB') + ', ' + now.toLocaleTimeString('en-GB');
-
-        // ── Update these values to match your restaurant ──
-        const CO_NAME    = 'Suasa Family Restaurant';
-        const CO_CONTACT = '071 979 9799';
-        const CO_ADDRESS = '583 Avissawella Road, mulleriyawa';
-        const CO_EMAIL   = 'info@suasafamily.com';
-
-        const itemRows = data.items.map(function(i) {
-            return '<tr>'
-                + '<td style="padding:3px 0; vertical-align:top; width:62%;">' + escapeHtml(i.product_name)
-                + '<br><span style="font-size:10px;">1 x Rs.' + i.unit_price.toFixed(2) + '</span>'
-                + (i.kitchen_notes ? '<br><span style="font-size:10px; font-style:italic;">Note: ' + escapeHtml(i.kitchen_notes) + '</span>' : '')
-                + '</td>'
-                + '<td style="text-align:center; padding:3px 0; vertical-align:top; width:10%;">' + i.quantity + '</td>'
-                + '<td style="text-align:right; padding:3px 0; vertical-align:top; width:28%;">Rs.' + i.subtotal.toFixed(2) + '</td>'
-                + '</tr>';
-        }).join('');
-
-        // ── HEADER: Logo + Company Details ──
-        const html =
-            '<div style="text-align:center; padding-bottom:8px;">'
-            + '<img src="/images/logo.jpeg" style="max-width:80px; max-height:80px; margin-bottom:6px; display:block; margin-left:auto; margin-right:auto;" />'
-            + '<div style="font-size:14px; letter-spacing:1px; color:#000; font-weight:bold;">' + CO_NAME + '</div>'
-            + '<div style="font-size:11px; color:#000;">' + CO_CONTACT + '</div>'
-            + '<div style="font-size:11px; color:#000;">' + CO_EMAIL + '</div>'
-            + '<div style="font-size:11px; color:#000;">' + CO_ADDRESS + '</div>'
-            + '</div>'
-
-            // ── RECEIPT METADATA ──
-            + '<div style="border-top:2px solid #000; border-bottom:2px solid #000; padding:6px 0; margin-bottom:8px;">'
-            + '<div style="text-align:center; font-size:13px; letter-spacing:3px; color:#000; margin-bottom:5px;">WAITER BILL</div>'
-            + '<table width="100%" cellspacing="0" cellpadding="2" style="font-size:11px; color:#000; width:100%; table-layout:fixed;">'
-            + '<tr><td style="width:35%;">Order</td><td style="text-align:right; width:65%; word-break:break-all;">' + data.order_number + '</td></tr>'
-            + '<tr><td>Token</td><td style="text-align:right;">#' + String(data.token_number).padStart(2, '0') + '</td></tr>'
-            + (data.customer_name  ? '<tr><td>Customer</td><td style="text-align:right;">' + escapeHtml(data.customer_name) + '</td></tr>' : '')
-            + (data.customer_phone ? '<tr><td>Phone</td><td style="text-align:right;">' + data.customer_phone + '</td></tr>' : '')
-            + '<tr><td>Date</td><td style="text-align:right;">' + dateStr + '</td></tr>'
-            + '</table>'
-            + '</div>'
-
-            // ── ITEM TABLE ──
-            + '<table width="100%" cellspacing="0" cellpadding="2" style="font-size:12px; color:#000; width:100%; table-layout:fixed;">'
-            + '<thead><tr style="border-bottom:1px dashed #000;">'
-            + '<th style="text-align:left; padding-bottom:4px; font-size:11px; width:62%;">ITEM</th>'
-            + '<th style="text-align:center; padding-bottom:4px; font-size:11px; width:10%;">QTY</th>'
-            + '<th style="text-align:right; padding-bottom:4px; font-size:11px; width:28%;">AMOUNT</th>'
-            + '</tr></thead>'
-            + '<tbody>' + itemRows + '</tbody>'
-            + '</table>'
-
-            // ── SUMMARY ──
-            + '<table width="100%" cellspacing="0" cellpadding="2" style="font-size:12px; color:#000; border-top:1px dashed #000; margin-top:4px; width:100%; table-layout:fixed;">'
-            + '<tr><td style="width:65%;">Subtotal</td><td style="text-align:right; width:35%;">Rs.' + data.subtotal.toFixed(2) + '</td></tr>'
-            + '<tr style="border-top:1px solid #000; font-size:14px;"><td style="padding-top:4px;">TOTAL</td><td style="text-align:right; padding-top:4px;">Rs.' + data.total.toFixed(2) + '</td></tr>'
-            + '</table>'
-
-            // ── FOOTER ──
-            + '<div style="text-align:center; font-size:11px; margin-top:8px; color:#000; border-top:1px dashed #000; padding-top:6px;">This is not a payment receipt</div>';
-
-        printReceipt(html);
-        toast('Waiter bill printed', 'success');
-    }
-
 
     // ═══════════════════════════════════════════
     // TOKEN (kitchen ticket)
@@ -1731,13 +1704,16 @@
                 + '<p style="font-size:14px; font-weight:800; margin:0; color:#0f172a;">' + escapeHtml(item.product_name) + '</p>'
                 + (item.kitchen_notes ? '<p style="font-size:11px; color:#f59e0b; margin:3px 0 0;"><i class="fas fa-note-sticky" style="margin-right:3px;"></i>' + escapeHtml(item.kitchen_notes) + '</p>' : '')
                 + '</div>'
-                + '<span style="font-size:18px; font-weight:900; color:#dc2626; margin-left:12px;">×' + item.quantity + '</span>'
+                + '<span style="font-size:18px; font-weight:900; color:#2563eb; margin-left:12px;">×' + item.quantity + '</span>'
                 + '</div>';
         }).join('');
     }
 
     function buildTokenHtml(data) {
-        return '<div style="text-align:center; font-weight:900; font-size:32px; border-bottom:2px solid #000; padding-bottom:8px; margin-bottom:10px; color:#000;">#' + String(data.token_number).padStart(2, '0') + '</div>'
+        return '<div style="text-align:center;">'
+            + '<img src="/images/KDJ_logo.png" style="max-width:70px; max-height:70px; margin-bottom:4px; display:inline-block;" />'
+            + '</div>'
+            + '<div style="text-align:center; font-weight:900; font-size:32px; border-bottom:2px solid #000; padding-bottom:8px; margin-bottom:10px; color:#000;">#' + String(data.token_number).padStart(2, '0') + '</div>'
             + '<div style="font-size:13px; font-weight:800; color:#000;">Order: ' + data.order_number + '</div>'
             + '<div style="font-size:10px; color:#000; margin-bottom:10px;">' + new Date().toLocaleString() + '</div>'
             + '<div style="border-top:1px solid #000; padding-top:10px;">'
@@ -1792,14 +1768,14 @@
                 list.innerHTML = orders.map(function(o) {
                     return '<div onclick="resumeOrder(' + o.id + ')" '
                         + 'style="padding:14px; border:1.5px solid #e2e8f0; border-radius:12px; cursor:pointer; transition:all 0.15s; background:#fff;" '
-                        + 'onmouseover="this.style.borderColor=\'#dc2626\'; this.style.background=\'#fef2f2\';" '
+                        + 'onmouseover="this.style.borderColor=\'#2563eb\'; this.style.background=\'#eff6ff\';" '
                         + 'onmouseout="this.style.borderColor=\'#e2e8f0\'; this.style.background=\'#fff\';">'
                         + '<div style="display:flex; justify-content:space-between; align-items:flex-start;">'
                         + '<div>'
                         + '<p style="font-size:13px; font-weight:800; color:#0f172a; margin:0;">' + o.order_number + '</p>'
                         + '<p style="font-size:12px; color:#64748b; margin:3px 0 0;">Token #' + String(o.token_number).padStart(2, '0') + ' &nbsp;&middot;&nbsp; ' + o.items_count + ' item' + (o.items_count !== 1 ? 's' : '') + '</p>'
                         + '</div>'
-                        + '<span style="font-size:14px; font-weight:900; color:#dc2626;">Rs. ' + o.total.toFixed(2) + '</span>'
+                        + '<span style="font-size:14px; font-weight:900; color:#2563eb;">Rs. ' + o.total.toFixed(2) + '</span>'
                         + '</div></div>';
                 }).join('');
             }
@@ -1847,8 +1823,8 @@
         // Restore stock cache for items being discarded
         if (currentOrder && currentOrder.items) {
             currentOrder.items.forEach(function(item) {
-                if (item.product_id && stockCache.hasOwnProperty(item.product_id)) {
-                    stockCache[item.product_id] += item.quantity;
+                if (item.product_id) {
+                    adjustStock(item.product_id, -item.quantity);
                 }
             });
         }
@@ -1910,8 +1886,38 @@
         );
         w.document.close();
         w.focus();
-        w.print();
-        setTimeout(function() { w.close(); }, 1200);
+
+        // Printing immediately after document.write() can fire before the logo
+        // <img> has actually loaded, so the printed/PDF output shows a blank
+        // space where the logo should be. Wait for every image in the popup to
+        // finish loading (or fail) first, with a hard timeout so a bad image
+        // URL can never block printing altogether.
+        let printed = false;
+        const doPrint = function() {
+            if (printed) return;
+            printed = true;
+            w.print();
+            setTimeout(function() { w.close(); }, 1200);
+        };
+        const images = w.document.images;
+        if (images.length === 0) {
+            doPrint();
+        } else {
+            let pending = images.length;
+            const onOneDone = function() {
+                pending--;
+                if (pending <= 0) doPrint();
+            };
+            Array.prototype.forEach.call(images, function(img) {
+                if (img.complete) {
+                    onOneDone();
+                } else {
+                    img.addEventListener('load', onOneDone);
+                    img.addEventListener('error', onOneDone);
+                }
+            });
+            setTimeout(doPrint, 1500); // safety net
+        }
     }
 
     function openModal(id)  { document.getElementById(id).classList.add('open'); }

@@ -18,7 +18,7 @@
                 @endsection
                 <p class="text-gray-600 mt-2">Manage suppliers and supplier information</p>
             </div>
-            <a href="{{ route('suppliers.create') }}" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+            <a href="{{ route('suppliers.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
                 <i class="fas fa-plus mr-2"></i>Add Supplier
             </a>
         </div>
@@ -83,7 +83,7 @@
                     <i class="fas fa-truck text-gray-300 text-5xl mb-4"></i>
                     <h3 class="text-lg font-semibold text-gray-900 mb-2">No suppliers yet</h3>
                     <p class="text-gray-600 mb-4">Start by adding your first supplier</p>
-                    <a href="{{ route('suppliers.create') }}" class="inline-block bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
+                    <a href="{{ route('suppliers.create') }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
                         <i class="fas fa-plus mr-2"></i>Add Supplier
                     </a>
                 </div>

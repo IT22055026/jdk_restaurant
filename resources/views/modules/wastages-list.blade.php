@@ -18,7 +18,7 @@
                 @endsection
                 <p class="text-gray-600 mt-2">Track product wastage and losses</p>
             </div>
-            <a href="{{ route('wastages.create') }}" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+            <a href="{{ route('wastages.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
                 <i class="fas fa-plus mr-2"></i>Record Wastage
             </a>
         </div>
@@ -81,7 +81,7 @@
                     <i class="fas fa-trash text-gray-300 text-5xl mb-4"></i>
                     <h3 class="text-lg font-semibold text-gray-900 mb-2">No wastage recorded yet</h3>
                     <p class="text-gray-600 mb-4">Start recording wastage entries</p>
-                    <a href="{{ route('wastages.create') }}" class="inline-block bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
+                    <a href="{{ route('wastages.create') }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
                         <i class="fas fa-plus mr-2"></i>Record Wastage
                     </a>
                 </div>

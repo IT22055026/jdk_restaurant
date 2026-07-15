@@ -31,7 +31,7 @@
                 <div>
                     <label for="product_id" class="block text-sm font-semibold text-gray-900 mb-2">Product <span class="text-red-600">*</span></label>
                     <select name="product_id" id="product_id" required
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent {{ $errors->has('product_id') ? 'border-red-600' : '' }}">
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent {{ $errors->has('product_id') ? 'border-red-600' : '' }}">
                         <option value="">Select a product</option>
                         @foreach($products as $product)
                             @php $avail = $product->is_unlimited_stock ? null : $product->availableStock(); @endphp
@@ -48,7 +48,7 @@
                 <div>
                     <label for="quantity" class="block text-sm font-semibold text-gray-900 mb-2">Quantity Wasted <span class="text-red-600">*</span></label>
                     <input type="number" name="quantity" id="quantity" value="{{ old('quantity', $wastage->quantity) }}" required min="1"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent {{ $errors->has('quantity') ? 'border-red-600' : '' }}"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent {{ $errors->has('quantity') ? 'border-red-600' : '' }}"
                         placeholder="0">
                     @error('quantity')
                         <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
@@ -58,7 +58,7 @@
                 <div>
                     <label for="reason" class="block text-sm font-semibold text-gray-900 mb-2">Reason <span class="text-red-600">*</span></label>
                     <input type="text" name="reason" id="reason" value="{{ old('reason', $wastage->reason) }}" required
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent {{ $errors->has('reason') ? 'border-red-600' : '' }}"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent {{ $errors->has('reason') ? 'border-red-600' : '' }}"
                         placeholder="e.g., Expired, Damaged, Spoiled">
                     @error('reason')
                         <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
@@ -68,7 +68,7 @@
                 <div>
                     <label for="date" class="block text-sm font-semibold text-gray-900 mb-2">Date <span class="text-red-600">*</span></label>
                     <input type="date" name="date" id="date" value="{{ old('date', $wastage->date->format('Y-m-d')) }}" required
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent {{ $errors->has('date') ? 'border-red-600' : '' }}">
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent {{ $errors->has('date') ? 'border-red-600' : '' }}">
                     @error('date')
                         <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
                     @enderror
@@ -77,7 +77,7 @@
                 <div>
                     <label for="notes" class="block text-sm font-semibold text-gray-900 mb-2">Notes <span class="text-gray-500">(Optional)</span></label>
                     <textarea name="notes" id="notes" rows="3"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         placeholder="Additional notes about the wastage">{{ old('notes', $wastage->notes) }}</textarea>
                     @error('notes')
                         <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
@@ -85,7 +85,7 @@
                 </div>
 
                 <div class="flex gap-4 pt-4">
-                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
                         <i class="fas fa-save mr-2"></i>Update Wastage
                     </button>
                     <a href="{{ route('wastage.index') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-900 px-6 py-2 rounded-lg font-semibold transition-colors">

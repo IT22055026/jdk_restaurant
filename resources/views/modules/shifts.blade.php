@@ -80,7 +80,7 @@
                         </div>
 
                         <!-- Close Shift Button -->
-                        <button onclick="openCloseShiftModal({{ $activeShift->id }})" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition flex items-center space-x-2">
+                        <button onclick="openCloseShiftModal({{ $activeShift->id }})" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition flex items-center space-x-2">
                             <i class="fas fa-sign-out-alt"></i>
                             <span>Close Shift</span>
                         </button>
@@ -273,7 +273,7 @@
                     <div class="relative">
                         <span class="absolute left-3 top-3 text-gray-500 font-semibold">Rs.</span>
                         <input type="number" id="actualTotal" name="actual_total" step="0.01" min="0" required
-                            class="w-full pl-12 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                            class="w-full pl-12 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="0.00">
                     </div>
                 </div>
@@ -288,7 +288,7 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Notes (Optional)</label>
                     <textarea id="notes" name="notes"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                         placeholder="Any discrepancies or notes..." rows="2"></textarea>
                 </div>
 
@@ -296,7 +296,7 @@
                     <button type="button" onclick="closeCloseShiftModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold py-2 px-4 rounded-lg transition">
                         Cancel
                     </button>
-                    <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition">
+                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition">
                         Close Shift
                     </button>
                 </div>

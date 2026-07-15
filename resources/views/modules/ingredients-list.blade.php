@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Ingredients')
+@section('title', 'Included Items')
 
 @section('content')
     <div>
@@ -11,12 +11,12 @@
                         <ol class="inline-flex items-center space-x-2">
                             <li><a href="{{ route('dashboard') }}" class="text-gray-500 hover:text-gray-700">Dashboard</a></li>
                             <li class="text-gray-300">/</li>
-                            <li class="text-gray-900 font-semibold">Ingredients</li>
+                            <li class="text-gray-900 font-semibold">Included Items</li>
                         </ol>
                     </nav>
-                <h1 class="text-4xl font-bold text-gray-900">Ingredients</h1>
+                <h1 class="text-4xl font-bold text-gray-900">Included Items</h1>
                 @endsection
-                <p class="text-gray-600 mt-2">Manage raw ingredient stock used in product recipes</p>
+                <p class="text-gray-600 mt-2">Manage the raw included items used in product recipes</p>
             </div>
             <div class="flex flex-wrap gap-3">
                 <a href="{{ route('stock.adjustments.index') }}" class="relative inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors {{ $lowStockCount > 0 ? 'bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300' : 'bg-gray-200 hover:bg-gray-300 text-gray-900' }}">
@@ -28,8 +28,8 @@
                         </span>
                     @endif
                 </a>
-                <a href="{{ route('ingredients.create') }}" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
-                    <i class="fas fa-plus mr-2"></i>Add Ingredient
+                <a href="{{ route('ingredients.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Add Included Item
                 </a>
             </div>
         </div>
@@ -44,9 +44,9 @@
         <div class="mb-6">
             <form action="{{ route('ingredients.index') }}" method="GET" class="relative">
                 <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
-                <input type="text" name="search" placeholder="Search by ingredient name…"
+                <input type="text" name="search" placeholder="Search by item name…"
                        value="{{ $searchQuery ?? '' }}"
-                       class="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                       class="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                        onkeypress="if(event.key=='Enter') this.form.submit()">
                 @if($searchQuery)
                     <a href="{{ route('ingredients.index') }}" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -119,10 +119,10 @@
             @else
                 <div class="text-center py-12">
                     <i class="fas fa-carrot text-gray-300 text-5xl mb-4"></i>
-                    <h3 class="text-lg font-semibold text-gray-900 mb-2">No ingredients yet</h3>
-                    <p class="text-gray-600 mb-4">Start by adding your raw ingredient stock (rice, chicken, oil, bottled drinks, etc.)</p>
-                    <a href="{{ route('ingredients.create') }}" class="inline-block bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
-                        <i class="fas fa-plus mr-2"></i>Add Ingredient
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">No included items yet</h3>
+                    <p class="text-gray-600 mb-4">Start by adding your raw included items (rice, chicken, oil, bottled drinks, etc.)</p>
+                    <a href="{{ route('ingredients.create') }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
+                        <i class="fas fa-plus mr-2"></i>Add Included Item
                     </a>
                 </div>
             @endif

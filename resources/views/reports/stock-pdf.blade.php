@@ -170,15 +170,15 @@
                 <div class="value">{{ number_format($outOfStockProducts) }}</div>
             </div>
             <div class="summary-card">
-                <div class="label">Total Ingredients</div>
+                <div class="label">Total Included Items</div>
                 <div class="value">{{ number_format($totalIngredients) }}</div>
             </div>
             <div class="summary-card warn">
-                <div class="label">Low Stock Ingredients</div>
+                <div class="label">Low Stock Included Items</div>
                 <div class="value">{{ number_format($lowStockIngredients) }}</div>
             </div>
             <div class="summary-card danger">
-                <div class="label">Out of Stock Ingredients</div>
+                <div class="label">Out of Stock Included Items</div>
                 <div class="value">{{ number_format($outOfStockIngredients) }}</div>
             </div>
         </div>
@@ -243,8 +243,8 @@
             </table>
         @endif
 
-        <!-- Ingredients Table -->
-        <div class="section-title">🧂 Ingredients — Current Stock</div>
+        <!-- Included Items Table -->
+        <div class="section-title">🧂 Included Items — Current Stock</div>
 
         @if($ingredients->isEmpty())
             <div class="no-data">No ingredients found</div>
@@ -252,7 +252,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 30%">Ingredient Name</th>
+                        <th style="width: 30%">Item Name</th>
                         <th style="width: 15%">Unit</th>
                         <th style="width: 20%" class="text-right">Current Stock</th>
                         <th style="width: 20%" class="text-right">Threshold</th>

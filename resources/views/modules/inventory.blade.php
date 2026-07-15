@@ -78,7 +78,7 @@
 
     {{-- Quick Actions --}}
     <div class="flex flex-wrap gap-3 mb-8">
-        <a href="{{ route('products.create') }}" class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors">
+        <a href="{{ route('products.create') }}" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors">
             <i class="fas fa-plus"></i> Add Product
         </a>
         <a href="{{ route('products.index') }}" class="inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 px-4 py-2 rounded-lg font-semibold text-sm transition-colors">
@@ -157,7 +157,7 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-right">
-                                    <a href="{{ route('products.edit', $product) }}" class="text-red-600 hover:text-red-700 font-semibold text-sm">
+                                    <a href="{{ route('products.edit', $product) }}" class="text-blue-600 hover:text-blue-700 font-semibold text-sm">
                                         <i class="fas fa-pen-to-square mr-1"></i>Edit
                                     </a>
                                 </td>
@@ -165,7 +165,7 @@
                         @endforeach
                             @if(isset($lowStockIngredients) && $lowStockIngredients->isNotEmpty())
                                 <tr class="bg-gray-50">
-                                    <td colspan="6" class="px-6 py-3 text-sm font-semibold text-gray-700">Low-stock Ingredients</td>
+                                    <td colspan="6" class="px-6 py-3 text-sm font-semibold text-gray-700">Low-stock Included Items</td>
                                 </tr>
                                 @foreach($lowStockIngredients as $ingredient)
                                     <tr class="hover:bg-amber-50/40 transition-colors">
@@ -184,7 +184,7 @@
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 text-right">
-                                            <a href="{{ route('ingredients.edit', $ingredient) }}" class="text-red-600 hover:text-red-700 font-semibold text-sm">
+                                            <a href="{{ route('ingredients.edit', $ingredient) }}" class="text-blue-600 hover:text-blue-700 font-semibold text-sm">
                                                 <i class="fas fa-pen-to-square mr-1"></i>Edit
                                             </a>
                                         </td>
@@ -258,7 +258,7 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 text-right">
-                                <a href="{{ route('products.edit', $product) }}" class="text-red-600 hover:text-red-700 font-semibold text-sm">
+                                <a href="{{ route('products.edit', $product) }}" class="text-blue-600 hover:text-blue-700 font-semibold text-sm">
                                     <i class="fas fa-pen-to-square mr-1"></i>Edit
                                 </a>
                             </td>

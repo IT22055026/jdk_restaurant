@@ -1,16 +1,20 @@
-<nav class="navbar fixed top-0 left-0 right-0 z-50 pb-2">
-    <div class="page-header-bar"></div>
+<nav class="navbar fixed top-0 left-0 right-0 z-50">
     <div class="navbar-inner">
         <!-- Logo -->
-        <a href="{{ route('dashboard') }}" class="navbar-logo-wrap">
-            <img src="{{ asset('images/jaan_logo.jpg') }}" alt="Logo" class="navbar-logo">
-        </a>
+        <div class="flex items-center gap-3">
+            <button type="button" class="navbar-hamburger lg:hidden" onclick="toggleMobileSidebar()" title="Menu">
+                <i class="fas fa-bars"></i>
+            </button>
+            <a href="{{ route('dashboard') }}" class="navbar-logo-wrap">
+                <img src="{{ asset('images/jaan_logo.jpg') }}" alt="Logo" class="navbar-logo">
+            </a>
+        </div>
 
         <!-- Right actions -->
         <div class="navbar-actions">
             <!-- Current page label -->
             <span class="hidden md:block" style="font-size:12px; color:#64748b; font-weight:500; margin-right:6px;">
-                {{ request()->routeIs('dashboard') ? 'Dashboard' : (request()->segment(1) ? ucfirst(str_replace('-', ' ', request()->segment(1))) : '') }}
+                {{ request()->routeIs('dashboard') || request()->routeIs('reports.index') || request()->routeIs('reports.sales') ? 'Dashboard' : (request()->segment(1) ? ucfirst(str_replace('-', ' ', request()->segment(1))) : '') }}
             </span>
 
             <div class="nav-divider hidden sm:block"></div>
@@ -70,9 +74,9 @@
 <style>
     /* ── Navbar ── */
     .navbar {
-        background: linear-gradient(90deg, #0f172a 0%, #1e293b 60%, #1a1a2e 100%);
-        box-shadow: 0 2px 20px rgba(0,0,0,0.35);
-        border-bottom: 1px solid rgba(255,255,255,0.06);
+        background: #ffffff;
+        box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+        border-bottom: 1px solid #eef1f6;
         height: 64px;
         flex-shrink: 0;
         width: 100%;
@@ -83,65 +87,66 @@
         display: flex; align-items: center; justify-content: space-between;
         height: 100%; padding: 0 24px;
     }
-    .page-header-bar {
-        height: 3px; background: linear-gradient(90deg, #dc2626, #f97316, #dc2626);
-        background-size: 200% 100%; animation: shimmer 3s ease infinite;
+    .navbar-hamburger {
+        display: flex; align-items: center; justify-content: center;
+        width: 36px; height: 36px; border-radius: 10px; background: #f8fafc;
+        border: 1px solid #eef1f6; color: #475569; cursor: pointer; font-size: 15px;
     }
-    @keyframes shimmer {
-        0%   { background-position: 0% 0%; }
-        50%  { background-position: 100% 0%; }
-        100% { background-position: 0% 0%; }
-    }
+    .navbar-hamburger:hover { background: #eff6ff; color: #2563eb; }
     .navbar-logo-wrap {
         display: flex; align-items: center; text-decoration: none; transition: opacity 0.2s;
     }
     .navbar-logo-wrap:hover { opacity: 0.85; }
     .navbar-logo {
-        height: 44px; width: auto; max-width: 160px; object-fit: contain; display: block; border-radius: 5px;
+        height: 40px; width: auto; max-width: 160px; object-fit: contain; display: block; border-radius: 5px;
     }
     .navbar-actions { display: flex; align-items: center; gap: 8px; }
-    .nav-divider { width: 1px; height: 28px; background: rgba(255,255,255,0.1); margin: 0 4px; }
+    .nav-divider { width: 1px; height: 28px; background: #eef1f6; margin: 0 4px; }
     .nav-user-pill {
-        display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+        display: flex; align-items: center; gap: 10px; background: #f8fafc; border: 1px solid #eef1f6;
         border-radius: 50px; padding: 5px 14px 5px 6px; cursor: pointer; transition: all 0.18s; outline: none; text-decoration: none; color: inherit;
     }
-    .nav-user-pill:hover { background: rgba(255,255,255,0.13); border-color: rgba(255,255,255,0.2); }
+    .nav-user-pill:hover { background: #eff6ff; border-color: #dbeafe; }
     .nav-user-avatar {
-        width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #dc2626, #991b1b);
+        width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #2563eb, #1d4ed8);
         display: flex; align-items: center; justify-content: center; font-size: 13px; color: #fff; font-weight: 700; flex-shrink: 0;
     }
-    .nav-user-name  { font-size: 13px; font-weight: 600; color: #f1f5f9; line-height: 1.2; text-align: left; }
+    .nav-user-name  { font-size: 13px; font-weight: 600; color: #1e293b; line-height: 1.2; text-align: left; }
     .nav-user-role  { font-size: 11px; color: #94a3b8; line-height: 1.2; text-align: left; }
     .nav-dropdown {
-        display: none; position: absolute; right: 0; top: calc(100% + 10px); width: 200px; background: #1e293b;
-        border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,0.4); z-index: 100;
+        display: none; position: absolute; right: 0; top: calc(100% + 10px); width: 200px; background: #fff;
+        border: 1px solid #eef1f6; border-radius: 14px; overflow: hidden; box-shadow: 0 16px 40px rgba(15,23,42,0.12); z-index: 100;
     }
     .nav-dropdown.open { display: block; }
     .nav-dropdown a, .nav-dropdown button {
         display: flex; align-items: center; gap: 10px; padding: 11px 16px; font-size: 13px; font-weight: 500;
-        color: #cbd5e1; text-decoration: none; background: none; border: none; width: 100%; text-align: left; cursor: pointer; transition: background 0.15s;
+        color: #475569; text-decoration: none; background: none; border: none; width: 100%; text-align: left; cursor: pointer; transition: background 0.15s;
     }
-    .nav-dropdown a:hover, .nav-dropdown button:hover { background: rgba(255,255,255,0.07); color: #fff; }
-    .nav-dropdown .dd-danger { color: #f87171; }
-    .nav-dropdown .dd-danger:hover { background: rgba(239,68,68,0.1); color: #ef4444; }
-    .nav-dropdown hr { border-color: rgba(255,255,255,0.08); margin: 4px 0; }
+    .nav-dropdown a:hover, .nav-dropdown button:hover { background: #f8fafc; color: #0f172a; }
+    .nav-dropdown .dd-danger { color: #dc2626; }
+    .nav-dropdown .dd-danger:hover { background: #fef2f2; color: #b91c1c; }
+    .nav-dropdown hr { border-color: #eef1f6; margin: 4px 0; }
     .nav-bell {
         position: relative; display: flex; align-items: center; justify-content: center;
-        width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.07);
-        border: 1px solid rgba(255,255,255,0.1); cursor: pointer; text-decoration: none; transition: all 0.18s;
+        width: 36px; height: 36px; border-radius: 50%; background: #f8fafc;
+        border: 1px solid #eef1f6; cursor: pointer; text-decoration: none; transition: all 0.18s;
     }
-    .nav-bell:hover { background: rgba(255,255,255,0.13); border-color: rgba(255,255,255,0.2); }
+    .nav-bell:hover { background: #eff6ff; border-color: #dbeafe; }
     .nav-bell-badge {
         position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px;
         background: #f59e0b; color: #fff; font-size: 10px; font-weight: 700;
         border-radius: 9px; display: flex; align-items: center; justify-content: center;
-        padding: 0 4px; border: 2px solid #0f172a;
+        padding: 0 4px; border: 2px solid #fff;
     }
 </style>
 
 <script>
     function toggleDropdown() {
         document.getElementById('dropdown').classList.toggle('open');
+    }
+    function toggleMobileSidebar() {
+        var sb = document.querySelector('.sidebar');
+        if (sb) sb.classList.toggle('mobile-open');
     }
     document.addEventListener('click', function(e) {
         const dd = document.getElementById('dropdown');

@@ -87,6 +87,18 @@ class PosController extends Controller
         }
 
         $products = $query->with('ingredients')->get()->map(function ($product) {
+            // Recipe-tracked items (not finished goods) may share included items with
+            // other menu items — expose each item's requirement + current stock so the
+            // POS screen can keep sibling products in sync as the cart fills up, without
+            // waiting for a full product reload.
+            $recipe = (!$product->is_unlimited_stock && !$product->is_finished_good)
+                ? $product->ingredients->map(fn($ingredient) => [
+                    'ingredient_id' => $ingredient->id,
+                    'quantity_per_unit' => (float) $ingredient->pivot->quantity_per_unit,
+                    'ingredient_stock' => (float) $ingredient->quantity,
+                ])->values()
+                : [];
+
             return [
                 'id' => $product->id,
                 'name' => $product->name,
@@ -97,6 +109,7 @@ class PosController extends Controller
                 'is_unlimited_stock' => $product->is_unlimited_stock,
                 'quantity' => $product->is_unlimited_stock ? 0 : $product->availableStock(),
                 'image' => $product->image,
+                'recipe' => $recipe,
             ];
         });
 

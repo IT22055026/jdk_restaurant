@@ -126,11 +126,13 @@
         border-color: #4a3a12 !important;
     }
 
-    /* Navbar shimmer bar -> blue in dark mode */
-    html.dark-mode .page-header-bar {
-        background: linear-gradient(90deg, #1d4ed8, #2f5bff, #1d4ed8) !important;
-        background-size: 200% 100% !important;
-    }
+    /* Navbar */
+    html.dark-mode .navbar { background: #0d1220 !important; border-bottom-color: #1c2438 !important; }
+    html.dark-mode .navbar-hamburger { background: #161d31 !important; border-color: #26314d !important; color: #cbd5e1 !important; }
+    html.dark-mode .nav-user-pill, html.dark-mode .nav-bell { background: #161d31 !important; border-color: #26314d !important; }
+    html.dark-mode .nav-user-name { color: #e8ecf4 !important; }
+    html.dark-mode .nav-dropdown { background: #10162a !important; border-color: #1f2942 !important; }
+    html.dark-mode .sidebar-brand-card { background: #101627 !important; border-color: #1f2942 !important; }
 
     /* Dark-mode toggle switch (navbar) */
     .dm-toggle {

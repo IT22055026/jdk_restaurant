@@ -18,7 +18,7 @@
                 @endsection
                 <p class="text-gray-600 mt-2">Manage users, roles, and passwords</p>
             </div>
-            <a href="{{ route('employees.create') }}" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+            <a href="{{ route('employees.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
                 <i class="fas fa-plus mr-2"></i>Add User
             </a>
         </div>
@@ -91,7 +91,7 @@
                     <i class="fas fa-users text-gray-300 text-5xl mb-4"></i>
                     <h3 class="text-lg font-semibold text-gray-900 mb-2">No users yet</h3>
                     <p class="text-gray-600 mb-4">Start by adding your first user</p>
-                    <a href="{{ route('employees.create') }}" class="inline-block bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
+                    <a href="{{ route('employees.create') }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
                         <i class="fas fa-plus mr-2"></i>Add User
                     </a>
                 </div>
@@ -109,14 +109,14 @@
                 @csrf
                 <div class="mb-4">
                     <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">New Password</label>
-                    <input type="password" id="password" name="password" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Enter new password">
+                    <input type="password" id="password" name="password" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter new password">
                 </div>
                 <div class="mb-6">
                     <label for="password_confirmation" class="block text-sm font-semibold text-gray-700 mb-2">Confirm Password</label>
-                    <input type="password" id="password_confirmation" name="password_confirmation" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Confirm password">
+                    <input type="password" id="password_confirmation" name="password_confirmation" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Confirm password">
                 </div>
                 <div class="flex gap-3">
-                    <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg transition-colors">
+                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-colors">
                         <i class="fas fa-save mr-2"></i>Update Password
                     </button>
                     <button type="button" onclick="closePasswordModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-900 font-semibold py-2 rounded-lg transition-colors">

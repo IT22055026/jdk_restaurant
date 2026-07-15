@@ -34,13 +34,13 @@
                     <div class="flex gap-6">
                         <label class="inline-flex items-center gap-2 text-sm text-gray-700">
                             <input type="radio" name="item_type" id="item_type_product" value="product" {{ old('item_type', 'product') === 'product' ? 'checked' : '' }}
-                                class="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500">
+                                class="w-4 h-4 text-red-600 border-gray-300 focus:ring-blue-500">
                             Finished Good
                         </label>
                         <label class="inline-flex items-center gap-2 text-sm text-gray-700">
                             <input type="radio" name="item_type" id="item_type_ingredient" value="ingredient" {{ old('item_type') === 'ingredient' ? 'checked' : '' }}
-                                class="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500">
-                            Ingredient
+                                class="w-4 h-4 text-red-600 border-gray-300 focus:ring-blue-500">
+                            Included Item
                         </label>
                     </div>
                     @error('item_type')
@@ -51,7 +51,7 @@
                 <div id="product-field">
                     <label for="product_id" class="block text-sm font-semibold text-gray-900 mb-2">Finished Good <span class="text-red-600">*</span></label>
                     <select name="product_id" id="product_id"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent {{ $errors->has('product_id') ? 'border-red-600' : '' }}">
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent {{ $errors->has('product_id') ? 'border-red-600' : '' }}">
                         <option value="">Select a finished good</option>
                         @foreach($products as $product)
                             @php $avail = $product->is_unlimited_stock ? null : $product->availableStock(); @endphp
@@ -69,10 +69,10 @@
                 </div>
 
                 <div id="ingredient-field">
-                    <label for="ingredient_id" class="block text-sm font-semibold text-gray-900 mb-2">Ingredient <span class="text-red-600">*</span></label>
+                    <label for="ingredient_id" class="block text-sm font-semibold text-gray-900 mb-2">Included Item <span class="text-red-600">*</span></label>
                     <select name="ingredient_id" id="ingredient_id"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent {{ $errors->has('ingredient_id') ? 'border-red-600' : '' }}">
-                        <option value="">Select an ingredient</option>
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent {{ $errors->has('ingredient_id') ? 'border-red-600' : '' }}">
+                        <option value="">Select an included item</option>
                         @foreach($ingredients as $ingredient)
                             <option value="{{ $ingredient->id }}" {{ old('ingredient_id') == $ingredient->id ? 'selected' : '' }}>
                                 {{ $ingredient->name }} (Available: {{ rtrim(rtrim(number_format((float) $ingredient->quantity, 3), '0'), '.') }} {{ $ingredient->unit }})
@@ -87,7 +87,7 @@
                 <div>
                     <label for="change_type" class="block text-sm font-semibold text-gray-900 mb-2">Change Type <span class="text-red-600">*</span></label>
                     <select name="change_type" id="change_type" required
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent {{ $errors->has('change_type') ? 'border-red-600' : '' }}">
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent {{ $errors->has('change_type') ? 'border-red-600' : '' }}">
                         <option value="">Select type</option>
                         <option value="increase" {{ old('change_type') === 'increase' ? 'selected' : '' }}>Increase</option>
                         <option value="decrease" {{ old('change_type') === 'decrease' ? 'selected' : '' }}>Decrease</option>
@@ -100,7 +100,7 @@
                 <div>
                     <label for="quantity" class="block text-sm font-semibold text-gray-900 mb-2">Quantity <span class="text-red-600">*</span></label>
                     <input type="number" name="quantity" id="quantity" value="{{ old('quantity') }}" required step="1" min="1"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent {{ $errors->has('quantity') ? 'border-red-600' : '' }}"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent {{ $errors->has('quantity') ? 'border-red-600' : '' }}"
                         placeholder="0">
                     @error('quantity')
                         <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
@@ -111,7 +111,7 @@
                 <div>
                     <label for="reason" class="block text-sm font-semibold text-gray-900 mb-2">Reason <span class="text-red-600">*</span></label>
                     <input type="text" name="reason" id="reason" value="{{ old('reason') }}" required
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent {{ $errors->has('reason') ? 'border-red-600' : '' }}"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent {{ $errors->has('reason') ? 'border-red-600' : '' }}"
                         placeholder="e.g., New delivery received, Stock count correction">
                     @error('reason')
                         <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
@@ -121,7 +121,7 @@
                 <div>
                     <label for="notes" class="block text-sm font-semibold text-gray-900 mb-2">Notes</label>
                     <textarea name="notes" id="notes" rows="3"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         placeholder="Additional notes">{{ old('notes') }}</textarea>
                     @error('notes')
                         <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
@@ -129,7 +129,7 @@
                 </div>
 
                 <div class="flex gap-4 pt-4">
-                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
                         <i class="fas fa-save mr-2"></i>Save Adjustment
                     </button>
                     <a href="{{ route('stock.adjustments.index') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-900 px-6 py-2 rounded-lg font-semibold transition-colors">
@@ -167,7 +167,7 @@
             } else {
                 quantityInput.step = '0.001';
                 quantityInput.min = '0.001';
-                quantityHint.textContent = 'Ingredients can use fractional amounts (e.g. 0.25 kg).';
+                quantityHint.textContent = 'Included items can use fractional amounts (e.g. 0.25 kg).';
             }
         };
 

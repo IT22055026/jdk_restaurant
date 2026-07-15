@@ -40,10 +40,10 @@
         }
 
         .btn-primary {
-            background: #dc2626;
+            background: #2563eb;
             color: #fff;
         }
-        .btn-primary:hover { background: #b91c1c; }
+        .btn-primary:hover { background: #1d4ed8; }
 
         .btn-secondary {
             background: #e2e8f0;
@@ -110,7 +110,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
                         <input type="text" id="searchInput" placeholder="Order #, customer name, phone..."
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div style="display: flex; align-items: flex-end; gap: 8px;">
                         <button onclick="loadOrders(true)" class="flex-1 btn btn-primary">
@@ -170,7 +170,7 @@
             </div>
 
             <div id="receiptContent" class="loader active">
-                <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #dc2626;"></i>
+                <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #2563eb;"></i>
             </div>
         </div>
     </div>
@@ -242,10 +242,10 @@
         }
 
         function printThermalReceipt(d) {
-            const CO_NAME    = 'Suasa Family Restaurant';
-            const CO_CONTACT = '071 979 9799';
-            const CO_ADDRESS = '583 Avissawella Road, mulleriyawa';
-            const CO_EMAIL   = 'info@suasafamily.com';
+            const CO_NAME    = "Cafe' Kdj - BBQ";
+            const CO_TAGLINE = 'Fusion Food Court';
+            const CO_CONTACT = '07777-04555';
+            const CO_ADDRESS = '#9, Galle Road, Dehiwala';
 
             const itemRows = d.items.map(function(i) {
                 return `<tr>
@@ -257,14 +257,15 @@
 
             const html = `
                 <div style="text-align:center; padding-bottom:8px;">
-                    <img src="/images/logo.jpeg" style="max-width:120px; max-height:120px; margin-bottom:6px; display:block; margin-left:auto; margin-right:auto;" />
+                    <img src="/images/KDJ_logo.png" style="max-width:120px; max-height:120px; margin-bottom:6px; display:block; margin-left:auto; margin-right:auto;" />
                     <div style="font-size:16px; font-weight:900;">${CO_NAME}</div>
-                    <div style="font-size:12px;">${CO_CONTACT}</div>
+                    <div style="font-size:12px;">${CO_TAGLINE}</div>
                     <div style="font-size:11px;">${CO_ADDRESS}</div>
+                    <div style="font-size:11px;">${CO_CONTACT}</div>
                 </div>
 
                 <div style="border-top:2px solid #000; border-bottom:2px solid #000; padding:6px 0; margin-bottom:8px;">
-                    <div style="text-align:center; font-size:16px; font-weight:900; color: #dc2626; margin-bottom: 5px;">*** RE-PRINT ***</div>
+                    <div style="text-align:center; font-size:16px; font-weight:900; color: #2563eb; margin-bottom: 5px;">*** RE-PRINT ***</div>
                     <div style="text-align:center; font-size:14px; letter-spacing:2px; margin-bottom:5px;">FINAL BILL</div>
                     <table width="100%" cellspacing="0" cellpadding="2" style="font-size:12px; font-weight:900;">
                         <tr><td style="width:35%;">Order</td><td style="text-align:right; width:65%;">${d.order_number}</td></tr>

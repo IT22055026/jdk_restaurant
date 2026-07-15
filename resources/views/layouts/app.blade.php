@@ -8,23 +8,30 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         body {
-            background: linear-gradient(135deg, #f1f5f9 0%, #e9eef5 100%);
+            background: #f6f8fb;
         }
 
         /* Sidebar */
         .sidebar {
             background: #fff;
-            box-shadow: 2px 0 12px rgba(0,0,0,0.06);
-            border-right: 1px solid #f1f5f9;
+            border-right: 1px solid #eef1f6;
         }
         .active-nav {
-            background: linear-gradient(135deg, #fef2f2, #fee2e2);
-            color: #991b1b;
-            border-left: 3px solid #dc2626;
-            font-weight: 700;
+            font-weight: 600;
+        }
+        .sidebar-brand-card {
+            background: #f8fafc;
+            border: 1px solid #eef1f6;
         }
         .main-content { margin-left: 256px; }
-        @media (max-width: 1024px) { .main-content { margin-left: 0; } }
+        @media (max-width: 1024px) {
+            .main-content { margin-left: 0; }
+            .sidebar.mobile-open {
+                display: flex !important;
+                z-index: 60;
+                box-shadow: 8px 0 24px rgba(15,23,42,0.15);
+            }
+        }
     </style>
     @include('layouts.dark-mode')
     @yield('styles')
@@ -59,6 +66,12 @@
 
     @yield('scripts')
     <script>
+    document.addEventListener('click', function (e) {
+        var sb = document.querySelector('.sidebar.mobile-open');
+        if (sb && !e.target.closest('.sidebar') && !e.target.closest('.navbar-hamburger')) {
+            sb.classList.remove('mobile-open');
+        }
+    });
     document.addEventListener('DOMContentLoaded', function () {
         var CTRL_KEYS  = [8, 9, 13, 27, 46, 35, 36, 37, 38, 39, 40]; // backspace,tab,enter,esc,del,home,end,arrows
         var DIGITS     = function (k) { return (k >= 48 && k <= 57) || (k >= 96 && k <= 105); };

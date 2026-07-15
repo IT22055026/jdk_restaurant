@@ -33,7 +33,7 @@
                         Download as PNG
                     </a>
 
-                    <a href="{{ route('qr.pdf') }}" class="flex items-center gap-3 w-full bg-red-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-700 transition">
+                    <a href="{{ route('qr.pdf') }}" class="flex items-center gap-3 w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
                         <i class="fas fa-file-pdf"></i>
                         Print Ready PDF
                     </a>

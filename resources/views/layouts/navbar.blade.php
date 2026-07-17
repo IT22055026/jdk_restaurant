@@ -1,3 +1,8 @@
+@php
+    $navUserModules = auth()->user()->role?->modules()->pluck('name')->toArray() ?? [];
+    $navHasDashboardAccess = in_array('Reports', $navUserModules);
+    $navHasInventoryAccess = in_array('Inventory & Products', $navUserModules);
+@endphp
 <nav class="navbar fixed top-0 left-0 right-0 z-50">
     <div class="navbar-inner">
         <!-- Logo -->
@@ -5,9 +10,15 @@
             <button type="button" class="navbar-hamburger lg:hidden" onclick="toggleMobileSidebar()" title="Menu">
                 <i class="fas fa-bars"></i>
             </button>
-            <a href="{{ route('dashboard') }}" class="navbar-logo-wrap">
-                <img src="{{ asset('images/jaan_logo.jpg') }}" alt="Logo" class="navbar-logo">
-            </a>
+            @if($navHasDashboardAccess)
+                <a href="{{ route('dashboard') }}" class="navbar-logo-wrap">
+                    <img src="{{ asset('images/jaan_logo.jpg') }}" alt="Logo" class="navbar-logo">
+                </a>
+            @else
+                <a href="javascript:void(0)" class="navbar-logo-wrap" onclick="navNoAccessToast()">
+                    <img src="{{ asset('images/jaan_logo.jpg') }}" alt="Logo" class="navbar-logo">
+                </a>
+            @endif
         </div>
 
         <!-- Right actions -->
@@ -20,12 +31,18 @@
             <div class="nav-divider hidden sm:block"></div>
 
             <!-- Low stock bell -->
-            <a href="{{ route('inventory.dashboard') }}" class="nav-bell" title="{{ $lowStockCount > 0 ? $lowStockCount . ' low stock alert(s)' : 'Inventory' }}">
-                <i class="fas fa-bell" style="font-size:16px; color:{{ $lowStockCount > 0 ? '#f59e0b' : '#64748b' }};"></i>
-                @if($lowStockCount > 0)
-                    <span class="nav-bell-badge">{{ $lowStockCount > 99 ? '99+' : $lowStockCount }}</span>
-                @endif
-            </a>
+            @if($navHasInventoryAccess)
+                <a href="{{ route('inventory.dashboard') }}" class="nav-bell" title="{{ $lowStockCount > 0 ? $lowStockCount . ' low stock alert(s)' : 'Inventory' }}">
+                    <i class="fas fa-bell" style="font-size:16px; color:{{ $lowStockCount > 0 ? '#f59e0b' : '#64748b' }};"></i>
+                    @if($lowStockCount > 0)
+                        <span class="nav-bell-badge">{{ $lowStockCount > 99 ? '99+' : $lowStockCount }}</span>
+                    @endif
+                </a>
+            @else
+                <a href="javascript:void(0)" class="nav-bell" title="Inventory" onclick="navNoAccessToast()">
+                    <i class="fas fa-bell" style="font-size:16px; color:#64748b;"></i>
+                </a>
+            @endif
 
             <!-- Dark mode toggle -->
             <button type="button" class="dm-toggle" onclick="toggleDarkMode()" title="Toggle dark mode">
@@ -52,9 +69,15 @@
                         <div style="font-size:13px; font-weight:700; color:#f1f5f9;">{{ auth()->user()->name ?? 'User' }}</div>
                         <div style="font-size:11px; color:#64748b; margin-top:2px;">{{ auth()->user()->email ?? '' }}</div>
                     </div>
-                    <a href="{{ route('dashboard') }}">
-                        <i class="fas fa-gauge-high" style="width:16px;"></i> Dashboard
-                    </a>
+                    @if($navHasDashboardAccess)
+                        <a href="{{ route('dashboard') }}">
+                            <i class="fas fa-gauge-high" style="width:16px;"></i> Dashboard
+                        </a>
+                    @else
+                        <a href="javascript:void(0)" onclick="navNoAccessToast()">
+                            <i class="fas fa-gauge-high" style="width:16px;"></i> Dashboard
+                        </a>
+                    @endif
                     <a href="{{ route('settings.index') }}">
                         <i class="fas fa-gear" style="width:16px;"></i> Settings
                     </a>
@@ -138,7 +161,16 @@
         border-radius: 9px; display: flex; align-items: center; justify-content: center;
         padding: 0 4px; border: 2px solid #fff;
     }
+    #navNoAccessToast {
+        position: fixed; bottom: 24px; right: 24px; z-index: 999;
+        background: #1e3a8a; color: #fff; padding: 12px 20px; border-radius: 10px;
+        font-size: 13px; font-weight: 500; opacity: 0; transition: opacity 0.3s;
+        pointer-events: none; max-width: 300px; display: flex; align-items: center; gap: 8px;
+    }
+    #navNoAccessToast.show { opacity: 1; }
 </style>
+
+<div id="navNoAccessToast"><i class="fas fa-lock"></i> <span>You don't have access to this section.</span></div>
 
 <script>
     function toggleDropdown() {
@@ -154,4 +186,12 @@
             dd.classList.remove('open');
         }
     });
+
+    let navNoAccessToastTimer = null;
+    function navNoAccessToast() {
+        const el = document.getElementById('navNoAccessToast');
+        el.classList.add('show');
+        clearTimeout(navNoAccessToastTimer);
+        navNoAccessToastTimer = setTimeout(function() { el.classList.remove('show'); }, 2500);
+    }
 </script>

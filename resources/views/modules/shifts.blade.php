@@ -269,12 +269,19 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Actual Till Amount</label>
-                    <div class="relative">
-                        <span class="absolute left-3 top-3 text-gray-500 font-semibold">Rs.</span>
-                        <input type="number" id="actualTotal" name="actual_total" step="0.01" min="0" required
-                            class="w-full pl-12 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="0.00">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Count the Till (notes)</label>
+                    <div class="grid grid-cols-3 gap-2" id="denominationRows">
+                        @foreach ([5000, 1000, 500, 100, 50, 20] as $denom)
+                            <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                                <span class="bg-gray-100 text-gray-700 text-sm font-semibold px-2 py-2">Rs.{{ $denom }}</span>
+                                <input type="number" class="denom-qty w-full px-2 py-2 focus:outline-none" data-denomination="{{ $denom }}"
+                                    min="0" step="1" placeholder="0" oninput="recalcDenominationTotal()">
+                            </div>
+                        @endforeach
+                    </div>
+                    <div class="mt-3 flex justify-between items-center bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+                        <span class="text-gray-700 font-medium">Total Counted:</span>
+                        <span id="actualTotalDisplay" class="text-xl font-bold text-gray-900">Rs. 0.00</span>
                     </div>
                 </div>
 
@@ -337,8 +344,23 @@
 
         function openCloseShiftModal(shiftId) {
             document.getElementById('closeShiftId').value = shiftId;
+            document.querySelectorAll('.denom-qty').forEach(input => input.value = '');
+            recalcDenominationTotal();
             document.getElementById('closeShiftModal').classList.remove('hidden');
             fetchActiveShiftData(shiftId);
+        }
+
+        function recalcDenominationTotal() {
+            const total = Array.from(document.querySelectorAll('.denom-qty')).reduce((sum, input) => {
+                const qty = parseInt(input.value) || 0;
+                const denomination = parseInt(input.dataset.denomination);
+                return sum + (qty * denomination);
+            }, 0);
+            document.getElementById('actualTotalDisplay').textContent = 'Rs. ' + total.toFixed(2);
+            if (window.currentExpectedTotal !== undefined) {
+                calculateVariance(window.currentExpectedTotal);
+            }
+            return total;
         }
 
         function closeCloseShiftModal() {
@@ -365,16 +387,17 @@
                         document.getElementById('closeSummarySales').textContent = 'Rs. ' + parseFloat(shift.total_sales).toFixed(2);
                         document.getElementById('closeSummaryExpected').textContent = 'Rs. ' + parseFloat(shift.current_total).toFixed(2);
 
-                        // Update when actual total changes
-                        document.getElementById('actualTotal').addEventListener('input', function() {
-                            calculateVariance(shift.current_total);
-                        });
+                        window.currentExpectedTotal = shift.current_total;
                     }
                 });
         }
 
         function calculateVariance(expectedTotal) {
-            const actualTotal = parseFloat(document.getElementById('actualTotal').value) || 0;
+            const actualTotal = Array.from(document.querySelectorAll('.denom-qty')).reduce((sum, input) => {
+                const qty = parseInt(input.value) || 0;
+                const denomination = parseInt(input.dataset.denomination);
+                return sum + (qty * denomination);
+            }, 0);
             const variance = actualTotal - expectedTotal;
             const varianceAlert = document.getElementById('varianceAlert');
             const varianceText = document.getElementById('varianceText');
@@ -462,6 +485,20 @@
                                 </div>
                             </div>
 
+                            ${(shift.denominations && shift.denominations.length > 0) ? `
+                                <div class="border-t border-gray-200 pt-6">
+                                    <h3 class="font-semibold text-gray-900 mb-4">Cash Denomination Breakdown</h3>
+                                    <div class="grid grid-cols-3 gap-2">
+                                        ${shift.denominations.map(d => `
+                                            <div class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 flex justify-between text-sm">
+                                                <span class="text-gray-600">Rs.${d.denomination} × ${d.quantity}</span>
+                                                <span class="font-semibold text-gray-900">Rs. ${parseFloat(d.subtotal).toFixed(2)}</span>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+
                             ${shift.notes ? `
                                 <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                                     <p class="text-sm font-medium text-blue-900 mb-1">Notes</p>
@@ -532,7 +569,17 @@
 
         document.getElementById('closeShiftForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            const formData = new FormData(this);
+
+            const denominations = Array.from(document.querySelectorAll('.denom-qty')).map(input => ({
+                denomination: parseInt(input.dataset.denomination),
+                quantity: parseInt(input.value) || 0,
+            }));
+
+            const payload = {
+                shift_id: document.getElementById('closeShiftId').value,
+                denominations: denominations,
+                notes: document.getElementById('notes').value,
+            };
 
             fetch('{{ route("shifts.close") }}', {
                 method: 'POST',
@@ -540,7 +587,7 @@
                     'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(Object.fromEntries(formData))
+                body: JSON.stringify(payload)
             })
             .then(response => response.json())
             .then(data => {

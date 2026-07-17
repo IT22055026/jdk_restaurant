@@ -31,11 +31,12 @@ class ReportsController extends Controller
 
         $breakdown  = $query->get();
         $totalCount = $breakdown->sum('order_count');
+        $labels     = ['pickme' => 'PickMe', 'uber' => 'Uber'];
 
         return response()->json([
             'breakdown'   => $breakdown->map(fn($pm) => [
                 'method'        => $pm->payment_method,
-                'label'         => ucfirst(str_replace('_', ' ', $pm->payment_method)),
+                'label'         => $labels[$pm->payment_method] ?? ucfirst(str_replace('_', ' ', $pm->payment_method)),
                 'order_count'   => $pm->order_count,
                 'total_revenue' => $pm->total_revenue,
                 'pct'           => $totalCount > 0 ? round(($pm->order_count / $totalCount) * 100) : 0,
@@ -48,49 +49,8 @@ class ReportsController extends Controller
     public function index()
     {
         $modules = $this->currentUser()->role->modules()->get();
-        $data    = $this->buildSalesTableData(null, null);
 
-        return view('modules.reports', array_merge($this->baseReportData(), compact('modules'), $data));
-    }
-
-    public function salesReport(Request $request)
-    {
-        $modules = $this->currentUser()->role->modules()->get();
-        $from    = $request->input('from');
-        $to      = $request->input('to');
-        $data    = $this->buildSalesTableData($from, $to);
-
-        return view('modules.reports', array_merge($this->baseReportData(), compact('modules'), $data));
-    }
-
-    private function buildSalesTableData(?string $fromStr, ?string $toStr): array
-    {
-        $from = $fromStr ? Carbon::parse($fromStr)->startOfDay() : null;
-        $to   = $toStr   ? Carbon::parse($toStr)->endOfDay()     : null;
-
-        $query = Order::where('status', 'completed')->latest();
-        if ($from && $to) {
-            $query->whereBetween('created_at', [$from, $to]);
-        }
-
-        $allForRange  = (clone $query)->get();
-        $rangeRevenue = $allForRange->sum('total');
-        $rangeCount   = $allForRange->count();
-        $rangeAvg     = $rangeCount > 0 ? round($rangeRevenue / $rangeCount, 2) : 0;
-
-        $pmQuery = Order::where('status', 'completed')->whereNotNull('payment_method')
-                        ->select('payment_method',
-                                 DB::raw('COUNT(*) as order_count'),
-                                 DB::raw('SUM(total) as total_revenue'))
-                        ->groupBy('payment_method');
-        if ($from && $to) {
-            $pmQuery->whereBetween('created_at', [$from, $to]);
-        }
-        $rangePayments = $pmQuery->get();
-
-        $sales = (clone $query)->paginate(15)->withQueryString();
-
-        return compact('sales', 'rangeRevenue', 'rangeCount', 'rangeAvg', 'rangePayments', 'from', 'to');
+        return view('modules.reports', array_merge($this->baseReportData(), compact('modules')));
     }
 
     public function exportSalesRangePdf(Request $request)

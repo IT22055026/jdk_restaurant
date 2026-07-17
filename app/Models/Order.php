@@ -29,6 +29,9 @@ class Order extends Model
         'bot_printed_at',
         'waiter_bill_printed_at',
         'printed_at',
+        'discard_reason',
+        'discarded_by',
+        'discarded_at',
     ];
 
     protected $casts = [
@@ -44,6 +47,7 @@ class Order extends Model
         'bot_printed_at' => 'datetime',
         'waiter_bill_printed_at' => 'datetime',
         'printed_at' => 'datetime',
+        'discarded_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -56,6 +60,11 @@ class Order extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function discardedBy()
+    {
+        return $this->belongsTo(User::class, 'discarded_by');
     }
 
     public function items()

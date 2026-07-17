@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -30,6 +31,10 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            // Full access by default so feature tests exercising business logic
+            // aren't also fighting module-access restrictions; tests targeting
+            // a specific role should override this explicitly.
+            'role_id' => Role::where('name', 'Admin')->first()?->id,
         ];
     }
 

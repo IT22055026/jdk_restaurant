@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\DB;
 
 class ShiftController extends Controller
 {
+    /** Denomination values (Rs.) the till count accepts, notes only. */
+    private const DENOMINATIONS = [5000, 1000, 500, 100, 50, 20];
+
     public function index()
     {
         $shifts = Shift::where('user_id', auth()->id())
@@ -98,7 +101,9 @@ class ShiftController extends Controller
     {
         $validated = $request->validate([
             'shift_id' => 'required|exists:shifts,id',
-            'actual_total' => 'required|numeric|min:0',
+            'denominations' => 'required|array',
+            'denominations.*.denomination' => 'required|integer|in:' . implode(',', self::DENOMINATIONS),
+            'denominations.*.quantity' => 'required|integer|min:0',
             'notes' => 'nullable|string',
         ]);
 
@@ -128,15 +133,21 @@ class ShiftController extends Controller
             ->sum('total');
 
         $expectedTotal = $openingBalance + $totalSales;
-        $variance = $validated['actual_total'] - $expectedTotal;
+
+        // The counted notes are authoritative — the actual till amount is always
+        // derived from what was physically counted, never typed in directly.
+        $actualTotal = collect($validated['denominations'])
+            ->sum(fn($row) => $row['denomination'] * $row['quantity']);
+
+        $variance = $actualTotal - $expectedTotal;
 
         // Update shift with closing details
         $shift->update([
             'status' => 'closed',
             'ended_at' => now(),
-            'closing_balance' => $validated['actual_total'],
+            'closing_balance' => $actualTotal,
             'expected_total' => $expectedTotal,
-            'actual_total' => $validated['actual_total'],
+            'actual_total' => $actualTotal,
             'variance' => $variance,
             'notes' => $validated['notes'] ?? null,
         ]);
@@ -146,14 +157,26 @@ class ShiftController extends Controller
             ['shift_id' => $shift->id],
             [
                 'opening_balance' => $openingBalance,
-                'closing_balance' => $validated['actual_total'],
+                'closing_balance' => $actualTotal,
                 'expected_total' => $expectedTotal,
-                'actual_total' => $validated['actual_total'],
+                'actual_total' => $actualTotal,
                 'variance' => $variance,
                 'notes' => $validated['notes'] ?? null,
                 'closed_at' => now(),
                 'updated_at' => now(),
             ]
+        );
+
+        DB::table('shift_cash_denominations')->where('shift_id', $shift->id)->delete();
+        DB::table('shift_cash_denominations')->insert(
+            collect($validated['denominations'])->map(fn($row) => [
+                'shift_id' => $shift->id,
+                'denomination' => $row['denomination'],
+                'quantity' => $row['quantity'],
+                'subtotal' => $row['denomination'] * $row['quantity'],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ])->all()
         );
 
         return response()->json([
@@ -194,6 +217,11 @@ class ShiftController extends Controller
 
         $openingBalance = $shift->opening_balance ?? 0;
 
+        $denominations = DB::table('shift_cash_denominations')
+            ->where('shift_id', $shift->id)
+            ->orderByDesc('denomination')
+            ->get(['denomination', 'quantity', 'subtotal']);
+
         return response()->json([
             'shift' => [
                 'id' => $shift->id,
@@ -210,6 +238,7 @@ class ShiftController extends Controller
                 'total_discounts' => (float) $totalDiscounts,
                 'total_tax' => (float) $totalTax,
                 'status' => $shift->status === 'active' ? 'Active' : 'Closed',
+                'denominations' => $denominations,
             ],
         ]);
     }

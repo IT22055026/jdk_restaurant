@@ -214,141 +214,6 @@
         </div>
     </div>
 
-    <!-- ── SALES REPORT SUMMARY ── -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-8">
-
-        <!-- Header with Flatpickr date range filter -->
-        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
-            <div class="flex items-center justify-between flex-wrap gap-4 mb-0">
-                <h2 class="text-lg font-bold text-gray-900">
-                    <i class="fas fa-receipt text-blue-500 mr-2"></i>Sales Report
-                    @if($from && $to)
-                        <span class="ml-2 text-sm font-normal text-gray-400">{{ $from->format('d M Y') }} — {{ $to->format('d M Y') }}</span>
-                    @else
-                        <span class="ml-2 text-sm font-normal text-gray-400">All time</span>
-                    @endif
-                </h2>
-                <form id="salesFilterForm" method="GET" action="{{ route('reports.sales') }}" class="flex items-center gap-2 flex-wrap">
-                    <div class="relative flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-1.5 shadow-sm">
-                        <i class="fas fa-calendar text-red-400 text-sm"></i>
-                        <input id="dateRangePicker" type="text" placeholder="Select date range..."
-                            class="text-sm text-gray-700 bg-transparent outline-none w-52 cursor-pointer"
-                            readonly>
-                        <input type="hidden" name="from" id="fromHidden" value="{{ $from ? $from->format('Y-m-d') : '' }}">
-                        <input type="hidden" name="to"   id="toHidden"   value="{{ $to   ? $to->format('Y-m-d')   : '' }}">
-                    </div>
-                    <button type="submit"
-                        class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shadow-sm">
-                        <i class="fas fa-filter text-xs"></i> Filter
-                    </button>
-                    @if($from && $to)
-                    <a href="{{ route('reports.index') }}"
-                        class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-100 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-200 transition">
-                        <i class="fas fa-xmark text-xs"></i> Clear
-                    </a>
-                    <a href="{{ route('reports.export.sales.range', ['from' => $from->format('Y-m-d'), 'to' => $to->format('Y-m-d')]) }}"
-                        class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition shadow-sm">
-                        <i class="fas fa-download text-xs"></i> Print PDF
-                    </a>
-                    @endif
-                </form>
-            </div>
-        </div>
-
-        <!-- Summary stats bar -->
-        <div class="grid grid-cols-2 md:grid-cols-4 divide-x divide-gray-100 border-b border-gray-100">
-            <div class="px-6 py-4">
-                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{{ ($from && $to) ? 'Period Revenue' : 'Total Revenue' }}</p>
-                <p class="text-xl font-bold text-gray-900">LKR {{ number_format($rangeRevenue, 2) }}</p>
-            </div>
-            <div class="px-6 py-4">
-                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Orders</p>
-                <p class="text-xl font-bold text-gray-900">{{ number_format($rangeCount) }}</p>
-            </div>
-            <div class="px-6 py-4">
-                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Avg Order Value</p>
-                <p class="text-xl font-bold text-gray-900">LKR {{ number_format($rangeAvg, 2) }}</p>
-            </div>
-            <div class="px-6 py-4 flex flex-wrap items-center gap-2">
-                @foreach($rangePayments as $rp)
-                @php $rpc = ['cash'=>'bg-green-100 text-green-700','card'=>'bg-blue-100 text-blue-700','bank_transfer'=>'bg-purple-100 text-purple-700','mixed'=>'bg-orange-100 text-orange-700'][$rp->payment_method] ?? 'bg-gray-100 text-gray-600'; @endphp
-                <span class="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full {{ $rpc }}">
-                    {{ ucfirst(str_replace('_',' ',$rp->payment_method)) }}
-                    <span class="font-normal opacity-75">{{ $rp->order_count }}</span>
-                </span>
-                @endforeach
-            </div>
-        </div>
-
-        <!-- Sales table -->
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    <tr>
-                        <th class="px-4 py-3 text-left">Order #</th>
-                        <th class="px-4 py-3 text-left">Token</th>
-                        <th class="px-4 py-3 text-left">Customer</th>
-                        <th class="px-4 py-3 text-center">Payment</th>
-                        <th class="px-4 py-3 text-right">Total</th>
-                        <th class="px-4 py-3 text-right">Date</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    @forelse($sales as $sale)
-                    @php
-                        $pc = ['cash'=>'bg-green-100 text-green-700','card'=>'bg-blue-100 text-blue-700','bank_transfer'=>'bg-purple-100 text-purple-700','mixed'=>'bg-orange-100 text-orange-700'][$sale->payment_method] ?? 'bg-gray-100 text-gray-600';
-                    @endphp
-                    <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="px-4 py-3 font-mono text-xs text-gray-700">{{ $sale->order_number }}</td>
-                        <td class="px-4 py-3 text-gray-600">
-                            {{ $sale->token_number ? '#' . str_pad($sale->token_number, 2, '0', STR_PAD_LEFT) : '—' }}
-                        </td>
-                        <td class="px-4 py-3 text-gray-600">{{ $sale->customer_name ?? '—' }}</td>
-                        <td class="px-4 py-3 text-center">
-                            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium {{ $pc }}">
-                                {{ ucfirst(str_replace('_',' ',$sale->payment_method ?? '—')) }}
-                            </span>
-                        </td>
-                        <td class="px-4 py-3 text-right font-semibold text-gray-900">LKR {{ number_format($sale->total, 2) }}</td>
-                        <td class="px-4 py-3 text-right text-gray-400 text-xs whitespace-nowrap">{{ $sale->created_at->format('d M Y, H:i') }}</td>
-                    </tr>
-                    @empty
-                    <tr><td colspan="6" class="px-4 py-10 text-center text-gray-400">No completed sales found.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Pagination -->
-        @if($sales->hasPages())
-        <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between flex-wrap gap-3">
-            <p class="text-sm text-gray-500">
-                Showing {{ $sales->firstItem() }}–{{ $sales->lastItem() }} of {{ $sales->total() }} orders
-            </p>
-            <div class="flex items-center gap-1">
-                @if($sales->onFirstPage())
-                    <span class="px-3 py-1.5 text-sm text-gray-300 border border-gray-200 rounded-lg cursor-not-allowed">Prev</span>
-                @else
-                    <a href="{{ $sales->previousPageUrl() }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition">Prev</a>
-                @endif
-                @foreach($sales->getUrlRange(max(1,$sales->currentPage()-2), min($sales->lastPage(),$sales->currentPage()+2)) as $page => $url)
-                    @if($page == $sales->currentPage())
-                        <span class="px-3 py-1.5 text-sm font-semibold bg-blue-600 text-white rounded-lg">{{ $page }}</span>
-                    @else
-                        <a href="{{ $url }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition">{{ $page }}</a>
-                    @endif
-                @endforeach
-                @if($sales->hasMorePages())
-                    <a href="{{ $sales->nextPageUrl() }}" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition">Next</a>
-                @else
-                    <span class="px-3 py-1.5 text-sm text-gray-300 border border-gray-200 rounded-lg cursor-not-allowed">Next</span>
-                @endif
-            </div>
-        </div>
-        @endif
-
-    </div>
-
     <!-- ── REVENUE CHART (last 7 days) ── -->
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-8">
         <h2 class="text-lg font-bold text-gray-900 mb-4">
@@ -400,11 +265,15 @@
                                         'card'          => 'bg-blue-100 text-blue-700',
                                         'bank_transfer' => 'bg-purple-100 text-purple-700',
                                         'mixed'         => 'bg-orange-100 text-orange-700',
+                                        'pickme'        => 'bg-red-100 text-red-700',
+                                        'uber'          => 'bg-gray-800 text-white',
                                     ];
                                     $pmColor = $pmColors[$sale->payment_method] ?? 'bg-gray-100 text-gray-600';
+                                    $pmLabels = ['pickme' => 'PickMe', 'uber' => 'Uber'];
+                                    $pmLabel = $pmLabels[$sale->payment_method] ?? ucfirst(str_replace('_', ' ', $sale->payment_method ?? '—'));
                                 @endphp
                                 <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium {{ $pmColor }}">
-                                    {{ ucfirst(str_replace('_', ' ', $sale->payment_method ?? '—')) }}
+                                    {{ $pmLabel }}
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-right text-gray-400 text-xs whitespace-nowrap">
@@ -444,19 +313,23 @@
                 @forelse($paymentBreakdown as $pm)
                 @php
                     $pmIcons = [
-                        'cash'          => 'fa-money-bill-wave text-green-500',
-                        'card'          => 'fa-credit-card text-blue-500',
-                        'bank_transfer' => 'fa-university text-purple-500',
-                        'mixed'         => 'fa-shuffle text-orange-500',
+                        'cash'          => 'fas fa-money-bill-wave text-green-500',
+                        'card'          => 'fas fa-credit-card text-blue-500',
+                        'bank_transfer' => 'fas fa-university text-purple-500',
+                        'mixed'         => 'fas fa-shuffle text-orange-500',
+                        'pickme'        => 'fas fa-taxi text-red-500',
+                        'uber'          => 'fab fa-uber text-gray-800',
                     ];
-                    $icon = $pmIcons[$pm->payment_method] ?? 'fa-circle-question text-gray-400';
+                    $icon = $pmIcons[$pm->payment_method] ?? 'fas fa-circle-question text-gray-400';
+                    $pmLabels = ['pickme' => 'PickMe', 'uber' => 'Uber'];
+                    $pmLabel = $pmLabels[$pm->payment_method] ?? ucfirst(str_replace('_', ' ', $pm->payment_method));
                     $pct  = $totalOrders > 0 ? round(($pm->order_count / $totalOrders) * 100) : 0;
                 @endphp
                 <div>
                     <div class="flex items-center justify-between mb-1">
                         <span class="flex items-center gap-2 text-sm font-medium text-gray-700">
-                            <i class="fas {{ $icon }}"></i>
-                            {{ ucfirst(str_replace('_', ' ', $pm->payment_method)) }}
+                            <i class="{{ $icon }}"></i>
+                            {{ $pmLabel }}
                         </span>
                         <span class="text-sm font-bold text-gray-900">{{ $pm->order_count }} orders</span>
                     </div>
@@ -586,39 +459,15 @@
     });
 })();
 
-// ── Flatpickr — Sales Report date range ──
-(function () {
-    const fromHidden = document.getElementById('fromHidden');
-    const toHidden   = document.getElementById('toHidden');
-
-    const fp = flatpickr('#dateRangePicker', {
-        mode: 'range',
-        dateFormat: 'Y-m-d',
-        altInput: true,
-        altFormat: 'd M Y',
-        showMonths: 2,
-        disableMobile: true,
-        onChange: function (selectedDates) {
-            if (selectedDates.length === 2) {
-                const fmt = d => d.toISOString().slice(0, 10);
-                fromHidden.value = fmt(selectedDates[0]);
-                toHidden.value   = fmt(selectedDates[1]);
-            }
-        }
-    });
-
-    const from = fromHidden.value;
-    const to   = toHidden.value;
-    if (from && to) fp.setDate([from, to]);
-})();
-
 // ── Flatpickr — Payment Methods date range ──
 (function () {
     const pmIcons = {
-        cash:          'fa-money-bill-wave text-green-500',
-        card:          'fa-credit-card text-blue-500',
-        bank_transfer: 'fa-university text-purple-500',
-        mixed:         'fa-shuffle text-orange-500',
+        cash:          'fas fa-money-bill-wave text-green-500',
+        card:          'fas fa-credit-card text-blue-500',
+        bank_transfer: 'fas fa-university text-purple-500',
+        mixed:         'fas fa-shuffle text-orange-500',
+        pickme:        'fas fa-taxi text-red-500',
+        uber:          'fab fa-uber text-gray-800',
     };
 
     const endpoint = '{{ route("reports.payment.breakdown") }}';
@@ -636,11 +485,11 @@
         }
 
         body.innerHTML = data.breakdown.map(pm => {
-            const icon = pmIcons[pm.method] || 'fa-circle-question text-gray-400';
+            const icon = pmIcons[pm.method] || 'fas fa-circle-question text-gray-400';
             return `<div>
                 <div class="flex items-center justify-between mb-1">
                     <span class="flex items-center gap-2 text-sm font-medium text-gray-700">
-                        <i class="fas ${icon}"></i>${pm.label}
+                        <i class="${icon}"></i>${pm.label}
                     </span>
                     <span class="text-sm font-bold text-gray-900">${pm.order_count} orders</span>
                 </div>

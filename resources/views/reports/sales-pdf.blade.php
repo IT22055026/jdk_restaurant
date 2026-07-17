@@ -132,6 +132,14 @@
             background: #fed7aa;
             color: #9a3412;
         }
+        .badge-pickme {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .badge-uber {
+            background: #111827;
+            color: #fff;
+        }
         .payment-section {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -233,11 +241,15 @@
                                     'card' => 'badge-card',
                                     'bank_transfer' => 'badge-bank',
                                     'mixed' => 'badge-mixed',
+                                    'pickme' => 'badge-pickme',
+                                    'uber' => 'badge-uber',
                                 ];
                                 $badgeClass = $pmMap[$sale->payment_method] ?? '';
+                                $pmLabels = ['pickme' => 'PickMe', 'uber' => 'Uber'];
+                                $pmLabel = $pmLabels[$sale->payment_method] ?? ucfirst(str_replace('_', ' ', $sale->payment_method ?? '—'));
                             @endphp
                             <span class="badge {{ $badgeClass }}">
-                                {{ ucfirst(str_replace('_', ' ', $sale->payment_method ?? '—')) }}
+                                {{ $pmLabel }}
                             </span>
                         </td>
                         <td class="text-right">{{ $sale->created_at->format('d M, H:i') }}</td>
@@ -254,9 +266,10 @@
             <div class="no-data">No payment data available</div>
         @else
             <div class="payment-section">
+                @php $pmLabels = ['pickme' => 'PickMe', 'uber' => 'Uber']; @endphp
                 @foreach($paymentBreakdown as $pm)
                 <div class="payment-item">
-                    <div class="method">{{ ucfirst(str_replace('_', ' ', $pm->payment_method)) }}</div>
+                    <div class="method">{{ $pmLabels[$pm->payment_method] ?? ucfirst(str_replace('_', ' ', $pm->payment_method)) }}</div>
                     <div class="count">{{ $pm->order_count }} order{{ $pm->order_count != 1 ? 's' : '' }}</div>
                     <div class="amount">LKR {{ number_format($pm->total_revenue, 2) }}</div>
                 </div>

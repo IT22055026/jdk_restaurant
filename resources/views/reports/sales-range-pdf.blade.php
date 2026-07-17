@@ -32,6 +32,8 @@
         .badge-card { background: #dbeafe; color: #1e40af; }
         .badge-bank { background: #e9d5ff; color: #7e22ce; }
         .badge-mixed { background: #fed7aa; color: #9a3412; }
+        .badge-pickme { background: #fee2e2; color: #991b1b; }
+        .badge-uber { background: #111827; color: #fff; }
         .footer { margin-top: 20px; text-align: center; font-size: 9px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 10px; }
         .no-data { text-align: center; padding: 20px; color: #9ca3af; font-style: italic; }
         .total-row td { font-weight: 700; background: #fef2f2; border-top: 2px solid #dc2626; }
@@ -70,9 +72,10 @@
     @if($rangePayments->count())
     <div class="section-title">Payment Methods</div>
     <div class="payment-row">
+        @php $pmLabels = ['pickme' => 'PickMe', 'uber' => 'Uber']; @endphp
         @foreach($rangePayments as $rp)
         <div class="payment-pill">
-            {{ ucfirst(str_replace('_', ' ', $rp->payment_method)) }}
+            {{ $pmLabels[$rp->payment_method] ?? ucfirst(str_replace('_', ' ', $rp->payment_method)) }}
             <span>&mdash; {{ $rp->order_count }} orders &mdash; LKR {{ number_format($rp->total_revenue, 2) }}</span>
         </div>
         @endforeach
@@ -99,15 +102,16 @@
         <tbody>
             @foreach($sales as $sale)
             @php
-                $pmMap = ['cash'=>'badge-cash','card'=>'badge-card','bank_transfer'=>'badge-bank','mixed'=>'badge-mixed'];
+                $pmMap = ['cash'=>'badge-cash','card'=>'badge-card','bank_transfer'=>'badge-bank','mixed'=>'badge-mixed','pickme'=>'badge-pickme','uber'=>'badge-uber'];
                 $bc = $pmMap[$sale->payment_method] ?? '';
+                $pmLabels = ['pickme' => 'PickMe', 'uber' => 'Uber'];
             @endphp
             <tr>
                 <td class="mono">{{ $sale->order_number }}</td>
                 <td>{{ $sale->token_number ? '#' . str_pad($sale->token_number, 2, '0', STR_PAD_LEFT) : '—' }}</td>
                 <td>{{ $sale->customer_name ?? '—' }}</td>
                 <td class="text-center">
-                    <span class="badge {{ $bc }}">{{ ucfirst(str_replace('_', ' ', $sale->payment_method ?? '—')) }}</span>
+                    <span class="badge {{ $bc }}">{{ $pmLabels[$sale->payment_method] ?? ucfirst(str_replace('_', ' ', $sale->payment_method ?? '—')) }}</span>
                 </td>
                 <td class="text-right">LKR {{ number_format($sale->total, 2) }}</td>
                 <td class="text-right">{{ $sale->created_at->format('d M Y, H:i') }}</td>

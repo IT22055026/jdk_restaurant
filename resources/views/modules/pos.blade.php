@@ -11,38 +11,11 @@
         body { background: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
 
         /* ── Layout ── */
-        .pos-grid { display: grid; grid-template-columns: 320px 1fr 580px; flex: 1; min-height: 0; }
+        .pos-grid { display: grid; grid-template-columns: 1fr 760px; flex: 1; min-height: 0; }
 
         /* ── Panels ── */
-        .tables-panel  { background: #fff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; }
         .menu-panel    { background: #f8fafc; display: flex; flex-direction: column; overflow: hidden; }
         .bill-panel    { background: #fff; border-left: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; }
-
-        /* ── Token cards ── */
-        .table-card {
-            cursor: pointer;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 7px 6px;
-            text-align: center;
-            transition: all 0.18s ease;
-            position: relative;
-            background: linear-gradient(135deg,#fff7ed,#ffedd5);
-            border-color: #fb923c;
-            user-select: none;
-        }
-        .table-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-color: #ea580c; }
-        .table-card.selected { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
-
-        /* Bottom action bar that expands on click */
-        .table-card-actions {
-            display: none;
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px dashed rgba(0,0,0,0.12);
-            gap: 6px;
-        }
-        .table-card.expanded .table-card-actions { display: flex; }
 
         /* ── Category pills ── */
         .cat-pill {
@@ -155,12 +128,8 @@
            DARK MODE — blue / black / white theme
         ══════════════════════════════════════════ */
         html.dark-mode body { background: #0a0e17; }
-        html.dark-mode .tables-panel,
         html.dark-mode .bill-panel { background: #10162a; border-color: #1f2942; }
         html.dark-mode .menu-panel { background: #0d1220; }
-
-        html.dark-mode .table-card { background: linear-gradient(135deg,#201607,#2b1c09); border-color: #ea580c; }
-        html.dark-mode .table-card.selected  { border-color: #2f5bff; box-shadow: 0 0 0 3px rgba(47,91,255,0.25); }
 
         html.dark-mode .cat-pill { background: #10162a; border-color: #26314d; color: #9aa7c2; }
         html.dark-mode .cat-pill:hover { border-color: #2f5bff; color: #6d94ff; }
@@ -224,41 +193,7 @@
 <div class="pos-grid" style="margin-top: 64px; height: calc(100vh - 64px);">
 
     <!-- ════════════════════════════════════════
-         COLUMN 1 — TABLES PANEL
-    ════════════════════════════════════════ -->
-    <div class="tables-panel">
-
-        <!-- Header -->
-        <div style="padding: 16px; border-bottom: 1px solid #e2e8f0; flex-shrink: 0;">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-                <h2 style="font-size:16px; font-weight:800; color:#0f172a; margin:0;">
-                    <i class="fas fa-ticket" style="color:#2563eb; margin-right:6px;"></i>Open Tokens
-                </h2>
-            </div>
-            <!-- Find by token number -->
-            <div style="display:flex; gap:6px; margin-bottom:10px;">
-                <input type="number" id="findTokenInput" placeholder="Token #"
-                       style="flex:1; min-width:0; font-size:12px; border:1.5px solid #e2e8f0; border-radius:8px; padding:8px; outline:none; background:#f8fafc;"
-                       onkeydown="if(event.key==='Enter'){findOrderByToken();event.preventDefault();}">
-                <button onclick="findOrderByToken()" class="btn-secondary" style="padding:8px 12px; font-size:12px;">
-                    <i class="fas fa-search"></i>
-                </button>
-            </div>
-            <!-- New Order Button -->
-            <button onclick="createNewOrder()" class="btn-primary" style="width:100%; padding:10px; font-size:12px; font-weight:700;">
-                <i class="fas fa-plus" style="margin-right:6px;"></i>New Order
-            </button>
-        </div>
-
-        <!-- Open tokens list -->
-        <div style="flex:1; overflow-y:auto; padding:10px; display:grid; grid-template-columns: repeat(2, 1fr); gap: 7px; align-content: start;" id="openTokensContainer">
-            <p style="grid-column:1/-1; text-align:center; color:#94a3b8; padding:32px 0; font-size:13px;">Loading tokens…</p>
-        </div>
-
-    </div>
-
-    <!-- ════════════════════════════════════════
-         COLUMN 2 — MENU PANEL
+         COLUMN 1 — MENU PANEL
     ════════════════════════════════════════ -->
     <div class="menu-panel">
 
@@ -266,6 +201,9 @@
         <div style="padding:16px; background:#fff; border-bottom:1px solid #e2e8f0; flex-shrink:0;">
             <!-- Categories -->
             <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px;" id="categoriesContainer">
+                <button class="cat-pill" id="offersPill" onclick="toggleOffersMode()" style="background:#fdf4ff; color:#a21caf; border-color:#e9d5ff;">
+                    <i class="fas fa-gift" style="margin-right:4px;"></i>Offers
+                </button>
                 <button class="cat-pill active" data-category="0" onclick="selectCategory(0, this)">All</button>
             </div>
             <!-- Search Bar -->
@@ -299,7 +237,7 @@
     </div>
 
     <!-- ════════════════════════════════════════
-         COLUMN 3 — BILL PANEL
+         COLUMN 2 — BILL PANEL
     ════════════════════════════════════════ -->
     <div class="bill-panel">
 
@@ -309,12 +247,20 @@
                 <h3 style="font-size:17px; font-weight:800; color:#0f172a; margin:0;">
                     <i class="fas fa-receipt" style="color:#2563eb; margin-right:6px;"></i>Order
                 </h3>
-                <button onclick="loadHeldOrders(true)" style="font-size:10px; background:#fef3c7; color:#92400e; border:none; padding:4px 8px; border-radius:6px; cursor:pointer; font-weight:700;">
-                    <i class="fas fa-pause-circle" style="margin-right:2px;"></i>Held <span id="heldCount" style="background:#f59e0b;color:#fff;border-radius:8px;padding:0px 5px; font-size:9px;">0</span>
+                <button onclick="createNewOrder()" class="btn-primary" style="padding:9px 16px; font-size:12px; font-weight:700;">
+                    <i class="fas fa-plus" style="margin-right:6px;"></i>New Order
                 </button>
             </div>
             <div id="selectedTokenLabel" style="font-size:14px; font-weight:700; color:#64748b;">
                 <i class="fas fa-arrow-left" style="font-size:10px; margin-right:4px;"></i>Tap New Order to begin
+            </div>
+            <div id="tokenNumberRow" style="display:none; align-items:center; gap:8px; margin-top:8px;">
+                <label style="font-size:11px; font-weight:800; color:#ea580c; text-transform:uppercase; letter-spacing:0.04em; flex-shrink:0;">
+                    <i class="fas fa-ticket" style="margin-right:3px;"></i>Token #
+                </label>
+                <input type="number" id="tokenNumberInput" placeholder="Enter physical token #" min="1"
+                       style="flex:1; min-width:0; font-size:14px; font-weight:800; border:1.5px solid #fdba74; border-radius:8px; padding:6px 10px; outline:none; background:#fff7ed; color:#9a3412;"
+                       onblur="saveTokenNumber()" onkeydown="if(event.key==='Enter'){this.blur();event.preventDefault();}">
             </div>
         </div>
 
@@ -351,6 +297,11 @@
 
         <!-- Zone 4: Fixed bottom controls -->
         <div style="border-top:1px solid #e2e8f0; padding:14px 18px; background:#fff; flex-shrink:0; display:flex; flex-direction:column; gap:8px;">
+
+            <!-- Give a free item as a discount (instead of reducing the bill amount) -->
+            <button type="button" id="freeItemToggle" onclick="openFreeItemModal()" style="display:none; width:100%; text-align:left; background:#f0fdf4; border:1px dashed #86efac; border-radius:8px; padding:7px 10px; font-size:12px; font-weight:700; color:#166534; cursor:pointer;">
+                <i class="fas fa-gift" style="margin-right:5px;"></i>Give a Free Item (as discount)
+            </button>
 
             <!-- Totals + Payment summary — single 4-column row -->
             <div style="display:grid; grid-template-columns: 1fr 1.25fr 1fr 1.1fr; gap:8px; align-items:start;">
@@ -391,7 +342,7 @@
             <!-- Payment details (collapsible, hidden until items exist) -->
             <div id="paymentSection" style="display:none;">
                 <div id="paymentBody" style="display:none; padding-top:8px; margin-top:2px; border-top:1px solid #e2e8f0;">
-                <div style="display:flex; gap:5px; margin-bottom:8px;">
+                <div style="display:flex; gap:5px; margin-bottom:5px;">
                     <button class="pay-method-btn active" data-method="cash" onclick="selectPaymentMethod('cash')" style="flex:1; padding:10px 6px; font-size:12px;">
                         <i class="fas fa-money-bill-wave" style="display:block; font-size:16px; margin-bottom:3px;"></i>Cash
                     </button>
@@ -400,6 +351,14 @@
                     </button>
                     <button class="pay-method-btn" data-method="bank_transfer" onclick="selectPaymentMethod('bank_transfer')" style="flex:1; padding:10px 6px; font-size:12px;">
                         <i class="fas fa-university" style="display:block; font-size:16px; margin-bottom:3px;"></i>Bank
+                    </button>
+                </div>
+                <div style="display:flex; gap:5px; margin-bottom:8px;">
+                    <button class="pay-method-btn" data-method="pickme" onclick="selectPaymentMethod('pickme')" style="flex:1; padding:10px 6px; font-size:12px;">
+                        <i class="fas fa-taxi" style="display:block; font-size:16px; margin-bottom:3px;"></i>PickMe
+                    </button>
+                    <button class="pay-method-btn" data-method="uber" onclick="selectPaymentMethod('uber')" style="flex:1; padding:10px 6px; font-size:12px;">
+                        <i class="fab fa-uber" style="display:block; font-size:16px; margin-bottom:3px;"></i>Uber
                     </button>
                     <button class="pay-method-btn" data-method="split" onclick="selectPaymentMethod('split')" style="flex:1; padding:10px 6px; font-size:12px;">
                         <i class="fas fa-code-branch" style="display:block; font-size:16px; margin-bottom:3px;"></i>Split
@@ -464,24 +423,12 @@
             <!-- Action buttons -->
             <div id="orderControls" style="display:flex; flex-direction:column; gap:6px;">
 
-                <!-- Row 1: Print Token -->
-                <div style="display:flex; gap:6px;">
-                    <button onclick="printToken()" class="btn-orange" style="flex:1; padding:13px 8px; font-size:14px;">
-                        <i class="fas fa-receipt" style="margin-right:3px;"></i>Print Token
-                    </button>
-                </div>
-
-                <!-- Row 2: Pay -->
+                <!-- Pay: prints the KOT (to kitchen) and the bill (to customer) in one action -->
                 <div id="waiterPayRow" style="display:none; gap:6px; display:flex;">
                     <button onclick="initiatePayment()" id="payBtn" class="btn-green" style="flex:1; padding:13px 8px; font-size:14px;">
                         <i class="fas fa-check-circle" style="margin-right:3px;"></i>Pay
                     </button>
                 </div>
-
-                <!-- Row 3: Hold -->
-                <button onclick="holdCurrentOrder()" id="holdBtn" class="btn-secondary" style="display:none; width:100%; padding:13px; font-size:14px;">
-                    <i class="fas fa-pause" style="margin-right:3px;"></i>Hold Order
-                </button>
 
             </div>
         </div>
@@ -506,36 +453,46 @@
 </div>
 
 <!-- ══════════════════════════════════════════════════
-     MODAL: Token
+     MODAL: Give Free Item (discount, not a bill reduction)
 ══════════════════════════════════════════════════ -->
-<div id="tokenModal" class="modal-overlay">
-    <div class="modal-box" style="max-width:400px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2 style="font-size:18px; font-weight:800; color:#0f172a; margin:0;"><i class="fas fa-ticket" style="color:#ea580c; margin-right:6px;"></i>Token</h2>
-            <button onclick="closeModal('tokenModal')" style="background:none; border:none; font-size:22px; cursor:pointer; color:#94a3b8;">&times;</button>
+<div id="freeItemModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 420px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h2 style="font-size:18px; font-weight:800; color:#0f172a; margin:0;"><i class="fas fa-gift" style="color:#16a34a; margin-right:6px;"></i>Give a Free Item</h2>
+            <button onclick="closeModal('freeItemModal')" style="background:none; border:none; font-size:22px; cursor:pointer; color:#94a3b8;">&times;</button>
         </div>
-        <div style="background:#f8fafc; border-radius:10px; padding:12px; margin-bottom:16px;">
-            <p style="font-size:24px; font-weight:900; margin:0 0 3px; color:#ea580c;" id="tokenNumberDisplay">Token —</p>
-            <p style="font-size:13px; color:#64748b; margin:0;" id="tokenOrderNumber">Order #—</p>
-        </div>
-        <div id="tokenItems" style="max-height:260px; overflow-y:auto; background:#fff; border:1.5px solid #e2e8f0; border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:10px;"></div>
-        <div style="display:flex; gap:10px; margin-top:20px;">
-            <button onclick="closeModal('tokenModal')" class="btn-secondary" style="flex:1;">Close</button>
-            <button onclick="printTokenContent()" class="btn-orange" style="flex:1;"><i class="fas fa-print" style="margin-right:4px;"></i>Print</button>
+        <p style="font-size:12px; color:#64748b; margin:0 0 12px;">
+            Adds the item to the bill at its normal price, then marks it 100% off so it's added to stock/kitchen as usual but shows as <strong style="color:#16a34a;">FREE</strong> on the bill instead of reducing the total amount.
+        </p>
+        <label style="font-size:11px; font-weight:700; color:#374151; display:block; margin-bottom:4px;">Item</label>
+        <select id="freeItemProduct" style="width:100%; font-size:13px; border:1.5px solid #e2e8f0; border-radius:8px; padding:9px 10px; outline:none; background:#f8fafc; margin-bottom:10px;">
+            <option value="">Select an item…</option>
+        </select>
+        <label style="font-size:11px; font-weight:700; color:#374151; display:block; margin-bottom:4px;">Quantity</label>
+        <input type="number" id="freeItemQty" value="1" min="1" style="width:100%; font-size:13px; border:1.5px solid #e2e8f0; border-radius:8px; padding:9px 10px; outline:none; background:#f8fafc;">
+        <div style="display:flex; gap:8px; margin-top:16px;">
+            <button onclick="closeModal('freeItemModal')" class="btn-secondary" style="flex:1;">Cancel</button>
+            <button onclick="submitFreeItem()" style="flex:1; background:#16a34a; color:#fff; border:none; border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer;"><i class="fas fa-gift" style="margin-right:5px;"></i>Add as Free</button>
         </div>
     </div>
 </div>
 
 <!-- ══════════════════════════════════════════════════
-     MODAL: Held Orders
+     MODAL: Discard Bill
 ══════════════════════════════════════════════════ -->
-<div id="heldOrdersModal" class="modal-overlay">
-    <div class="modal-box">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2 style="font-size:18px; font-weight:800; color:#0f172a; margin:0;"><i class="fas fa-pause-circle" style="color:#f59e0b; margin-right:6px;"></i>Held Orders</h2>
-            <button onclick="closeModal('heldOrdersModal')" style="background:none; border:none; font-size:22px; cursor:pointer; color:#94a3b8;">&times;</button>
+<div id="discardReasonModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 420px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2 style="font-size:18px; font-weight:800; color:#0f172a; margin:0;"><i class="fas fa-ban" style="color:#dc2626; margin-right:6px;"></i>Discard Bill</h2>
+            <button onclick="closeModal('discardReasonModal')" style="background:none; border:none; font-size:22px; cursor:pointer; color:#94a3b8;">&times;</button>
         </div>
-        <div id="heldOrdersList" style="display:flex; flex-direction:column; gap:10px; max-height:400px; overflow-y:auto;"></div>
+        <p style="font-size:13px; color:#64748b; margin:0 0 10px;">This bill will be cancelled and recorded for audit. Please enter a reason.</p>
+        <textarea id="discardReasonInput" rows="3" placeholder="Reason for discarding this bill…"
+                  style="width:100%; font-size:13px; border:1.5px solid #e2e8f0; border-radius:8px; padding:10px; outline:none; resize:none;"></textarea>
+        <div style="display:flex; gap:8px; margin-top:14px;">
+            <button onclick="closeModal('discardReasonModal')" class="btn-secondary" style="flex:1;">Cancel</button>
+            <button onclick="submitDiscardOrder()" style="flex:1; background:#dc2626; color:#fff; border:none; border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer;">Discard Bill</button>
+        </div>
     </div>
 </div>
 
@@ -575,7 +532,6 @@
     let allProducts   = [];
     let allCategories = @json($categories);
     let selectedPaymentMethod = 'cash';
-    let currentTokenContent   = '';
     let currentBillContent    = '';
     let stockCache            = {}; // { productId: remainingQty } for finished-goods (independent stock)
     let ingredientStockCache  = {}; // { ingredientId: remainingRawQty } for recipe-tracked products
@@ -616,10 +572,8 @@
 
     // ── Bootstrap ──
     async function initPos() {
-        await loadOpenTokens();
         loadCategories();
         await loadProducts();
-        loadHeldOrders();
         setupEventListeners();
         updateShiftStatus();
         setInterval(updateShiftStatus, 15000); // Update every 15 seconds
@@ -641,94 +595,6 @@
                 console.error('Error updating shift status:', e);
             }
         @endif
-    }
-
-    // ═══════════════════════════════════════════
-    // OPEN TOKENS
-    // ═══════════════════════════════════════════
-
-    async function loadOpenTokens() {
-        try {
-            const res = await fetch('{{ route("pos.tokens") }}');
-            if (!res.ok) { toast('Failed to load open tokens', 'error'); return; }
-            renderOpenTokens(await res.json());
-        } catch (e) {
-            console.error('Load open tokens error:', e);
-            toast('Error loading open tokens', 'error');
-        }
-    }
-
-    function renderOpenTokens(tokens) {
-        const container = document.getElementById('openTokensContainer');
-
-        if (tokens.length === 0) {
-            container.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#94a3b8; padding:32px 0; font-size:13px;">No open tokens</p>';
-            return;
-        }
-
-        container.innerHTML = tokens.map(function(t) {
-            const isSelected = currentOrder && currentOrder.id === t.id;
-            const time = new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-
-            const itemBadge = t.items_count > 0
-                ? '<div style="font-size:11px; font-weight:800; color:#2563eb; margin-top:4px;">'
-                    + '<i class="fas fa-circle-dot" style="font-size:8px;"></i> '
-                    + t.items_count + ' item' + (t.items_count !== 1 ? 's' : '')
-                    + '</div>'
-                : '';
-
-            const actionBar = t.items_count > 0
-                ? '<div class="table-card-actions" style="display:flex;">'
-                    + '<button onclick="printTokenForOrder(' + t.id + '); event.stopPropagation();" '
-                    + 'style="flex:1; font-size:11px; font-weight:700; background:#ea580c; color:#fff; border:none; border-radius:7px; padding:6px 4px; cursor:pointer;">'
-                    + '<i class="fas fa-print" style="margin-right:3px;"></i>Token</button>'
-                    + '</div>'
-                : '';
-
-            return '<div id="tok-' + t.id + '" class="table-card' + (isSelected ? ' selected' : '') + '" onclick="reopenOrder(' + t.id + ')">'
-                + '<div style="font-size:20px; font-weight:900; color:#ea580c; line-height:1;">#' + String(t.token_number).padStart(2, '0') + '</div>'
-                + '<div style="font-size:10px; font-weight:600; color:#64748b; margin-top:2px;">Rs. ' + t.total.toFixed(2) + '</div>'
-                + itemBadge
-                + '<div style="font-size:10px; color:#94a3b8; margin-top:2px;"><i class="fas fa-clock" style="font-size:9px;"></i> ' + time + '</div>'
-                + actionBar
-                + '</div>';
-        }).join('');
-    }
-
-    async function reopenOrder(orderId) {
-        try {
-            showLoading();
-            const res   = await fetch('{{ route("pos.order.show", ":id") }}'.replace(':id', orderId));
-            if (!res.ok) { toast('Failed to load order', 'error'); hideLoading(); return; }
-            currentOrder = await res.json();
-            document.querySelectorAll('.table-card.selected').forEach(function(c) { c.classList.remove('selected'); });
-            const card = document.getElementById('tok-' + orderId);
-            if (card) card.classList.add('selected');
-            renderOrderHeader();
-            renderBill();
-            hideLoading();
-        } catch (e) {
-            console.error('Reopen order error:', e);
-            hideLoading();
-            toast('Error loading order', 'error');
-        }
-    }
-
-    async function findOrderByToken() {
-        const input = document.getElementById('findTokenInput');
-        const tokenNumber = parseInt(input.value);
-        if (!tokenNumber) { toast('Enter a token number', 'error'); return; }
-
-        try {
-            const res = await fetch('{{ route("pos.order.by_token", ":tokenNumber") }}'.replace(':tokenNumber', tokenNumber));
-            const data = await res.json();
-            if (!data.success) { toast(data.message || 'Token not found', 'error'); return; }
-            input.value = '';
-            await reopenOrder(data.order_id);
-        } catch (e) {
-            console.error('Find order by token error:', e);
-            toast('Error finding token', 'error');
-        }
     }
 
     async function createNewOrder() {
@@ -808,10 +674,9 @@
 
             renderOrderHeader();
             renderBill();
-            await loadOpenTokens();
             hideLoading();
 
-            toast('Token #' + String(data.token_number).padStart(2, '0') + ' created — ready to add items', 'success');
+            toast('New order started — enter the token number and add items', 'success');
             return true;
         } catch (e) {
             console.error('createNewOrder error:', e);
@@ -872,7 +737,8 @@
 
     function loadCategories() {
         const container = document.getElementById('categoriesContainer');
-        container.innerHTML = '<button class="cat-pill active" data-category="0" onclick="selectCategory(0, this)">All</button>';
+        container.innerHTML = '<button class="cat-pill" id="offersPill" onclick="toggleOffersMode()" style="background:#fdf4ff; color:#a21caf; border-color:#e9d5ff;"><i class="fas fa-gift" style="margin-right:4px;"></i>Offers</button>'
+            + '<button class="cat-pill active" data-category="0" onclick="selectCategory(0, this)">All</button>';
         allCategories.forEach(function(cat) {
             const btn = document.createElement('button');
             btn.className = 'cat-pill';
@@ -884,9 +750,95 @@
     }
 
     function selectCategory(id, btn) {
+        offersMode = false;
+        document.getElementById('offersPill').classList.remove('active');
         document.querySelectorAll('#categoriesContainer .cat-pill').forEach(function(b) { b.classList.remove('active'); });
         if (btn) btn.classList.add('active');
         loadProducts(document.getElementById('searchInput').value, id);
+    }
+
+    let offersMode = false;
+    let allOffers = [];
+
+    function toggleOffersMode() {
+        offersMode = !offersMode;
+        document.querySelectorAll('#categoriesContainer .cat-pill').forEach(function(b) { b.classList.remove('active'); });
+        if (offersMode) {
+            document.getElementById('offersPill').classList.add('active');
+            loadOffers();
+        } else {
+            document.querySelector('#categoriesContainer .cat-pill[data-category="0"]').classList.add('active');
+            renderProducts();
+        }
+    }
+
+    async function loadOffers() {
+        const container = document.getElementById('productsContainer');
+        container.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#94a3b8; padding:48px 0; font-size:13px;">Loading offers…</p>';
+        try {
+            const res = await fetch('{{ route("pos.offers") }}');
+            allOffers = await res.json();
+            renderOffers();
+        } catch (e) {
+            console.error('Load offers error:', e);
+            toast('Error loading offers', 'error');
+        }
+    }
+
+    function renderOffers() {
+        const container = document.getElementById('productsContainer');
+        if (!allOffers.length) {
+            container.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#94a3b8; padding:48px 0; font-size:13px;"><i class="fas fa-gift" style="font-size:28px; display:block; margin-bottom:10px;"></i>No active offers</p>';
+            return;
+        }
+        container.innerHTML = allOffers.map(function(o) {
+            const includes = (o.includes || []).join(', ');
+            const imageHtml = o.image
+                ? '<img src="/storage/' + o.image + '" alt="' + escapeHtml(o.name) + '" style="width:100%; height:100%; object-fit:cover;">'
+                : '<i class="fas fa-gift" style="color:#a21caf; font-size:28px;"></i>';
+            return '<div class="product-card" onclick="addOfferToOrder(' + o.id + ', \'' + escapeJs(o.name) + '\')">'
+                + '<div style="height:130px; background:linear-gradient(135deg,#fdf4ff,#fae8ff); border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; overflow:hidden;">'
+                + imageHtml
+                + '</div>'
+                + '<p style="font-size:14px; font-weight:700; color:#0f172a; margin:0 0 5px; line-height:1.3;">' + escapeHtml(o.name) + '</p>'
+                + '<p style="font-size:16px; font-weight:900; color:#a21caf; margin:0;">Rs. ' + o.price.toFixed(2) + '</p>'
+                + (includes ? '<p style="font-size:10px; color:#64748b; margin:4px 0 0; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">Includes: ' + escapeHtml(includes) + '</p>' : '')
+                + '</div>';
+        }).join('');
+    }
+
+    async function addOfferToOrder(offerId, offerName) {
+        const hasActiveShift = {{ $activeShift ? 'true' : 'false' }};
+        if (!hasActiveShift) {
+            showShiftModal();
+            return;
+        }
+
+        if (!currentOrder || !currentOrder.id) {
+            const created = await createNewOrder();
+            if (!created) {
+                toast('Failed to create order. Please try again.', 'error');
+                return;
+            }
+        }
+
+        try {
+            const res = await fetch('{{ route("pos.offer.add", ":id") }}'.replace(':id', currentOrder.id), {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ offer_id: offerId, quantity: 1 })
+            });
+            const data = await res.json();
+            if (data.success) {
+                await syncOrder();
+                toast(offerName + ' added to order', 'success');
+            } else {
+                toast(data.message || 'Failed to add offer', 'error');
+            }
+        } catch (e) {
+            console.error('Add offer error:', e);
+            toast('Failed to add offer to order', 'error');
+        }
     }
 
     function renderProducts() {
@@ -1208,10 +1160,13 @@
                 '<i class="fas fa-arrow-left" style="font-size:11px; margin-right:4px;"></i>Tap New Order to begin';
             document.getElementById('customerInfoToggle').style.display = 'none';
             document.getElementById('activeOrderBanner').style.display   = 'none';
+            document.getElementById('tokenNumberRow').style.display = 'none';
             return;
         }
 
-        const tokenLabel = 'Token #' + String(currentOrder.token_number).padStart(2, '0');
+        const tokenLabel = currentOrder.token_number
+            ? 'Token #' + String(currentOrder.token_number).padStart(2, '0')
+            : 'No token yet';
         document.getElementById('selectedTokenLabel').innerHTML =
             '🎫 <strong>' + tokenLabel + '</strong> — ' + (currentOrder.order_number || '—');
         document.getElementById('customerInfoToggle').style.display = 'flex';
@@ -1220,6 +1175,37 @@
 
         document.getElementById('customerName').value  = currentOrder.customer_name  || '';
         document.getElementById('customerPhone').value = currentOrder.customer_phone || '';
+
+        document.getElementById('tokenNumberRow').style.display = 'flex';
+        document.getElementById('tokenNumberInput').value = currentOrder.token_number || '';
+    }
+
+    async function saveTokenNumber() {
+        if (!currentOrder || !currentOrder.id) return;
+        const input = document.getElementById('tokenNumberInput');
+        const value = parseInt(input.value);
+        if (!value || value < 1) return;
+        if (value === currentOrder.token_number) return;
+
+        try {
+            const res = await fetch('{{ route("pos.order.token_number", ":id") }}'.replace(':id', currentOrder.id), {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token_number: value })
+            });
+            const data = await res.json();
+            if (data.success) {
+                currentOrder.token_number = data.token_number;
+                renderOrderHeader();
+                toast('Token #' + String(data.token_number).padStart(2, '0') + ' set', 'success');
+            } else {
+                input.value = currentOrder.token_number || '';
+                toast(data.message || 'Failed to set token number', 'error');
+            }
+        } catch (e) {
+            console.error('Save token error:', e);
+            toast('Failed to set token number', 'error');
+        }
     }
 
     function renderBill() {
@@ -1245,14 +1231,20 @@
             billEl.style.alignItems = 'start';
             billEl.innerHTML = currentOrder.items.map(function(item) {
                 const discPercent   = item.discount_percent || 0;
+                const isFreeItem    = discPercent >= 100;
                 const discRowOpen   = item.id && openDiscountRows.has(item.id);
                 const itemAvailStock = getStock(item.product_id);
                 const atStockLimit  = itemAvailStock !== null && itemAvailStock <= 0;
 
-                // Discount badge next to product name
-                const discBadge = discPercent > 0
-                    ? '<span style="font-size:9px; background:#fef3c7; color:#92400e; border-radius:4px; padding:1px 5px; font-weight:700; white-space:nowrap; flex-shrink:0;">-' + discPercent + '%</span>'
-                    : '';
+                // Discount badge next to product name — a full (100%) discount is
+                // shown as a distinct "FREE gift" rather than a plain "-100%" line
+                // discount, since it represents giving an item away, not shaving
+                // money off the bill.
+                const discBadge = isFreeItem
+                    ? '<span style="font-size:9px; background:#dcfce7; color:#166534; border-radius:4px; padding:1px 5px; font-weight:700; white-space:nowrap; flex-shrink:0;"><i class="fas fa-gift"></i> FREE</span>'
+                    : (discPercent > 0
+                        ? '<span style="font-size:9px; background:#fef3c7; color:#92400e; border-radius:4px; padding:1px 5px; font-weight:700; white-space:nowrap; flex-shrink:0;">-' + discPercent + '%</span>'
+                        : '');
 
                 // Editable quantity input (replaces static span)
                 const qtyControl = item.id
@@ -1282,10 +1274,12 @@
                     ? '<button type="button" onclick="removeItem(' + item.id + ')" title="Remove" style="font-size:11px; color:#ef4444; background:none; border:none; cursor:pointer; padding:2px 3px; line-height:1;"><i class="fas fa-trash"></i></button>'
                     : '';
 
-                // Discount toggle button (amber when active, grey when not)
-                const discBtnStyle = discPercent > 0
-                    ? 'background:#fef3c7; color:#92400e; border:1px solid #fde68a;'
-                    : 'background:#f1f5f9; color:#64748b; border:1px solid #e2e8f0;';
+                // Discount toggle button (green when free, amber when partially discounted, grey when not)
+                const discBtnStyle = isFreeItem
+                    ? 'background:#dcfce7; color:#166534; border:1px solid #86efac;'
+                    : (discPercent > 0
+                        ? 'background:#fef3c7; color:#92400e; border:1px solid #fde68a;'
+                        : 'background:#f1f5f9; color:#64748b; border:1px solid #e2e8f0;');
                 const discBtn = item.id
                     ? '<button type="button" onclick="toggleDiscountRow(' + item.id + ')" title="Discount" '
                       + 'style="font-size:9px; ' + discBtnStyle + ' border-radius:5px; padding:2px 6px; cursor:pointer; font-weight:700; line-height:1.3;">% off</button>'
@@ -1335,7 +1329,9 @@
                     + stockLeft
                     + '</div>'
                     + '<div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; min-width:0;">'
-                    + '<p style="font-size:15px; font-weight:800; color:#0f172a; margin:0; white-space:nowrap;">Rs. ' + item.subtotal.toFixed(2) + '</p>'
+                    + (isFreeItem
+                        ? '<p style="font-size:15px; font-weight:800; margin:0; white-space:nowrap;"><span style="text-decoration:line-through; color:#94a3b8; font-size:11px; font-weight:600; margin-right:4px;">Rs. ' + (item.unit_price * item.quantity).toFixed(2) + '</span><span style="color:#16a34a;">FREE</span></p>'
+                        : '<p style="font-size:15px; font-weight:800; color:#0f172a; margin:0; white-space:nowrap;">Rs. ' + item.subtotal.toFixed(2) + '</p>')
                     + '<div style="display:flex; align-items:center; gap:6px;">' + discBtn + removeBtn + '</div>'
                     + '</div>'
                     + '</div>'
@@ -1370,7 +1366,7 @@
         document.getElementById('paymentToggle').style.display      = hasItems ? 'flex' : 'none';
         document.getElementById('paymentSection').style.display     = hasItems ? 'block' : 'none';
         document.getElementById('waiterPayRow').style.display       = hasItems ? 'flex' : 'none';
-        document.getElementById('holdBtn').style.display            = hasItems ? 'block' : 'none';
+        document.getElementById('freeItemToggle').style.display     = (currentOrder && currentOrder.id) ? 'block' : 'none';
         if (!hasItems) setPaymentExpanded(false);
     }
 
@@ -1435,7 +1431,7 @@
         document.getElementById('splitSection').style.display = method === 'split' ? 'block' : 'none';
         if (method !== 'cash') document.getElementById('changeDisplay').textContent = 'Rs. 0.00';
         if (method === 'split') updateSplitTotal();
-        const _payLabels  = { cash: 'Cash', card: 'Card', bank_transfer: 'Bank', split: 'Split' };
+        const _payLabels  = { cash: 'Cash', card: 'Card', bank_transfer: 'Bank', pickme: 'PickMe', uber: 'Uber', split: 'Split' };
         const _paySummary = document.getElementById('paymentMethodSummary');
         if (_paySummary) _paySummary.textContent = (_payLabels[method] || method);
     }
@@ -1480,6 +1476,16 @@
             toast('No items in order', 'error'); return;
         }
 
+        // PickMe/Uber orders are delivery orders with no physical token handed
+        // out at the counter, so they're exempt from the token requirement.
+        const tokenExempt = selectedPaymentMethod === 'pickme' || selectedPaymentMethod === 'uber';
+
+        if (!currentOrder.token_number && !tokenExempt) {
+            toast('Enter the token number before completing the bill', 'error');
+            document.getElementById('tokenNumberInput').focus();
+            return;
+        }
+
         // Reveal payment details so the cashier can confirm method / cash amount
         setPaymentExpanded(true);
 
@@ -1519,7 +1525,10 @@
         const total       = Math.max(0, subtotal - discountVal);
         let amountPaid    = total;
         let paymentData   = {
-            payment_method: selectedPaymentMethod,
+            // "split" is a UI-only concept — the bill was paid via a mix of
+            // methods, which the backend records as payment_method "mixed"
+            // (the split_method*/split_amount* fields below carry the detail).
+            payment_method: selectedPaymentMethod === 'split' ? 'mixed' : selectedPaymentMethod,
             amount_paid:    amountPaid,
             discount_type:  document.getElementById('discountType').value || null,
             discount_value: parseFloat(document.getElementById('discountValue').value) || 0,
@@ -1547,15 +1556,14 @@
         const data = await res.json();
         if (data.success) {
             showPaidBill(data);
-            await loadOpenTokens();       // refreshes open-tokens panel (this token is now closed)
             toast('Payment received!', 'success');
         } else {
-            toast(data.error || 'Payment failed', 'error');
+            toast(data.message || 'Payment failed', 'error');
         }
     }
 
     function showPaidBill(d) {
-        const methodLabel = { cash:'Cash', card:'Card', bank_transfer:'Bank Transfer', mixed:'Mixed' };
+        const methodLabel = { cash:'Cash', card:'Card', bank_transfer:'Bank Transfer', mixed:'Mixed', pickme:'PickMe', uber:'Uber' };
         const now = new Date();
         const dateStr = now.toLocaleDateString('en-GB') + ', ' + now.toLocaleTimeString('en-GB');
 
@@ -1566,12 +1574,16 @@
         const CO_ADDRESS = '#9, Galle Road, Dehiwala';
 
         const itemRows = d.items.map(function(i) {
-            const discLabel = i.discount_percent > 0 ? ' (-' + i.discount_percent + '%)' : '';
+            const isFreeItem = (i.discount_percent || 0) >= 100;
+            const discLabel = isFreeItem ? ' (FREE GIFT)' : (i.discount_percent > 0 ? ' (-' + i.discount_percent + '%)' : '');
+            const amountCell = isFreeItem
+                ? '<span style="text-decoration:line-through;">Rs.' + (i.unit_price * i.quantity).toFixed(2) + '</span> <strong>FREE</strong>'
+                : 'Rs.' + i.subtotal.toFixed(2);
             return '<tr>'
                 + '<td style="padding:3px 0; vertical-align:top; width:62%;">' + escapeHtml(i.product_name)
                 + '<br><span style="font-size:10px;">1 x Rs.' + i.unit_price.toFixed(2) + discLabel + '</span></td>'
                 + '<td style="text-align:center; padding:3px 0; vertical-align:top; width:10%;">' + i.quantity + '</td>'
-                + '<td style="text-align:right; padding:3px 0; vertical-align:top; width:28%;">Rs.' + i.subtotal.toFixed(2) + '</td>'
+                + '<td style="text-align:right; padding:3px 0; vertical-align:top; width:28%;">' + amountCell + '</td>'
                 + '</tr>';
         }).join('');
 
@@ -1590,7 +1602,7 @@
             + '<div style="text-align:center; font-size:13px; letter-spacing:3px; color:#000; margin-bottom:5px;">RECEIPT</div>'
             + '<table width="100%" cellspacing="0" cellpadding="2" style="font-size:11px; color:#000; width:100%; table-layout:fixed;">'
             + '<tr><td style="width:35%;">Order</td><td style="text-align:right; width:65%; word-break:break-all;">' + d.order_number + '</td></tr>'
-            + '<tr><td>Token</td><td style="text-align:right;">#' + String(d.token_number).padStart(2, '0') + '</td></tr>'
+            + (d.token_number ? '<tr><td>Token</td><td style="text-align:right;">#' + String(d.token_number).padStart(2, '0') + '</td></tr>' : '')
             + (d.customer_name  ? '<tr><td>Customer</td><td style="text-align:right;">' + escapeHtml(d.customer_name) + '</td></tr>' : '')
             + (d.customer_phone ? '<tr><td>Phone</td><td style="text-align:right;">' + d.customer_phone + '</td></tr>' : '')
             + '<tr><td>Date</td><td style="text-align:right;">' + dateStr + '</td></tr>'
@@ -1624,96 +1636,37 @@
             + '<div style="text-align:center; font-size:11px; margin-top:8px; color:#000; border-top:1px dashed #000; padding-top:6px;">Thank you for dining with us!<br>We look forward to seeing you again.<br>Powered By JAAN Network (PVT) Ltd</div>';
 
         currentBillContent = html;
+
+        // One "Pay" action produces two printouts: the KOT for the kitchen
+        // (only if there are actual kitchen items on this bill) and the bill
+        // for the customer.
+        if (Array.isArray(d.kot_items) && d.kot_items.length > 0) {
+            printReceipt(buildTokenHtml({
+                token_number: d.token_number,
+                order_number: d.order_number,
+                payment_method: d.payment_method,
+                items: d.kot_items,
+            }));
+        }
         printReceipt(html);
         resetOrder();
     }
 
     // ═══════════════════════════════════════════
-    // TOKEN (kitchen ticket)
+    // TOKEN (kitchen ticket) — built and printed automatically as part of
+    // Pay (see showPaidBill()); there's no standalone print action anymore.
     // ═══════════════════════════════════════════
 
-    async function printToken() {
-        if (!currentOrder || !currentOrder.id) { toast('No active order', 'error'); return; }
-        const res  = await fetch('{{ route("pos.order.token", ":id") }}'.replace(':id', currentOrder.id), {
-            method: 'POST',
-            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
-        });
-        const data = await res.json();
-
-        if (!data.success) {
-            toast(data.message || 'Token already printed', 'warning');
-            return;
-        }
-
-        if (!data.items || !Array.isArray(data.items)) {
-            toast('No items to print', 'warning');
-            return;
-        }
-
-        // Update local stock cache for finished goods (so POS reflects new quantities)
-        if (Array.isArray(data.product_changes) && data.product_changes.length > 0) {
-            data.product_changes.forEach(function(ch) {
-                if (ch.product_id && stockCache.hasOwnProperty(ch.product_id)) {
-                    stockCache[ch.product_id] = Math.max(0, (stockCache[ch.product_id] || 0) - ch.quantity);
-                }
-            });
-            renderProducts();
-        }
-
-        printReceipt(buildTokenHtml(data));
-    }
-
-    async function printTokenForOrder(orderId) {
-        const res  = await fetch('{{ route("pos.order.token", ":id") }}'.replace(':id', orderId), {
-            method: 'POST',
-            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
-        });
-        const data = await res.json();
-
-        if (!data.success) {
-            toast(data.message || 'Token already printed', 'warning');
-            return;
-        }
-
-        if (!data.items || !Array.isArray(data.items)) {
-            toast('No new items to print', 'warning');
-            return;
-        }
-
-        // Update local stock cache for finished goods when printing from the open-tokens list
-        if (Array.isArray(data.product_changes) && data.product_changes.length > 0) {
-            data.product_changes.forEach(function(ch) {
-                if (ch.product_id && stockCache.hasOwnProperty(ch.product_id)) {
-                    stockCache[ch.product_id] = Math.max(0, (stockCache[ch.product_id] || 0) - ch.quantity);
-                }
-            });
-            renderProducts();
-        }
-
-        document.getElementById('tokenNumberDisplay').textContent = 'Token #' + String(data.token_number).padStart(2, '0');
-        document.getElementById('tokenOrderNumber').textContent = 'Order #' + data.order_number;
-        renderTokenItems(data.items);
-        currentTokenContent = buildTokenHtml(data);
-        openModal('tokenModal');
-    }
-
-    function renderTokenItems(items) {
-        document.getElementById('tokenItems').innerHTML = items.map(function(item) {
-            return '<div style="display:flex; justify-content:space-between; align-items:flex-start; padding:8px 0; border-bottom:1px dashed #e2e8f0;">'
-                + '<div>'
-                + '<p style="font-size:14px; font-weight:800; margin:0; color:#0f172a;">' + escapeHtml(item.product_name) + '</p>'
-                + (item.kitchen_notes ? '<p style="font-size:11px; color:#f59e0b; margin:3px 0 0;"><i class="fas fa-note-sticky" style="margin-right:3px;"></i>' + escapeHtml(item.kitchen_notes) + '</p>' : '')
-                + '</div>'
-                + '<span style="font-size:18px; font-weight:900; color:#2563eb; margin-left:12px;">×' + item.quantity + '</span>'
-                + '</div>';
-        }).join('');
-    }
-
     function buildTokenHtml(data) {
+        const deliveryLabels = { pickme: 'PICKME DELIVERY', uber: 'UBER DELIVERY' };
+        const heading = data.token_number
+            ? '#' + String(data.token_number).padStart(2, '0')
+            : (deliveryLabels[data.payment_method] || 'NO TOKEN');
+
         return '<div style="text-align:center;">'
             + '<img src="/images/KDJ_logo.png" style="max-width:70px; max-height:70px; margin-bottom:4px; display:inline-block;" />'
             + '</div>'
-            + '<div style="text-align:center; font-weight:900; font-size:32px; border-bottom:2px solid #000; padding-bottom:8px; margin-bottom:10px; color:#000;">#' + String(data.token_number).padStart(2, '0') + '</div>'
+            + '<div style="text-align:center; font-weight:900; font-size:' + (data.token_number ? '32px' : '20px') + '; border-bottom:2px solid #000; padding-bottom:8px; margin-bottom:10px; color:#000;">' + heading + '</div>'
             + '<div style="font-size:13px; font-weight:800; color:#000;">Order: ' + data.order_number + '</div>'
             + '<div style="font-size:10px; color:#000; margin-bottom:10px;">' + new Date().toLocaleString() + '</div>'
             + '<div style="border-top:1px solid #000; padding-top:10px;">'
@@ -1727,96 +1680,90 @@
             + '</div>';
     }
 
-    function printTokenContent() {
-        printReceipt(currentTokenContent);
-        closeModal('tokenModal');
-    }
-
     function printBillContent() {
         printReceipt(currentBillContent);
     }
 
     // ═══════════════════════════════════════════
-    // HELD ORDERS
+    // FREE ITEM (discount as a gift, not a bill reduction)
     // ═══════════════════════════════════════════
 
-    async function holdCurrentOrder() {
+    function openFreeItemModal() {
         if (!currentOrder || !currentOrder.id) return;
-        await fetch('{{ route("pos.order.hold", ":id") }}'.replace(':id', currentOrder.id), {
-            method: 'POST',
-            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
-        });
-        toast('Order held');
-        resetOrder();
-        await loadOpenTokens();
-        loadHeldOrders(true);
+
+        const select = document.getElementById('freeItemProduct');
+        select.innerHTML = '<option value="">Select an item…</option>' + allProducts.map(function(p) {
+            return '<option value="' + p.id + '" data-name="' + escapeHtml(p.name) + '">' + escapeHtml(p.name) + ' (Rs. ' + p.price.toFixed(2) + ')</option>';
+        }).join('');
+        document.getElementById('freeItemQty').value = 1;
+
+        openModal('freeItemModal');
     }
 
-    async function loadHeldOrders(showModal = false) {
-        try {
-            const res    = await fetch('{{ route("pos.held") }}');
-            if (!res.ok) { toast('Failed to load held orders', 'error'); return; }
-            const orders = await res.json();
-            const badge  = document.getElementById('heldCount');
-            badge.textContent = orders.length;
-            badge.style.background = orders.length > 0 ? '#f59e0b' : '#94a3b8';
+    async function submitFreeItem() {
+        const select = document.getElementById('freeItemProduct');
+        const productId = parseInt(select.value);
+        const qty = Math.max(1, parseInt(document.getElementById('freeItemQty').value) || 1);
 
-            const list = document.getElementById('heldOrdersList');
-            if (orders.length === 0) {
-                list.innerHTML = '<p style="text-align:center; color:#94a3b8; padding:32px 0; font-size:13px;">No held orders</p>';
-            } else {
-                list.innerHTML = orders.map(function(o) {
-                    return '<div onclick="resumeOrder(' + o.id + ')" '
-                        + 'style="padding:14px; border:1.5px solid #e2e8f0; border-radius:12px; cursor:pointer; transition:all 0.15s; background:#fff;" '
-                        + 'onmouseover="this.style.borderColor=\'#2563eb\'; this.style.background=\'#eff6ff\';" '
-                        + 'onmouseout="this.style.borderColor=\'#e2e8f0\'; this.style.background=\'#fff\';">'
-                        + '<div style="display:flex; justify-content:space-between; align-items:flex-start;">'
-                        + '<div>'
-                        + '<p style="font-size:13px; font-weight:800; color:#0f172a; margin:0;">' + o.order_number + '</p>'
-                        + '<p style="font-size:12px; color:#64748b; margin:3px 0 0;">Token #' + String(o.token_number).padStart(2, '0') + ' &nbsp;&middot;&nbsp; ' + o.items_count + ' item' + (o.items_count !== 1 ? 's' : '') + '</p>'
-                        + '</div>'
-                        + '<span style="font-size:14px; font-weight:900; color:#2563eb;">Rs. ' + o.total.toFixed(2) + '</span>'
-                        + '</div></div>';
-                }).join('');
+        if (!productId) {
+            toast('Select an item to give for free', 'error');
+            return;
+        }
+        if (!currentOrder || !currentOrder.id) return;
+
+        try {
+            const res = await fetch('{{ route("pos.item.add", ":id") }}'.replace(':id', currentOrder.id), {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ product_id: productId, quantity: qty, is_free: true })
+            });
+            const data = await res.json();
+            if (!data.success) {
+                toast(data.message || 'Failed to add free item', 'error');
+                return;
             }
-            if (showModal) {
-                openModal('heldOrdersModal');
-            }
+
+            closeModal('freeItemModal');
+            await syncOrder();
+            renderBill();
+            const name = select.options[select.selectedIndex].dataset.name || 'Item';
+            toast(name + ' added as a free item', 'success');
         } catch (e) {
-            console.error('Load held orders error:', e);
-            toast('Error loading held orders', 'error');
+            console.error('Add free item error:', e);
+            toast('Failed to add free item', 'error');
         }
     }
 
-    async function resumeOrder(orderId) {
-        const res    = await fetch('{{ route("pos.order.show", ":id") }}'.replace(':id', orderId));
-        currentOrder = await res.json();
-        renderOrderHeader();
-        renderBill();
-        closeModal('heldOrdersModal');
-        await loadOpenTokens();
-        toast('Order resumed');
+    function closeCurrentOrder() {
+        if (!currentOrder || !currentOrder.id) return;
+        document.getElementById('discardReasonInput').value = '';
+        openModal('discardReasonModal');
     }
 
-    async function closeCurrentOrder() {
+    async function submitDiscardOrder() {
         if (!currentOrder || !currentOrder.id) return;
-        if (currentOrder.items && currentOrder.items.length > 0) {
-            if (!confirm('This order has items. Cancel anyway and discard all items?')) return;
+
+        const reason = document.getElementById('discardReasonInput').value.trim();
+        if (!reason) {
+            toast('Please enter a reason for discarding this bill', 'error');
+            return;
         }
 
         // Call backend to cancel the order
         try {
             const res = await fetch('{{ route("pos.order.cancel", ":id") }}'.replace(':id', currentOrder.id), {
                 method: 'POST',
-                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ reason: reason })
             });
-            if (!res.ok) {
-                toast('Failed to cancel order', 'error');
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                toast(data.message || 'Failed to discard bill', 'error');
                 return;
             }
         } catch (e) {
-            console.error('Close order error:', e);
-            toast('Error cancelling order', 'error');
+            console.error('Discard order error:', e);
+            toast('Error discarding bill', 'error');
             return;
         }
 
@@ -1828,10 +1775,10 @@
                 }
             });
         }
+        closeModal('discardReasonModal');
         resetOrder();
         renderProducts();
-        await loadOpenTokens();
-        toast('Order cancelled', 'success');
+        toast('Bill discarded', 'success');
     }
 
     // ═══════════════════════════════════════════
@@ -1849,10 +1796,11 @@
         document.getElementById('customerInfoToggle').style.display     = 'none';
         document.getElementById('customerInfoSection').style.display    = 'none';
         document.getElementById('activeOrderBanner').style.display      = 'none';
+        document.getElementById('tokenNumberRow').style.display         = 'none';
+        document.getElementById('tokenNumberInput').value               = '';
         document.getElementById('paymentToggle').style.display          = 'none';
         document.getElementById('paymentSection').style.display         = 'none';
         document.getElementById('waiterPayRow').style.display           = 'none';
-        document.getElementById('holdBtn').style.display                = 'none';
         setPaymentExpanded(false);
         const _paySummary = document.getElementById('paymentMethodSummary');
         if (_paySummary) _paySummary.textContent = 'Cash';
@@ -1870,7 +1818,6 @@
             b.classList.toggle('active', b.dataset.method === 'cash');
         });
         document.getElementById('cashSection').style.display = 'flex';
-        document.querySelectorAll('.table-card.selected').forEach(function(c) { c.classList.remove('selected'); });
     }
 
     function printReceipt(html) {

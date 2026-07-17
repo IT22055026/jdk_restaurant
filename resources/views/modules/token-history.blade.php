@@ -233,7 +233,7 @@
                     <div style="font-size: 24px; font-weight: 900; color: #2563eb; border: 3px solid #2563eb; display: inline-block; padding: 4px 15px; margin-bottom: 10px; border-radius: 8px; letter-spacing: 2px;">RE-PRINT</div>
                     <div style="font-weight: 900; font-size: 16px; color:#000;">${title}</div>
                     <div style="font-size: 13px; font-weight: 800; color:#000; margin-top: 5px;">Order: ${data.order_number}</div>
-                    <div style="font-size: 32px; font-weight: 900; margin:4px 0; color:#000;">#${String(data.token_number).padStart(2, '0')}</div>
+                    <div style="font-size: 32px; font-weight: 900; margin:4px 0; color:#000;">${data.token_number ? '#' + String(data.token_number).padStart(2, '0') : 'No token'}</div>
                     <div style="font-size: 10px; color:#000;">Original: ${data.date_time}</div>
                 </div>
                 <div style="border-bottom: 1px solid #000; padding-bottom: 10px;">

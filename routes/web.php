@@ -18,6 +18,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\QrMenuController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ShiftController;
+use App\Http\Controllers\OfferController;
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
@@ -35,7 +36,7 @@ Route::get('/login', [LoginController::class, 'show'])->name('login');
 Route::post('/login', [LoginController::class, 'store']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'module.access'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // QR Menu Management (Admin)
@@ -93,17 +94,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/pos/order/{order}/item', [PosController::class, 'addItem'])->name('pos.item.add');
     Route::delete('/pos/order/{order}/item/{item}', [PosController::class, 'removeItem'])->name('pos.item.remove');
     Route::put('/pos/order/{order}/item/{item}', [PosController::class, 'updateItem'])->name('pos.item.update');
-    Route::post('/pos/order/{order}/hold', [PosController::class, 'holdOrder'])->name('pos.order.hold');
     Route::post('/pos/order/{order}/complete', [PosController::class, 'completeOrder'])->name('pos.order.complete');
-    Route::post('/pos/order/{order}/token', [PosController::class, 'printToken'])->name('pos.order.token');
     Route::post('/pos/order/{order}/customer', [PosController::class, 'updateCustomer'])->name('pos.order.customer');
+    Route::post('/pos/order/{order}/token-number', [PosController::class, 'updateToken'])->name('pos.order.token_number');
+    Route::get('/pos/offers', [PosController::class, 'getActiveOffers'])->name('pos.offers');
+    Route::post('/pos/order/{order}/offer', [PosController::class, 'addOffer'])->name('pos.offer.add');
     Route::post('/pos/order/{order}/waiter-bill', [PosController::class, 'printWaiterBill'])->name('pos.order.waiter_bill');
     Route::post('/pos/order/{order}/live-bill', [PosController::class, 'toggleLiveBill'])->name('pos.order.live_bill');
     Route::post('/pos/order/{order}/cancel', [PosController::class, 'cancelOrder'])->name('pos.order.cancel');
-    Route::get('/pos/tokens', [PosController::class, 'getOpenTokens'])->name('pos.tokens');
-    Route::get('/pos/order/by-token/{tokenNumber}', [PosController::class, 'findOrderByToken'])->name('pos.order.by_token');
     Route::get('/pos/products', [PosController::class, 'getProducts'])->name('pos.products');
-    Route::get('/pos/held-orders', [PosController::class, 'getHeldOrders'])->name('pos.held');
     Route::post('/pos/order/{order}/pay', [PosController::class, 'payOrder'])->name('pos.order.pay');
 
     // Order & Token History routes
@@ -114,13 +113,20 @@ Route::middleware('auth')->group(function () {
     Route::get('/pos/order/{order}/receipt/reprint', [PosController::class, 'reprintReceipt'])->name('pos.receipt.reprint');
     Route::get('/pos/order/{order}/token/reprint', [PosController::class, 'reprintToken'])->name('pos.token.reprint');
 
+    // Sales report (every bill and what happened to it, with revoke)
+    Route::get('/sales-report', [PosController::class, 'salesReport'])->name('sales-report.index');
+    Route::get('/api/sales-report', [PosController::class, 'getSalesReport'])->name('api.sales-report');
+    Route::post('/pos/order/{order}/revoke', [PosController::class, 'revokeOrder'])->name('pos.order.revoke');
+
+    // Discounts & Offers CRUD
+    Route::resource('offers', OfferController::class)->except(['show']);
+
     // Stock adjustments
     Route::get('/inventory/adjustments', [StockAdjustmentController::class, 'index'])->name('stock.adjustments.index');
     Route::get('/inventory/adjustments/create', [StockAdjustmentController::class, 'create'])->name('stock.adjustments.create');
     Route::post('/inventory/adjustments', [StockAdjustmentController::class, 'store'])->name('stock.adjustments.store');
 
     Route::get('/reports', [ReportsController::class, 'index'])->name('reports.index');
-    Route::get('/reports/sales', [ReportsController::class, 'salesReport'])->name('reports.sales');
     Route::get('/reports/export/sales-pdf', [ReportsController::class, 'exportSalesPdf'])->name('reports.export.sales');
     Route::get('/reports/export/sales-range-pdf', [ReportsController::class, 'exportSalesRangePdf'])->name('reports.export.sales.range');
     Route::get('/reports/payment-breakdown', [ReportsController::class, 'paymentBreakdownJson'])->name('reports.payment.breakdown');

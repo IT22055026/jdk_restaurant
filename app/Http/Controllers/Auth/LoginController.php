@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
@@ -22,7 +23,17 @@ class LoginController extends Controller
         ]);
 
         if (Auth::attempt($validated, $request->boolean('remember'))) {
-            return redirect()->intended(route('dashboard'));
+            $user = Auth::user();
+            $firstModule = $user->role?->modules()->first();
+            $landingRoute = ($firstModule && Route::has($firstModule->route))
+                ? route($firstModule->route)
+                : route('dashboard');
+
+            // Deliberately not using redirect()->intended() here: a role's
+            // landing page must be deterministic (e.g. Cashier always lands on
+            // POS), not wherever the browser happened to be pointed at before
+            // the session expired — which could be a page this role can't see.
+            return redirect()->to($landingRoute);
         }
 
         throw ValidationException::withMessages([

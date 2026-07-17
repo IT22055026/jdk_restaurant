@@ -27,6 +27,16 @@ class IngredientStockService
         foreach ($itemDeltas as $entry) {
             $item = $entry['item'];
             $delta = $entry['delta'];
+
+            // Included items bundled directly into an offer (no product in between —
+            // see PosController::addOffer()) deduct at the offer's per-unit rate
+            // (offer_component_qty), skipping the recipe lookup below.
+            if ($item->ingredient_id && $delta > 0) {
+                $qty = (float) ($item->offer_component_qty ?? 1) * $delta;
+                $required[$item->ingredient_id] = ($required[$item->ingredient_id] ?? 0) + $qty;
+                continue;
+            }
+
             $product = $item->product;
 
             if (!$product || $product->is_unlimited_stock || $product->is_finished_good || $delta <= 0) {
@@ -81,6 +91,26 @@ class IngredientStockService
         foreach ($itemDeltas as $entry) {
             $item = $entry['item'];
             $delta = $entry['delta'];
+
+            if ($item->ingredient_id && $delta > 0) {
+                $qty = (float) ($item->offer_component_qty ?? 1) * $delta;
+                $lockedIngredients[$item->ingredient_id]->decrement('quantity', $qty);
+
+                IngredientStockMovement::create([
+                    'ingredient_id' => $item->ingredient_id,
+                    'change_type' => 'decrease',
+                    'quantity' => $qty,
+                    'reason' => 'Offer component (token printed)',
+                    'source' => 'token',
+                    'reference_type' => OrderItem::class,
+                    'reference_id' => $item->id,
+                    'user_id' => $userId,
+                ]);
+
+                $applied[$item->ingredient_id] = ($applied[$item->ingredient_id] ?? 0) + $qty;
+                continue;
+            }
+
             $product = $item->product;
 
             if (!$product || $product->is_unlimited_stock || $product->is_finished_good || $delta <= 0) {

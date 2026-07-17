@@ -4,14 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\InsufficientStockException;
 use App\Models\Category;
+use App\Models\Ingredient;
+use App\Models\IngredientStockMovement;
+use App\Models\Offer;
 use App\Models\Product;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Shift;
 use App\Models\ShiftTransaction;
+use App\Models\StockMovement;
 use App\Services\IngredientStockService;
 use App\Services\ProductStockService;
-use App\Services\TokenNumberService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -34,42 +37,6 @@ class PosController extends Controller
             'modules' => $modules,
             'activeShift' => $activeShift,
         ]);
-    }
-
-    public function getOpenTokens()
-    {
-        $orders = Order::whereIn('status', ['pending', 'confirmed', 'hold'])
-            ->with('items')
-            ->orderByDesc('created_at')
-            ->get();
-
-        return response()->json($orders->map(fn($order) => [
-            'id' => $order->id,
-            'token_number' => $order->token_number,
-            'token_date' => $order->token_date?->toDateString(),
-            'status' => $order->status,
-            'customer_name' => $order->customer_name,
-            'items_count' => $order->items->count(),
-            'total' => (float) $order->total,
-            'created_at' => $order->created_at->toIso8601String(),
-        ]));
-    }
-
-    public function findOrderByToken(Request $request, int $tokenNumber)
-    {
-        $order = Order::where('token_number', $tokenNumber)
-            ->where('token_date', now()->toDateString())
-            ->whereIn('status', ['pending', 'confirmed', 'hold'])
-            ->first();
-
-        if (!$order) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No open order with that token today',
-            ], 404);
-        }
-
-        return response()->json(['success' => true, 'order_id' => $order->id]);
     }
 
     public function getProducts(Request $request)
@@ -125,12 +92,8 @@ class PosController extends Controller
             'waiter_name' => 'nullable|string',
         ]);
 
-        $token = app(TokenNumberService::class)->next();
-
         $order = Order::create([
             'order_number' => (string) Str::uuid(), // temp unique placeholder, replaced below once the id is known
-            'token_date' => $token['date'],
-            'token_number' => $token['number'],
             'customer_id' => $validated['customer_id'] ?? null,
             'customer_name' => $validated['customer_name'] ?? null,
             'customer_phone' => $validated['customer_phone'] ?? null,
@@ -147,6 +110,37 @@ class PosController extends Controller
             'order_id' => $order->id,
             'order_number' => $order->order_number,
             'token_number' => $order->token_number,
+        ]);
+    }
+
+    public function updateToken(Request $request, Order $order)
+    {
+        $validated = $request->validate([
+            'token_number' => 'required|integer|min:1',
+        ]);
+
+        $tokenDate = $order->token_date ?? now()->toDateString();
+
+        $duplicate = Order::whereDate('token_date', $tokenDate)
+            ->where('token_number', $validated['token_number'])
+            ->where('id', '!=', $order->id)
+            ->exists();
+
+        if ($duplicate) {
+            return response()->json([
+                'success' => false,
+                'message' => "Token #{$validated['token_number']} is already in use today",
+            ], 422);
+        }
+
+        $order->update([
+            'token_date' => $tokenDate,
+            'token_number' => $validated['token_number'],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'token_number' => $order->token_number,
             'token_date' => $order->token_date->toDateString(),
         ]);
     }
@@ -155,10 +149,14 @@ class PosController extends Controller
     {
         $order->load('items.product', 'customer');
 
-        $itemsData = $order->items->map(function ($item) {
+        // Component lines (the individual products/ingredients an offer bundles)
+        // are hidden here — the cashier only needs to see the one offer billing
+        // line. They still exist for printToken()/stock deduction purposes.
+        $itemsData = $order->items->where('is_offer_component', false)->values()->map(function ($item) {
             return [
                 'id' => $item->id,
                 'product_id' => $item->product_id,
+                'offer_id' => $item->offer_id,
                 'product_name' => $item->product_name,
                 'unit_price' => (float) $item->unit_price,
                 'quantity' => $item->quantity,
@@ -196,20 +194,34 @@ class PosController extends Controller
             'quantity' => 'required|integer|min:1',
             'kitchen_notes' => 'nullable|string',
             'is_bar_item' => 'nullable|boolean',
+            'is_free' => 'nullable|boolean',
         ]);
 
         $product = Product::find($validated['product_id']);
         $price = $product->selling_price ?? $product->price;
 
-        // Find any existing item for this product in the order
+        // Given away as a discount (e.g. a free sauce cup) rather than a normal
+        // sale: the item still goes to the kitchen and deducts stock like any
+        // other line, but is 100% off so it shows as FREE on the bill and
+        // contributes nothing to the total, instead of shaving money off the
+        // order the way a percentage/fixed discount would.
+        $isFree = $validated['is_free'] ?? false;
+
+        // Find any existing item for this product in the order (excluding hidden
+        // offer-component rows, which must stay tied to their offer's quantity).
+        // A free-item add only merges into an existing free line for the same
+        // product — it must never silently merge into (and lose the discount
+        // of) an already-paid line, or vice versa.
         $existingItem = OrderItem::where('order_id', $order->id)
             ->where('product_id', $product->id)
+            ->whereNull('offer_id')
+            ->when($isFree, fn($q) => $q->where('discount_percent', 100))
             ->first();
 
         if ($existingItem) {
             // If item exists, increase the quantity
             $existingItem->quantity += $validated['quantity'];
-            $existingItem->subtotal = $existingItem->unit_price * $existingItem->quantity;
+            $existingItem->subtotal = $existingItem->unit_price * $existingItem->quantity * (1 - $existingItem->discount_percent / 100);
             $existingItem->save();
             $item = $existingItem;
         } else {
@@ -220,7 +232,8 @@ class PosController extends Controller
                 'product_name' => $product->name,
                 'unit_price' => $price,
                 'quantity' => $validated['quantity'],
-                'subtotal' => $price * $validated['quantity'],
+                'discount_percent' => $isFree ? 100 : 0,
+                'subtotal' => $isFree ? 0 : $price * $validated['quantity'],
                 'kitchen_notes' => $validated['kitchen_notes'] ?? null,
                 'is_bar_item' => $validated['is_bar_item'] ?? false,
                 'kot_printed' => false,
@@ -245,7 +258,14 @@ class PosController extends Controller
         // Nothing to restore: ingredient stock is only committed once the item is
         // confirmed to the kitchen via printToken(), and removing an already-printed
         // item doesn't un-cook it.
-        $item->delete();
+        if ($item->offer_id && !$item->is_offer_component) {
+            // This is an offer's visible billing line — remove it and every hidden
+            // product/ingredient component line that came bundled with it.
+            OrderItem::where('order_id', $order->id)->where('offer_id', $item->offer_id)->delete();
+        } else {
+            $item->delete();
+        }
+
         $this->updateOrderTotals($order);
 
         return response()->json(['success' => true, 'message' => 'Item removed']);
@@ -272,19 +292,29 @@ class PosController extends Controller
             'kitchen_notes' => $validated['kitchen_notes'] ?? $item->kitchen_notes,
         ]);
 
+        if ($item->offer_id && !$item->is_offer_component) {
+            // Keep every hidden component line (one unit per linked product/ingredient
+            // per offer) in lockstep with the billing line's quantity.
+            OrderItem::where('order_id', $order->id)
+                ->where('offer_id', $item->offer_id)
+                ->where('is_offer_component', true)
+                ->update(['quantity' => $validated['quantity'], 'subtotal' => 0]);
+        }
+
         $this->updateOrderTotals($order);
 
         return response()->json(['success' => true, 'message' => 'Item updated']);
     }
 
-    public function holdOrder(Order $order)
-    {
-        $order->update(['status' => 'hold']);
-        return response()->json(['success' => true, 'message' => 'Order held']);
-    }
-
     public function completeOrder(Request $request, Order $order)
     {
+        if (!$order->token_number) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Enter the token number before completing the bill',
+            ], 422);
+        }
+
         $validated = $request->validate([
             'discount_type' => 'nullable|in:percentage,fixed',
             'discount_value' => 'nullable|numeric|min:0',
@@ -320,7 +350,7 @@ class PosController extends Controller
             'subtotal' => (float) $subtotal,
             'discount_amount' => (float) $discount,
             'total' => (float) $total,
-            'items' => $order->items->map(fn($item) => [
+            'items' => $order->items->where('is_offer_component', false)->values()->map(fn($item) => [
                 'product_name' => $item->product_name,
                 'quantity' => $item->quantity,
                 'unit_price' => (float) $item->unit_price,
@@ -330,110 +360,227 @@ class PosController extends Controller
         ]);
     }
 
-    public function printToken(Order $order)
+    public function getActiveOffers()
     {
-        $order->load('items.product.ingredients');
+        $offers = Offer::where('is_active', true)->with('ingredients')->get();
 
-        // Get kitchen items (not bar items) that have quantity > printed_qty
-        $printableItems = $order->items
-            ->where('is_bar_item', false)
-            ->filter(function ($item) {
-                return $item->quantity > $item->printed_qty;
-            })
-            ->values();
-
-        if ($printableItems->isEmpty()) {
-            // If the order already has kitchen items printed but kot_printed_at is missing, fix it now
-            if (!$order->kot_printed_at && $order->items->where('is_bar_item', false)->count() > 0) {
-                $order->update(['kot_printed_at' => now()]);
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Token already printed, history record updated.',
-                    'order_number' => $order->order_number,
-                    'token_number' => $order->token_number,
-                    'items' => []
-                ]);
-            }
-
-            return response()->json([
-                'success' => false,
-                'message' => 'No new items to print. All items already sent to kitchen.',
-                'order_number' => $order->order_number,
-                'token_number' => $order->token_number,
-            ], 422);
-        }
-
-        // Deduct stock for the delta being newly confirmed to the kitchen. Finished
-        // goods (e.g. bottled drinks) deduct their own quantity; recipe-tracked dishes
-        // deduct ingredients instead. Both run inside one transaction so a shortfall in
-        // either never leaves the other half-deducted.
-        $itemDeltas = $printableItems->map(function ($item) {
-            return ['item' => $item, 'delta' => $item->quantity - $item->printed_qty];
-        })->all();
-
-        $userId = $this->currentUser()->id;
-
-        try {
-            $productChanges = [];
-            $ingredientChanges = [];
-            DB::transaction(function () use ($itemDeltas, $userId, &$productChanges, &$ingredientChanges) {
-                $productChanges = app(ProductStockService::class)->deductForToken($itemDeltas, $userId);
-                $ingredientChanges = app(IngredientStockService::class)->deductForToken($itemDeltas, $userId);
-            });
-        } catch (InsufficientStockException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-                'order_number' => $order->order_number,
-                'token_number' => $order->token_number,
-            ], 422);
-        }
-
-        // Prepare items to print and update printed_qty
-        $itemsToPrint = [];
-        foreach ($printableItems as $item) {
-            $qtyToPrint = $item->quantity - $item->printed_qty;
-
-            $itemsToPrint[] = [
-                'product_id' => $item->product_id,
-                'is_finished_good' => $item->product?->is_finished_good ? true : false,
-                'product_name' => $item->product_name,
-                'quantity' => $qtyToPrint,
-                'kitchen_notes' => $item->kitchen_notes,
-            ];
-
-            // Mark as printed and update printed_qty
-            $item->update([
-                'kot_printed' => true,
-                'printed_qty' => $item->quantity,
-                'updated_at' => now(),
-            ]);
-        }
-
-        $order->update(['kot_printed_at' => now()]);
-
-        return response()->json([
-            'success' => true,
-            'order_number' => $order->order_number,
-            'token_number' => $order->token_number,
-            'token_date' => $order->token_date?->toDateString(),
-            'items' => $itemsToPrint,
-            'product_changes' => $productChanges ?? [],
-            'ingredient_changes' => $ingredientChanges ?? [],
-        ]);
+        return response()->json($offers->map(fn($offer) => [
+            'id' => $offer->id,
+            'name' => $offer->name,
+            'description' => $offer->description,
+            'image' => $offer->image,
+            'price' => (float) $offer->price,
+            'includes' => $offer->ingredients->pluck('name')->values(),
+        ]));
     }
 
-    public function getHeldOrders()
+    public function addOffer(Request $request, Order $order)
     {
-        $orders = Order::where('status', 'hold')->with('items')->latest()->get();
+        $validated = $request->validate([
+            'offer_id' => 'required|exists:offers,id',
+            'quantity' => 'nullable|integer|min:1',
+        ]);
+
+        $quantity = $validated['quantity'] ?? 1;
+
+        $billingLine = OrderItem::where('order_id', $order->id)
+            ->where('offer_id', $validated['offer_id'])
+            ->where('is_offer_component', false)
+            ->first();
+
+        if ($billingLine) {
+            $newQuantity = $billingLine->quantity + $quantity;
+            $billingLine->update([
+                'quantity' => $newQuantity,
+                'subtotal' => $billingLine->unit_price * $newQuantity,
+            ]);
+
+            OrderItem::where('order_id', $order->id)
+                ->where('offer_id', $validated['offer_id'])
+                ->where('is_offer_component', true)
+                ->update(['quantity' => $newQuantity]);
+        } else {
+            $offer = Offer::with('ingredients')->findOrFail($validated['offer_id']);
+
+            OrderItem::create([
+                'order_id' => $order->id,
+                'offer_id' => $offer->id,
+                'product_name' => $offer->name,
+                'unit_price' => $offer->price,
+                'quantity' => $quantity,
+                'subtotal' => $offer->price * $quantity,
+                'is_bar_item' => true, // keeps the billing line off the kitchen ticket
+                'is_offer_component' => false,
+            ]);
+
+            foreach ($offer->ingredients as $ingredient) {
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'offer_id' => $offer->id,
+                    'ingredient_id' => $ingredient->id,
+                    'product_name' => $ingredient->name,
+                    'unit_price' => 0,
+                    'quantity' => $quantity,
+                    'subtotal' => 0,
+                    'is_bar_item' => false,
+                    'is_offer_component' => true,
+                    // Snapshot the offer's per-unit amount now, so later edits to the
+                    // offer's recipe don't retroactively change this already-placed order.
+                    'offer_component_qty' => $ingredient->pivot->quantity,
+                ]);
+            }
+        }
+
+        $this->updateOrderTotals($order);
+
+        return response()->json(['success' => true, 'message' => 'Offer added to order']);
+    }
+
+    public function salesReport()
+    {
+        $modules = $this->currentUser()->role->modules()->get();
+        return view('modules.sales-report', ['modules' => $modules]);
+    }
+
+    public function getSalesReport(Request $request)
+    {
+        $query = Order::with('discardedBy', 'items')
+            ->orderBy('created_at', 'desc');
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('order_number', 'like', "%{$search}%")
+                    ->orWhere('customer_name', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->input('date_from'));
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->input('date_to'));
+        }
+
+        $orders = $query->get();
 
         return response()->json($orders->map(fn($order) => [
             'id' => $order->id,
             'order_number' => $order->order_number,
             'token_number' => $order->token_number,
-            'items_count' => $order->items->count(),
+            'customer_name' => $order->customer_name ?? 'Walk-in',
+            'status' => $order->status,
+            'items_count' => $order->items->where('is_offer_component', false)->count(),
+            'subtotal' => (float) $order->subtotal,
+            'discount_amount' => (float) $order->discount_amount,
             'total' => (float) $order->total,
+            'payment_method' => $order->payment_method,
+            'discard_reason' => $order->discard_reason,
+            'discarded_by' => $order->discardedBy->name ?? null,
+            'discarded_at' => $order->discarded_at?->format('M d, Y H:i'),
+            'created_at' => $order->created_at->format('M d, Y H:i'),
         ]));
+    }
+
+    /**
+     * Reverse a completed (paid) bill: restore stock for whatever was actually
+     * deducted at pay time, and flip the order to cancelled with an audit trail
+     * — the same discard_reason/discarded_by/discarded_at fields a pre-payment
+     * discard uses. The sales report / shift totals both compute revenue by
+     * summing orders with status=completed, so this alone removes the bill's
+     * money from every report without any separate ledger entry needed.
+     */
+    public function revokeOrder(Request $request, Order $order)
+    {
+        if ($order->status !== 'completed') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only completed bills can be revoked',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'reason' => 'required|string|max:500',
+        ]);
+
+        $order->load('items.product.ingredients');
+        $userId = $this->currentUser()->id;
+        $reason = $validated['reason'];
+
+        DB::transaction(function () use ($order, $userId, $reason) {
+            foreach ($order->items->where('is_bar_item', false) as $item) {
+                if ($item->printed_qty <= 0) {
+                    continue;
+                }
+
+                if ($item->ingredient_id) {
+                    $qty = (float) ($item->offer_component_qty ?? 1) * $item->printed_qty;
+                    Ingredient::find($item->ingredient_id)?->increment('quantity', $qty);
+                    IngredientStockMovement::create([
+                        'ingredient_id' => $item->ingredient_id,
+                        'change_type' => 'increase',
+                        'quantity' => $qty,
+                        'reason' => 'Bill revoked',
+                        'source' => 'revoke',
+                        'reference_type' => OrderItem::class,
+                        'reference_id' => $item->id,
+                        'user_id' => $userId,
+                    ]);
+                    continue;
+                }
+
+                $product = $item->product;
+                if (!$product || $product->is_unlimited_stock) {
+                    continue;
+                }
+
+                if ($product->is_finished_good) {
+                    $product->increment('quantity', $item->printed_qty);
+                    StockMovement::create([
+                        'product_id' => $product->id,
+                        'change_type' => 'increase',
+                        'quantity' => $item->printed_qty,
+                        'reason' => 'Bill revoked',
+                        'source' => 'revoke',
+                        'reference_type' => OrderItem::class,
+                        'reference_id' => $item->id,
+                        'user_id' => $userId,
+                    ]);
+                } else {
+                    foreach ($product->ingredients as $ingredient) {
+                        $qty = (float) $ingredient->pivot->quantity_per_unit * $item->printed_qty;
+                        if ($qty <= 0) {
+                            continue;
+                        }
+                        $ingredient->increment('quantity', $qty);
+                        IngredientStockMovement::create([
+                            'ingredient_id' => $ingredient->id,
+                            'change_type' => 'increase',
+                            'quantity' => $qty,
+                            'reason' => 'Bill revoked',
+                            'source' => 'revoke',
+                            'reference_type' => OrderItem::class,
+                            'reference_id' => $item->id,
+                            'user_id' => $userId,
+                        ]);
+                    }
+                }
+            }
+
+            $order->update([
+                'status' => 'cancelled',
+                'discard_reason' => $reason,
+                'discarded_by' => $userId,
+                'discarded_at' => now(),
+            ]);
+        });
+
+        return response()->json(['success' => true, 'message' => 'Bill revoked']);
     }
 
     private function updateOrderTotals(Order $order)
@@ -482,7 +629,7 @@ class PosController extends Controller
             'subtotal' => (float) $subtotal,
             'tax_amount' => 0,
             'total' => (float) $total,
-            'items' => $order->items->map(fn($item) => [
+            'items' => $order->items->where('is_offer_component', false)->values()->map(fn($item) => [
                 'product_name' => $item->product_name,
                 'quantity' => $item->quantity,
                 'unit_price' => (float) $item->unit_price,
@@ -504,24 +651,100 @@ class PosController extends Controller
         ]);
     }
 
-    public function cancelOrder(Order $order)
+    public function cancelOrder(Request $request, Order $order)
     {
+        if (in_array($order->status, ['completed', 'cancelled'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only open bills can be discarded',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'reason' => 'required|string|max:500',
+        ]);
+
         // No ingredient stock to restore: unprinted items never consumed any, and
         // printed items already went to the kitchen, so their ingredients stay spent.
-        $order->update(['status' => 'cancelled']);
-        return response()->json(['success' => true, 'message' => 'Order cancelled']);
+        $order->update([
+            'status' => 'cancelled',
+            'discard_reason' => $validated['reason'],
+            'discarded_by' => $this->currentUser()->id,
+            'discarded_at' => now(),
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Bill discarded']);
     }
 
     public function payOrder(Request $request, Order $order)
     {
         $validated = $request->validate([
-            'payment_method' => 'required|in:cash,card,bank_transfer,mixed',
+            'payment_method' => 'required|in:cash,card,bank_transfer,mixed,pickme,uber',
             'amount_paid' => 'required|numeric|min:0',
             'discount_type' => 'nullable|in:percentage,fixed',
             'discount_value' => 'nullable|numeric|min:0',
         ]);
 
-        $order->load('items');
+        // PickMe/Uber orders are delivery orders with no physical token handed
+        // out at the counter, so the manual token-number requirement doesn't
+        // apply to them — every other payment method still needs one.
+        $tokenExempt = in_array($validated['payment_method'], ['pickme', 'uber']);
+
+        if (!$order->token_number && !$tokenExempt) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Enter the token number before completing the bill',
+            ], 422);
+        }
+
+        $order->load('items.product.ingredients');
+
+        // There's no separate "print token" step anymore — tokens are handed out
+        // physically before billing, so paying is what confirms items to the
+        // kitchen and deducts stock, all in one action.
+        $kitchenItems = $order->items
+            ->where('is_bar_item', false)
+            ->filter(fn($item) => $item->quantity > $item->printed_qty)
+            ->values();
+
+        $kotItems = [];
+        if ($kitchenItems->isNotEmpty()) {
+            $itemDeltas = $kitchenItems->map(fn($item) => [
+                'item' => $item,
+                'delta' => $item->quantity - $item->printed_qty,
+            ])->all();
+
+            $userId = $this->currentUser()->id;
+
+            try {
+                DB::transaction(function () use ($itemDeltas, $userId) {
+                    app(ProductStockService::class)->deductForToken($itemDeltas, $userId);
+                    app(IngredientStockService::class)->deductForToken($itemDeltas, $userId);
+                });
+            } catch (InsufficientStockException $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
+
+            foreach ($kitchenItems as $item) {
+                $delta = $item->quantity - $item->printed_qty;
+
+                $kotItems[] = [
+                    'product_name' => $item->product_name,
+                    // For an offer's included-item component, show how much of that
+                    // item is actually needed (its per-offer rate × how many offers
+                    // sold) rather than the order line's own quantity, which only
+                    // counts how many offers were bought.
+                    'quantity' => $delta * (float) ($item->offer_component_qty ?? 1),
+                    'kitchen_notes' => $item->kitchen_notes,
+                ];
+
+                $item->update(['kot_printed' => true, 'printed_qty' => $item->quantity]);
+            }
+        }
+
         $subtotal = $order->items->sum('subtotal');
         $discount = 0;
 
@@ -545,7 +768,7 @@ class PosController extends Controller
             'amount_paid' => $amountPaid,
             'change_amount' => $change,
             'printed_at' => now(),
-            'kot_printed_at' => $order->kot_printed_at ?? ($order->items->where('is_bar_item', false)->count() > 0 ? now() : null),
+            'kot_printed_at' => $order->kot_printed_at ?? (count($kotItems) > 0 ? now() : null),
         ]);
 
         // Record transaction in active shift
@@ -587,7 +810,7 @@ class PosController extends Controller
             'payment_method' => $validated['payment_method'],
             'amount_paid' => (float) $amountPaid,
             'change_amount' => (float) $change,
-            'items' => $order->items->map(fn($item) => [
+            'items' => $order->items->where('is_offer_component', false)->values()->map(fn($item) => [
                 'product_name' => $item->product_name,
                 'quantity' => $item->quantity,
                 'unit_price' => (float) $item->unit_price,
@@ -595,6 +818,7 @@ class PosController extends Controller
                 'discount_percent' => (float) $item->discount_percent,
                 'kitchen_notes' => $item->kitchen_notes,
             ]),
+            'kot_items' => $kotItems,
         ]);
     }
 
@@ -693,7 +917,7 @@ class PosController extends Controller
             'amount_paid' => (float) $order->amount_paid,
             'change_amount' => (float) $order->change_amount,
             'printed_at' => $order->printed_at?->format('M d, Y H:i'),
-            'items' => $order->items->map(fn($item) => [
+            'items' => $order->items->where('is_offer_component', false)->values()->map(fn($item) => [
                 'product_name' => $item->product_name,
                 'quantity' => $item->quantity,
                 'unit_price' => (float) $item->unit_price,

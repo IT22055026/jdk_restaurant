@@ -1,5 +1,5 @@
 <!-- Sidebar -->
-<div class="sidebar w-64 min-h-screen bg-white fixed left-0 top-16 hidden lg:flex lg:flex-col overflow-y-auto">
+<div class="sidebar w-64 bg-white fixed left-0 top-16 hidden lg:flex lg:flex-col overflow-y-auto" style="height: calc(100vh - 4rem);">
     <div class="p-5 flex-1">
         <p class="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Menu</p>
         <nav class="space-y-1">

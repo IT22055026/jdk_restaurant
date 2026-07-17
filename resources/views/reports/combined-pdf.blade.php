@@ -269,7 +269,7 @@
                         <td class="text-right">LKR {{ number_format($sale->total, 0) }}</td>
                         <td>
                             @php
-                                $methods = ['cash' => 'Cash', 'card' => 'Card', 'bank_transfer' => 'Bank', 'mixed' => 'Mixed'];
+                                $methods = ['cash' => 'Cash', 'card' => 'Card', 'bank_transfer' => 'Bank', 'mixed' => 'Mixed', 'pickme' => 'PickMe', 'uber' => 'Uber'];
                                 $method = $methods[$sale->payment_method] ?? ucfirst($sale->payment_method ?? '—');
                             @endphp
                             <span class="badge">{{ $method }}</span>

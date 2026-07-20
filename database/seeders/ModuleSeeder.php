@@ -133,6 +133,12 @@ class ModuleSeeder extends Seeder
 
         $allModules = DB::table('modules')->get();
         $posModuleId = DB::table('modules')->where('name', 'POS & Billing')->first()->id;
+        $shiftsModuleId = DB::table('modules')->where('name', 'Shifts & Till Management')->first()->id ?? null;
+
+        // Cashiers only ever touch the till at the start/end of their shift,
+        // so besides POS & Billing they also get Shifts & Till Management —
+        // everything else (reports, inventory, settings, etc.) stays admin/manager-only.
+        $cashierModuleIds = array_filter([$posModuleId, $shiftsModuleId]);
 
         foreach ($allModules as $module) {
             DB::table('role_module')->insertOrIgnore([
@@ -151,7 +157,7 @@ class ModuleSeeder extends Seeder
                 ]);
             }
 
-            if ($module->id === $posModuleId) {
+            if (in_array($module->id, $cashierModuleIds)) {
                 DB::table('role_module')->insertOrIgnore([
                     'role_id' => $cashierId,
                     'module_id' => $module->id,

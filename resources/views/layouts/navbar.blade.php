@@ -2,6 +2,7 @@
     $navUserModules = auth()->user()->role?->modules()->pluck('name')->toArray() ?? [];
     $navHasDashboardAccess = in_array('Reports', $navUserModules);
     $navHasInventoryAccess = in_array('Inventory & Products', $navUserModules);
+    $navHasSettingsAccess = in_array('Settings', $navUserModules);
 @endphp
 <nav class="navbar fixed top-0 left-0 right-0 z-50">
     <div class="navbar-inner">
@@ -78,9 +79,15 @@
                             <i class="fas fa-gauge-high" style="width:16px;"></i> Dashboard
                         </a>
                     @endif
-                    <a href="{{ route('settings.index') }}">
-                        <i class="fas fa-gear" style="width:16px;"></i> Settings
-                    </a>
+                    @if($navHasSettingsAccess)
+                        <a href="{{ route('settings.index') }}">
+                            <i class="fas fa-gear" style="width:16px;"></i> Settings
+                        </a>
+                    @else
+                        <a href="javascript:void(0)" onclick="navNoAccessToast()">
+                            <i class="fas fa-gear" style="width:16px;"></i> Settings
+                        </a>
+                    @endif
                     <hr>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf

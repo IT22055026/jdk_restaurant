@@ -1601,11 +1601,9 @@
             + '<div style="border-top:2px solid #000; border-bottom:2px solid #000; padding:6px 0; margin-bottom:8px;">'
             + '<div style="text-align:center; font-size:13px; letter-spacing:3px; color:#000; margin-bottom:5px;">RECEIPT</div>'
             + '<table width="100%" cellspacing="0" cellpadding="2" style="font-size:11px; color:#000; width:100%; table-layout:fixed;">'
-            + '<tr><td style="width:35%;">Order</td><td style="text-align:right; width:65%; word-break:break-all;">' + d.order_number + '</td></tr>'
-            + (d.token_number ? '<tr><td>Token</td><td style="text-align:right;">#' + String(d.token_number).padStart(2, '0') + '</td></tr>' : '')
-            + (d.customer_name  ? '<tr><td>Customer</td><td style="text-align:right;">' + escapeHtml(d.customer_name) + '</td></tr>' : '')
+            + (d.customer_name  ? '<tr><td style="width:35%;">Customer</td><td style="text-align:right; width:65%;">' + escapeHtml(d.customer_name) + '</td></tr>' : '')
             + (d.customer_phone ? '<tr><td>Phone</td><td style="text-align:right;">' + d.customer_phone + '</td></tr>' : '')
-            + '<tr><td>Date</td><td style="text-align:right;">' + dateStr + '</td></tr>'
+            + '<tr><td style="width:35%;">Date</td><td style="text-align:right; width:65%;">' + dateStr + '</td></tr>'
             + '</table>'
             + '</div>'
 
@@ -1632,6 +1630,14 @@
             + (d.change_amount > 0 ? '<tr><td>Change</td><td style="text-align:right;">Rs.' + d.change_amount.toFixed(2) + '</td></tr>' : '')
             + '</table>'
 
+            // ── TOKEN NUMBER (shown after the total, not with the order metadata) ──
+            + (d.token_number
+                ? '<div style="text-align:center; border-top:2px dashed #000; border-bottom:2px dashed #000; padding:8px 0; margin-top:8px;">'
+                    + '<div style="font-size:11px; letter-spacing:3px; color:#000;">TOKEN NUMBER</div>'
+                    + '<div style="font-size:48px; font-weight:900; color:#000; line-height:1.2;">#' + String(d.token_number).padStart(2, '0') + '</div>'
+                    + '</div>'
+                : '')
+
             // ── FOOTER ──
             + '<div style="text-align:center; font-size:11px; margin-top:8px; color:#000; border-top:1px dashed #000; padding-top:6px;">Thank you for dining with us!<br>We look forward to seeing you again.<br>Powered By JAAN Network (PVT) Ltd</div>';
 
@@ -1639,16 +1645,21 @@
 
         // One "Pay" action produces two printouts: the KOT for the kitchen
         // (only if there are actual kitchen items on this bill) and the bill
-        // for the customer.
+        // for the customer. Both go through a single print job (one dialog,
+        // one click) with a page-break between them so the printer cuts
+        // between the two instead of stapling them into one receipt — see
+        // printReceipt() for how the page break is inserted.
+        const printJobs = [];
         if (Array.isArray(d.kot_items) && d.kot_items.length > 0) {
-            printReceipt(buildTokenHtml({
+            printJobs.push(buildTokenHtml({
                 token_number: d.token_number,
                 order_number: d.order_number,
                 payment_method: d.payment_method,
                 items: d.kot_items,
             }));
         }
-        printReceipt(html);
+        printJobs.push(html);
+        printReceipt(printJobs);
         resetOrder();
     }
 
@@ -1683,10 +1694,6 @@
     function printBillContent() {
         printReceipt(currentBillContent);
     }
-
-    // ═══════════════════════════════════════════
-    // FREE ITEM (discount as a gift, not a bill reduction)
-    // ═══════════════════════════════════════════
 
     function openFreeItemModal() {
         if (!currentOrder || !currentOrder.id) return;
@@ -1820,16 +1827,30 @@
         document.getElementById('cashSection').style.display = 'flex';
     }
 
-    function printReceipt(html) {
+    // Accepts either a single receipt's HTML, or an array of receipts that
+    // should all print as ONE job — one popup, one print-dialog confirmation
+    // — with a page break between each so the printer still cuts the paper
+    // between them instead of running them together on one strip.
+    function printReceipt(htmlOrPages) {
+        const pages = Array.isArray(htmlOrPages) ? htmlOrPages : [htmlOrPages];
+        const body = pages.map(function(pageHtml, idx) {
+            const isLast = idx === pages.length - 1;
+            return '<div' + (isLast ? '' : ' style="page-break-after: always;"') + '>' + pageHtml + '</div>';
+        }).join('');
+
         const w = window.open('', '', 'width=400,height=700,toolbar=0,menubar=0,scrollbars=1');
         w.document.write(
             '<!DOCTYPE html><html><head><style>'
-            + '@page { size: 80mm auto; margin: 2mm 6mm; }'
+            // 80mm = a standard 3" thermal receipt roll; keep the side margins
+            // tight so the printable area actually uses the paper width instead
+            // of wasting it, while still leaving enough room to avoid clipping
+            // on printers whose own driver reserves a sliver of its own.
+            + '@page { size: 80mm auto; margin: 2mm 3mm; }'
             + '* { box-sizing: border-box; font-weight: bold !important; }'
             + 'body { font-family: \'Courier New\', monospace; width: 100%; margin: 0; padding: 0; font-size: 12px; }'
             + 'table { width: 100%; border-collapse: collapse; table-layout: fixed; }'
             + 'td, th { word-break: break-word; overflow-wrap: break-word; }'
-            + '</style></head><body>' + html + '</body></html>'
+            + '</style></head><body>' + body + '</body></html>'
         );
         w.document.close();
         w.focus();

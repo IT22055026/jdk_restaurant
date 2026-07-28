@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\BusinessDay;
 use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
@@ -70,5 +71,21 @@ class Order extends Model
     public function items()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    /** Orders placed during the given business date (06:00 through 05:59:59 the next day). */
+    public function scopeBusinessDay($query, $date)
+    {
+        [$start, $end] = BusinessDay::boundsFor($date);
+
+        return $query->whereBetween('created_at', [$start, $end]);
+    }
+
+    /** Orders placed anywhere within the business dates $from through $to, inclusive. */
+    public function scopeBusinessDayRange($query, $from, $to)
+    {
+        [$start, $end] = BusinessDay::boundsBetween($from, $to);
+
+        return $query->whereBetween('created_at', [$start, $end]);
     }
 }

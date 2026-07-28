@@ -15,6 +15,7 @@ use App\Models\ShiftTransaction;
 use App\Models\StockMovement;
 use App\Services\IngredientStockService;
 use App\Services\ProductStockService;
+use App\Support\BusinessDay;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -83,6 +84,22 @@ class PosController extends Controller
         return response()->json($products);
     }
 
+    // Raw/included items (not sellable menu Products) — used by both the
+    // "Include Items" section (buy one directly, e.g. "extra mayonnaise")
+    // and the "Give a Free Item" picker (give one away).
+    public function getIngredients()
+    {
+        $ingredients = Ingredient::where('status', 'active')->orderBy('name')->get();
+
+        return response()->json($ingredients->map(fn($ingredient) => [
+            'id' => $ingredient->id,
+            'name' => $ingredient->name,
+            'unit' => $ingredient->unit,
+            'quantity' => (float) $ingredient->quantity,
+            'selling_price' => $ingredient->selling_price !== null ? (float) $ingredient->selling_price : null,
+        ]));
+    }
+
     public function createOrder(Request $request)
     {
         $validated = $request->validate([
@@ -119,17 +136,25 @@ class PosController extends Controller
             'token_number' => 'required|integer|min:1',
         ]);
 
-        $tokenDate = $order->token_date ?? now()->toDateString();
+        // The trading day runs 06:00-05:59 the next calendar day (shifts go
+        // overnight), so a token issued at, say, 1am still belongs to the
+        // PREVIOUS business date, not the new calendar date.
+        $tokenDate = $order->token_date ?? BusinessDay::today()->toDateString();
 
+        // Tokens are physical tags handed to customers and returned once their
+        // meal is done, so the same number is meant to be reused several times
+        // a day — only block it while another order still holds it (i.e. that
+        // order hasn't been completed or cancelled yet).
         $duplicate = Order::whereDate('token_date', $tokenDate)
             ->where('token_number', $validated['token_number'])
             ->where('id', '!=', $order->id)
+            ->whereNotIn('status', ['completed', 'cancelled'])
             ->exists();
 
         if ($duplicate) {
             return response()->json([
                 'success' => false,
-                'message' => "Token #{$validated['token_number']} is already in use today",
+                'message' => "Token #{$validated['token_number']} is still in use by an open order today",
             ], 422);
         }
 
@@ -190,15 +215,13 @@ class PosController extends Controller
     public function addItem(Request $request, Order $order)
     {
         $validated = $request->validate([
-            'product_id' => 'required|exists:products,id',
+            'product_id' => 'nullable|required_without:ingredient_id|exists:products,id',
+            'ingredient_id' => 'nullable|required_without:product_id|exists:ingredients,id',
             'quantity' => 'required|integer|min:1',
             'kitchen_notes' => 'nullable|string',
             'is_bar_item' => 'nullable|boolean',
             'is_free' => 'nullable|boolean',
         ]);
-
-        $product = Product::find($validated['product_id']);
-        $price = $product->selling_price ?? $product->price;
 
         // Given away as a discount (e.g. a free sauce cup) rather than a normal
         // sale: the item still goes to the kitchen and deducts stock like any
@@ -207,15 +230,54 @@ class PosController extends Controller
         // order the way a percentage/fixed discount would.
         $isFree = $validated['is_free'] ?? false;
 
-        // Find any existing item for this product in the order (excluding hidden
-        // offer-component rows, which must stay tied to their offer's quantity).
-        // A free-item add only merges into an existing free line for the same
-        // product — it must never silently merge into (and lose the discount
-        // of) an already-paid line, or vice versa.
+        if (!empty($validated['ingredient_id'])) {
+            // A raw/included item — e.g. an extra sauce pot — added directly
+            // rather than through one of the sellable menu Products.
+            // IngredientStockService already knows how to deduct stock for
+            // any order_item carrying an ingredient_id (the same path offer
+            // components use), so nothing extra is needed for that part.
+            $ingredient = Ingredient::findOrFail($validated['ingredient_id']);
+            $name = $ingredient->name;
+
+            if ($isFree) {
+                // Given away — the "price" is only shown crossed-out on the
+                // receipt, so use the cost basis rather than a customer price.
+                $price = (float) ($ingredient->cost_per_unit ?? 0);
+            } else {
+                // A customer is actually paying for this one directly (e.g.
+                // "extra mayonnaise"), so it needs a real selling price.
+                if (!$ingredient->selling_price || $ingredient->selling_price <= 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "{$ingredient->name} doesn't have a selling price set yet — add one in Included Items first, or give it away as a free item instead.",
+                    ], 422);
+                }
+                $price = (float) $ingredient->selling_price;
+            }
+
+            $matchColumn = 'ingredient_id';
+            $matchValue = $ingredient->id;
+            $extraFields = ['ingredient_id' => $ingredient->id, 'offer_component_qty' => 1];
+        } else {
+            $product = Product::find($validated['product_id']);
+            $name = $product->name;
+            $price = $product->selling_price ?? $product->price;
+            $matchColumn = 'product_id';
+            $matchValue = $product->id;
+            $extraFields = ['product_id' => $product->id];
+        }
+
+        // Find any existing item for this product/ingredient in the order
+        // (excluding hidden offer-component rows, which must stay tied to
+        // their offer's quantity). A free-item add only merges into an
+        // existing 100%-off line, and a normal add only merges into a
+        // non-100%-off one — they must never merge into each other, or a
+        // paid re-add would silently fold into (and zero out) a free line,
+        // or vice versa.
         $existingItem = OrderItem::where('order_id', $order->id)
-            ->where('product_id', $product->id)
+            ->where($matchColumn, $matchValue)
             ->whereNull('offer_id')
-            ->when($isFree, fn($q) => $q->where('discount_percent', 100))
+            ->where('discount_percent', $isFree ? '=' : '!=', 100)
             ->first();
 
         if ($existingItem) {
@@ -226,10 +288,9 @@ class PosController extends Controller
             $item = $existingItem;
         } else {
             // Create first line item
-            $item = OrderItem::create([
+            $item = OrderItem::create(array_merge([
                 'order_id' => $order->id,
-                'product_id' => $product->id,
-                'product_name' => $product->name,
+                'product_name' => $name,
                 'unit_price' => $price,
                 'quantity' => $validated['quantity'],
                 'discount_percent' => $isFree ? 100 : 0,
@@ -238,7 +299,7 @@ class PosController extends Controller
                 'is_bar_item' => $validated['is_bar_item'] ?? false,
                 'kot_printed' => false,
                 'printed_qty' => 0,
-            ]);
+            ], $extraFields));
         }
 
         // Ingredient stock is no longer touched here — it's only deducted once the
@@ -249,7 +310,7 @@ class PosController extends Controller
             'success' => true,
             'item_id' => $item->id,
             'item_kot_printed' => (bool) $item->kot_printed,
-            'message' => $product->name . ' added to order',
+            'message' => $name . ' added to order',
         ]);
     }
 
@@ -459,12 +520,17 @@ class PosController extends Controller
             $query->where('status', $request->input('status'));
         }
 
-        if ($request->filled('date_from')) {
-            $query->whereDate('created_at', '>=', $request->input('date_from'));
-        }
-
-        if ($request->filled('date_to')) {
-            $query->whereDate('created_at', '<=', $request->input('date_to'));
+        // Business dates, not calendar dates — an order at 1am still belongs
+        // to the previous day's trading window (see App\Support\BusinessDay).
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            [$start, $end] = BusinessDay::boundsBetween($request->input('date_from'), $request->input('date_to'));
+            $query->whereBetween('created_at', [$start, $end]);
+        } elseif ($request->filled('date_from')) {
+            [$start] = BusinessDay::boundsFor($request->input('date_from'));
+            $query->where('created_at', '>=', $start);
+        } elseif ($request->filled('date_to')) {
+            [, $end] = BusinessDay::boundsFor($request->input('date_to'));
+            $query->where('created_at', '<=', $end);
         }
 
         $orders = $query->get();
@@ -674,6 +740,27 @@ class PosController extends Controller
         ]);
 
         return response()->json(['success' => true, 'message' => 'Bill discarded']);
+    }
+
+    /**
+     * Park an in-progress bill without paying or discarding it — items, token
+     * number and totals are left untouched so it can be resumed later from
+     * the Sales Report page's "Resume & Pay" action (see getOrder()/the POS
+     * screen's resumeExistingOrder()), which already accepts any non-final
+     * status.
+     */
+    public function holdOrder(Request $request, Order $order)
+    {
+        if (in_array($order->status, ['completed', 'cancelled'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only open bills can be held',
+            ], 422);
+        }
+
+        $order->update(['status' => 'hold']);
+
+        return response()->json(['success' => true, 'message' => 'Bill held']);
     }
 
     public function payOrder(Request $request, Order $order)

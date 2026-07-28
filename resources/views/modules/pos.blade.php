@@ -56,6 +56,26 @@
         .pay-method-btn:hover { border-color: #3b82f6; color: #3b82f6; }
         .pay-method-btn.active { border-color: #2563eb; background: #eff6ff; color: #2563eb; }
 
+        /* While Split is selected, the split-amount fields need the room —
+           shrink the method icons down to a single compact row each instead
+           of stacked icon+label, so the bottom Hold/Pay buttons don't get
+           pushed out of view. */
+        #paymentBody.split-active .pay-method-btn {
+            padding: 6px 4px; font-size: 10px;
+            display: flex; align-items: center; justify-content: center; gap: 4px;
+        }
+        #paymentBody.split-active .pay-method-btn i {
+            display: inline-block !important; font-size: 12px !important; margin-bottom: 0 !important;
+        }
+        /* Whatever's expanded here (method buttons + cash/split fields) is
+           capped and scrolls internally, rather than growing past the panel
+           and pushing the Hold/Pay row below the visible area — the bottom
+           controls must always stay reachable regardless of screen height.
+           A viewport-relative cap (rather than a fixed px guess) keeps this
+           safe on short windows without being unnecessarily cramped on tall
+           ones. */
+        #paymentBody { max-height: 26vh; overflow-y: auto; }
+
         /* ── Modals ── */
         .modal-overlay {
             display: none; position: fixed; inset: 0;
@@ -99,6 +119,28 @@
         .btn-orange:hover  { background: #c2410c; }
         .btn-purple  { background: #7c3aed; color: #fff; border: none; border-radius: 10px; padding: 10px 14px; font-weight: 700; cursor: pointer; transition: background 0.15s; font-size: 12px; }
         .btn-purple:hover  { background: #6d28d9; }
+
+        /* ── Keyboard focus visibility (cashiers work mouse-free) ── */
+        .product-card:focus-visible,
+        .cat-pill:focus-visible,
+        .qty-btn:focus-visible,
+        .pay-method-btn:focus-visible,
+        button:focus-visible,
+        a:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        textarea:focus-visible {
+            outline: 3px solid #2563eb !important;
+            outline-offset: 2px !important;
+        }
+        html.dark-mode *:focus-visible { outline-color: #6d94ff; }
+        .product-card[aria-disabled="true"] { cursor: not-allowed; }
+        kbd {
+            background: #f1f5f9; border: 1px solid #cbd5e1; border-bottom-width: 2px;
+            border-radius: 4px; padding: 1px 5px; font-size: 9px; font-family: inherit;
+            color: #475569; font-weight: 700;
+        }
+        html.dark-mode kbd { background: #141b30; border-color: #26314d; color: #9aa7c2; }
 
         /* ── Scrollbars ── */
         ::-webkit-scrollbar { width: 5px; }
@@ -204,6 +246,9 @@
                 <button class="cat-pill" id="offersPill" onclick="toggleOffersMode()" style="background:#fdf4ff; color:#a21caf; border-color:#e9d5ff;">
                     <i class="fas fa-gift" style="margin-right:4px;"></i>Offers
                 </button>
+                <button class="cat-pill" id="includeItemsPill" onclick="toggleIncludeItemsMode()" style="background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe;">
+                    <i class="fas fa-flask" style="margin-right:4px;"></i>Include Items
+                </button>
                 <button class="cat-pill active" data-category="0" onclick="selectCategory(0, this)">All</button>
             </div>
             <!-- Search Bar -->
@@ -212,6 +257,19 @@
                 <input type="text" id="searchInput" placeholder="Search by product name…"
                        style="width:100%; padding:11px 14px 11px 38px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:14px; outline:none; background:#f8fafc;"
                        onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+            </div>
+            <!-- Keyboard-only cashier workflow reference -->
+            <div style="margin-top:7px; display:flex; align-items:center; gap:9px; flex-wrap:wrap; color:#94a3b8; font-size:10px;">
+                <span><i class="fas fa-keyboard" style="margin-right:3px;"></i>Keyboard:</span>
+                <span><kbd>Tab</kbd> Switch panel</span>
+                <span><kbd>&#8593;&#8595;&#8592;&#8594;</kbd> Move within it</span>
+                <span><kbd>&crarr;</kbd> Select</span>
+                <span><kbd>F2</kbd> New</span>
+                <span><kbd>F3</kbd> Search</span>
+                <span><kbd>F4</kbd> Hold</span>
+                <span><kbd>F8</kbd> Discard</span>
+                <span><kbd>F9</kbd> Pay</span>
+                <span><kbd>Esc</kbd> Close</span>
             </div>
         </div>
 
@@ -242,7 +300,7 @@
     <div class="bill-panel">
 
         <!-- Zone 1: Header with Table Info -->
-        <div style="padding:12px 16px; border-bottom:1px solid #e2e8f0; flex-shrink:0; background:#fff;">
+        <div id="orderHeaderPanel" style="padding:12px 16px; border-bottom:1px solid #e2e8f0; flex-shrink:0; background:#fff;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
                 <h3 style="font-size:17px; font-weight:800; color:#0f172a; margin:0;">
                     <i class="fas fa-receipt" style="color:#2563eb; margin-right:6px;"></i>Order
@@ -265,7 +323,7 @@
         </div>
 
         <!-- Zone 2: Expandable Customer Info -->
-        <div style="padding:0; border-bottom:1px solid #e2e8f0; flex-shrink:0; background:#f8fafc;">
+        <div id="customerPanel" style="padding:0; border-bottom:1px solid #e2e8f0; flex-shrink:0; background:#f8fafc;">
             <button id="customerInfoToggle" onclick="toggleCustomerInfo()" style="width:100%; padding:10px 16px; background:none; border:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; text-align:left;">
                 <div style="display:flex; align-items:center;">
                     <i class="fas fa-user-circle" style="color:#1d4ed8; margin-right:6px; font-size:13px;"></i>
@@ -296,7 +354,7 @@
         </div>
 
         <!-- Zone 4: Fixed bottom controls -->
-        <div style="border-top:1px solid #e2e8f0; padding:14px 18px; background:#fff; flex-shrink:0; display:flex; flex-direction:column; gap:8px;">
+        <div id="bottomControlsPanel" style="border-top:1px solid #e2e8f0; padding:14px 18px; background:#fff; flex-shrink:0; display:flex; flex-direction:column; gap:8px;">
 
             <!-- Give a free item as a discount (instead of reducing the bill amount) -->
             <button type="button" id="freeItemToggle" onclick="openFreeItemModal()" style="display:none; width:100%; text-align:left; background:#f0fdf4; border:1px dashed #86efac; border-radius:8px; padding:7px 10px; font-size:12px; font-weight:700; color:#166534; cursor:pointer;">
@@ -379,27 +437,27 @@
                 </div>
 
                 <!-- Split Payment inputs -->
-                <div id="splitSection" style="display:none; border-top:1px solid #e2e8f0; padding-top:8px;">
-                    <div style="font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#64748b; margin-bottom:6px;">Split Payment</div>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:6px;">
+                <div id="splitSection" style="display:none; border-top:1px solid #e2e8f0; padding-top:12px;">
+                    <div style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#64748b; margin-bottom:10px;">Split Payment</div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:10px;">
                         <div>
-                            <label for="splitMethod1" style="font-size:9px; font-weight:600; color:#64748b; display:block; margin-bottom:2px;">Method 1</label>
-                            <select id="splitMethod1" onchange="updateSplitTotal()" style="width:100%; font-size:10px; border:1px solid #e2e8f0; border-radius:5px; padding:4px 6px; outline:none;">
+                            <label for="splitMethod1" style="font-size:12px; font-weight:600; color:#64748b; display:block; margin-bottom:4px;">Method 1</label>
+                            <select id="splitMethod1" onchange="updateSplitTotal()" style="width:100%; font-size:14px; border:1.5px solid #e2e8f0; border-radius:8px; padding:9px 10px; outline:none;">
                                 <option value="cash">Cash</option>
                                 <option value="card">Card</option>
                                 <option value="bank">Bank</option>
                             </select>
                         </div>
                         <div>
-                            <label for="splitAmount1" style="font-size:9px; font-weight:600; color:#64748b; display:block; margin-bottom:2px;">Amount</label>
+                            <label for="splitAmount1" style="font-size:12px; font-weight:600; color:#64748b; display:block; margin-bottom:4px;">Amount</label>
                             <input type="number" id="splitAmount1" placeholder="0.00" min="0" oninput="updateSplitTotal()"
-                                   style="width:100%; font-size:10px; border:1px solid #e2e8f0; border-radius:5px; padding:4px 6px; outline:none;">
+                                   style="width:100%; font-size:15px; font-weight:700; border:1.5px solid #e2e8f0; border-radius:8px; padding:9px 10px; outline:none;">
                         </div>
                     </div>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:6px;">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:10px;">
                         <div>
-                            <label for="splitMethod2" style="font-size:9px; font-weight:600; color:#64748b; display:block; margin-bottom:2px;">Method 2</label>
-                            <select id="splitMethod2" onchange="updateSplitTotal()" style="width:100%; font-size:10px; border:1px solid #e2e8f0; border-radius:5px; padding:4px 6px; outline:none;">
+                            <label for="splitMethod2" style="font-size:12px; font-weight:600; color:#64748b; display:block; margin-bottom:4px;">Method 2</label>
+                            <select id="splitMethod2" onchange="updateSplitTotal()" style="width:100%; font-size:14px; border:1.5px solid #e2e8f0; border-radius:8px; padding:9px 10px; outline:none;">
                                 <option value="">-- Select --</option>
                                 <option value="cash">Cash</option>
                                 <option value="card">Card</option>
@@ -407,14 +465,14 @@
                             </select>
                         </div>
                         <div>
-                            <label for="splitAmount2" style="font-size:9px; font-weight:600; color:#64748b; display:block; margin-bottom:2px;">Amount</label>
+                            <label for="splitAmount2" style="font-size:12px; font-weight:600; color:#64748b; display:block; margin-bottom:4px;">Amount</label>
                             <input type="number" id="splitAmount2" placeholder="0.00" min="0" oninput="updateSplitTotal()"
-                                   style="width:100%; font-size:10px; border:1px solid #e2e8f0; border-radius:5px; padding:4px 6px; outline:none;">
+                                   style="width:100%; font-size:15px; font-weight:700; border:1.5px solid #e2e8f0; border-radius:8px; padding:9px 10px; outline:none;">
                         </div>
                     </div>
-                    <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:5px; padding:5px 6px; text-align:center;">
-                        <div style="font-size:8px; color:#64748b; margin-bottom:2px;">Total Paid</div>
-                        <div id="splitTotalDisplay" style="font-size:12px; font-weight:700; color:#16a34a;">Rs. 0.00</div>
+                    <div style="background:#f0fdf4; border:1.5px solid #bbf7d0; border-radius:8px; padding:10px 12px; text-align:center;">
+                        <div style="font-size:11px; color:#64748b; margin-bottom:4px; font-weight:600;">Total Paid</div>
+                        <div id="splitTotalDisplay" style="font-size:18px; font-weight:800; color:#16a34a;">Rs. 0.00</div>
                     </div>
                 </div>
                 </div>
@@ -425,6 +483,9 @@
 
                 <!-- Pay: prints the KOT (to kitchen) and the bill (to customer) in one action -->
                 <div id="waiterPayRow" style="display:none; gap:6px; display:flex;">
+                    <button onclick="holdCurrentOrder()" id="holdBtn" class="btn-secondary" style="padding:13px 14px; font-size:13px; white-space:nowrap;" title="Park this bill and resume it later from Sales Report">
+                        <i class="fas fa-pause-circle" style="margin-right:4px;"></i>Hold
+                    </button>
                     <button onclick="initiatePayment()" id="payBtn" class="btn-green" style="flex:1; padding:13px 8px; font-size:14px;">
                         <i class="fas fa-check-circle" style="margin-right:3px;"></i>Pay
                     </button>
@@ -447,7 +508,7 @@
         <div id="billContent" style="font-family:'Courier New',monospace; background:#fafafa; border-radius:8px; padding:16px; font-size:12px; border:1px solid #e2e8f0;"></div>
         <div style="display:flex; gap:10px; margin-top:16px;">
             <button onclick="closeModal('finalBillModal')" class="btn-secondary" style="flex:1;">Cancel</button>
-            <button onclick="printBillContent()" class="btn-primary" style="flex:1;"><i class="fas fa-print" style="margin-right:4px;"></i>Print</button>
+            <button onclick="printBillContent()" data-primary="true" class="btn-primary" style="flex:1;"><i class="fas fa-print" style="margin-right:4px;"></i>Print</button>
         </div>
     </div>
 </div>
@@ -465,14 +526,35 @@
             Adds the item to the bill at its normal price, then marks it 100% off so it's added to stock/kitchen as usual but shows as <strong style="color:#16a34a;">FREE</strong> on the bill instead of reducing the total amount.
         </p>
         <label style="font-size:11px; font-weight:700; color:#374151; display:block; margin-bottom:4px;">Item</label>
-        <select id="freeItemProduct" style="width:100%; font-size:13px; border:1.5px solid #e2e8f0; border-radius:8px; padding:9px 10px; outline:none; background:#f8fafc; margin-bottom:10px;">
+        <select id="freeItemProduct" onchange="onFreeItemSelectionChange()" style="width:100%; font-size:13px; border:1.5px solid #e2e8f0; border-radius:8px; padding:9px 10px; outline:none; background:#f8fafc; margin-bottom:10px;">
             <option value="">Select an item…</option>
         </select>
-        <label style="font-size:11px; font-weight:700; color:#374151; display:block; margin-bottom:4px;">Quantity</label>
+        <label id="freeItemQtyLabel" style="font-size:11px; font-weight:700; color:#374151; display:block; margin-bottom:4px;">Quantity</label>
         <input type="number" id="freeItemQty" value="1" min="1" style="width:100%; font-size:13px; border:1.5px solid #e2e8f0; border-radius:8px; padding:9px 10px; outline:none; background:#f8fafc;">
         <div style="display:flex; gap:8px; margin-top:16px;">
             <button onclick="closeModal('freeItemModal')" class="btn-secondary" style="flex:1;">Cancel</button>
-            <button onclick="submitFreeItem()" style="flex:1; background:#16a34a; color:#fff; border:none; border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer;"><i class="fas fa-gift" style="margin-right:5px;"></i>Add as Free</button>
+            <button onclick="submitFreeItem()" data-primary="true" style="flex:1; background:#16a34a; color:#fff; border:none; border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer;"><i class="fas fa-gift" style="margin-right:5px;"></i>Add as Free</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     MODAL: Add Include Item (paid — buy one directly, e.g. "extra mayonnaise")
+══════════════════════════════════════════════════ -->
+<div id="includeItemModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 380px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h2 style="font-size:18px; font-weight:800; color:#0f172a; margin:0;"><i class="fas fa-flask" style="color:#1d4ed8; margin-right:6px;"></i><span id="includeItemModalTitle">Add Item</span></h2>
+            <button onclick="closeModal('includeItemModal')" style="background:none; border:none; font-size:22px; cursor:pointer; color:#94a3b8;">&times;</button>
+        </div>
+        <p id="includeItemModalHint" style="font-size:12px; color:#64748b; margin:0 0 12px;"></p>
+        <label id="includeItemQtyLabel" style="font-size:11px; font-weight:700; color:#374151; display:block; margin-bottom:4px;">Quantity</label>
+        <input type="number" id="includeItemQty" value="1" min="1" step="1"
+               style="width:100%; font-size:15px; font-weight:700; border:1.5px solid #bfdbfe; border-radius:8px; padding:9px 10px; outline:none; background:#eff6ff; text-align:center;"
+               onkeydown="if(event.key==='Enter'){submitIncludeItem();event.preventDefault();event.stopPropagation();}">
+        <div style="display:flex; gap:8px; margin-top:16px;">
+            <button onclick="closeModal('includeItemModal')" class="btn-secondary" style="flex:1;">Cancel</button>
+            <button onclick="submitIncludeItem()" data-primary="true" style="flex:1; background:#1d4ed8; color:#fff; border:none; border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer;"><i class="fas fa-plus" style="margin-right:5px;"></i>Add to Bill</button>
         </div>
     </div>
 </div>
@@ -491,7 +573,7 @@
                   style="width:100%; font-size:13px; border:1.5px solid #e2e8f0; border-radius:8px; padding:10px; outline:none; resize:none;"></textarea>
         <div style="display:flex; gap:8px; margin-top:14px;">
             <button onclick="closeModal('discardReasonModal')" class="btn-secondary" style="flex:1;">Cancel</button>
-            <button onclick="submitDiscardOrder()" style="flex:1; background:#dc2626; color:#fff; border:none; border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer;">Discard Bill</button>
+            <button onclick="submitDiscardOrder()" data-primary="true" style="flex:1; background:#dc2626; color:#fff; border:none; border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer;">Discard Bill</button>
         </div>
     </div>
 </div>
@@ -530,6 +612,7 @@
     // ── State ──
     let currentOrder  = null;
     let allProducts   = [];
+    let allIngredients = []; // raw/included items (not sellable menu Products) — for the Free Item picker
     let allCategories = @json($categories);
     let selectedPaymentMethod = 'cash';
     let currentBillContent    = '';
@@ -538,6 +621,7 @@
     let productRecipes        = {}; // { productId: [{ingredient_id, quantity_per_unit}] } for recipe-tracked products
     let openDiscountRows      = new Set(); // item IDs whose discount input row is open
     let qtyLock               = {}; // { itemId: true } — prevents overlapping qty updates
+    let lastFocusedBeforeModal = null; // element to restore focus to once a modal closes
 
     // Recipe-tracked products (e.g. two combos that both use the same Paratha Roti)
     // share one pool of ingredient stock. getStock() derives a product's available
@@ -570,13 +654,189 @@
         }
     }
 
+    // ═══════════════════════════════════════════
+    // KEYBOARD NAVIGATION (cashiers work mouse-free)
+    //
+    // The screen is a handful of panels (categories, product grid, order
+    // header, customer, bill items, bottom controls). Tab moves between
+    // panels and only ever stops once per panel — a "roving tabindex": every
+    // control inside a panel is tabindex="-1" except the one currently
+    // "active", which is tabindex="0". Arrow keys move that active pointer
+    // around *inside* the current panel; Enter/Space activates whatever is
+    // focused (native browser behavior for real <button>/<input> elements).
+    // ═══════════════════════════════════════════
+
+    const ROVING_SELECTOR = 'button, input, select, a[href], .product-card[tabindex]';
+
+    function rovingItems(panel) {
+        return Array.from(panel.querySelectorAll(ROVING_SELECTOR)).filter(function(el) {
+            return !el.disabled && el.getAttribute('aria-disabled') !== 'true' && el.offsetParent !== null;
+        });
+    }
+
+    // Make exactly one item in `panel` the page's Tab stop: `preferredEl` if
+    // it's still present, else whichever was already active, else the first
+    // item. Only actually moves keyboard focus there when `restoreFocus` is
+    // true — re-renders happen constantly (including from background syncs),
+    // and must never steal focus from a cashier working somewhere else.
+    function ensureRovingDefault(panel, preferredEl, restoreFocus) {
+        const items = rovingItems(panel);
+        if (!items.length) return null;
+        const current = items.find(function(el) { return el.getAttribute('tabindex') === '0'; });
+        const active = (preferredEl && items.includes(preferredEl)) ? preferredEl : (current || items[0]);
+        items.forEach(function(el) { el.setAttribute('tabindex', el === active ? '0' : '-1'); });
+        if (restoreFocus) active.focus();
+        return active;
+    }
+
+    // Whichever item last actually received focus — by click, arrow-nav, or
+    // programmatic focus() — becomes the panel's sole Tab stop from then on.
+    function registerRovingSync(panel) {
+        panel.addEventListener('focusin', function(e) {
+            const items = rovingItems(panel);
+            if (!items.includes(e.target)) return;
+            items.forEach(function(el) { el.setAttribute('tabindex', el === e.target ? '0' : '-1'); });
+        });
+    }
+
+    // Generic arrow-key roving for panels that are a simple list of controls
+    // (as opposed to the product grid / bill items, which are 2-D and have
+    // their own column-aware handlers). Up/down always move the roving
+    // pointer; left/right only do on controls where that key has no native
+    // meaning — a text input's caret and a number input's spinner always win.
+    function registerLinearRoving(panel) {
+        registerRovingSync(panel);
+        panel.addEventListener('keydown', function(e) {
+            const items = rovingItems(panel);
+            const idx = items.indexOf(e.target);
+            if (idx === -1) return;
+
+            // Text/number inputs: up/down has no native meaning for a single-line
+            // value (these are all money/quantity fields — cashiers type the
+            // amount rather than spin to it), so it's free to move the roving
+            // pointer; left/right always stays native for the text caret.
+            // Selects: the reverse — up/down natively cycles options, so only
+            // left/right is free to roam.
+            const tag = e.target.tagName;
+            const isInput  = tag === 'INPUT';
+            const isSelect = tag === 'SELECT';
+            const canUpDown    = !isSelect;
+            const canLeftRight = !isInput;
+
+            let dir = 0;
+            if (canUpDown && e.key === 'ArrowDown') dir = 1;
+            else if (canUpDown && e.key === 'ArrowUp') dir = -1;
+            else if (canLeftRight && e.key === 'ArrowRight') dir = 1;
+            else if (canLeftRight && e.key === 'ArrowLeft') dir = -1;
+            else if (canLeftRight && e.key === 'Home') { e.preventDefault(); items[0].focus(); return; }
+            else if (canLeftRight && e.key === 'End') { e.preventDefault(); items[items.length - 1].focus(); return; }
+            else return;
+
+            if (!dir) return;
+            const next = items[idx + dir];
+            if (next) { e.preventDefault(); next.focus(); }
+        });
+    }
+
+    // Grid items wrap based on container width (auto-fill), so the number of
+    // columns isn't fixed — derive it by counting how many cards share the
+    // first card's row (their offsetTop).
+    function gridColumnCount(cards) {
+        if (cards.length < 2) return 1;
+        const firstTop = cards[0].offsetTop;
+        let count = 0;
+        for (const card of cards) {
+            if (card.offsetTop === firstTop) count++;
+            else break;
+        }
+        return count || 1;
+    }
+
+    // Re-rendering the product/offer grid replaces every card's DOM node,
+    // which would otherwise drop keyboard focus back to <body>. Remember
+    // which product/offer had focus (if any) before rebuilding, so the
+    // equivalent new card can both become the panel's roving default and, if
+    // focus was actually there, get it back (a second Enter on the same item
+    // then bumps its quantity again — handy for "same item x3").
+    function captureGridFocus(container) {
+        const el = document.activeElement;
+        if (!container.contains(el)) return { hadFocus: false };
+        return {
+            hadFocus: true,
+            productId: el.dataset.productId || null,
+            offerId: el.dataset.offerId || null,
+            ingredientId: el.dataset.ingredientId || null,
+        };
+    }
+
+    function restoreGridFocus(container, captured) {
+        let preferredEl = null;
+        if (captured && captured.productId) {
+            preferredEl = container.querySelector('.product-card[data-product-id="' + captured.productId + '"]');
+        } else if (captured && captured.offerId) {
+            preferredEl = container.querySelector('.product-card[data-offer-id="' + captured.offerId + '"]');
+        } else if (captured && captured.ingredientId) {
+            preferredEl = container.querySelector('.product-card[data-ingredient-id="' + captured.ingredientId + '"]');
+        }
+        ensureRovingDefault(container, preferredEl, !!(captured && captured.hadFocus));
+    }
+
     // ── Bootstrap ──
     async function initPos() {
         loadCategories();
         await loadProducts();
+        loadIngredients();
         setupEventListeners();
         updateShiftStatus();
         setInterval(updateShiftStatus, 15000); // Update every 15 seconds
+
+        // Establish each panel's single Tab stop before any order exists —
+        // renderOrderHeader()/setBottomControls() only run once an order is
+        // created or resumed, but a couple of these panels' controls (e.g.
+        // the discount fields) are visible from the very first paint.
+        ensureRovingDefault(document.getElementById('orderHeaderPanel'), null, false);
+        ensureRovingDefault(document.getElementById('customerPanel'), null, false);
+        ensureRovingDefault(document.getElementById('bottomControlsPanel'), null, false);
+
+        const resumeId = new URLSearchParams(window.location.search).get('resume');
+        if (resumeId) {
+            history.replaceState({}, '', window.location.pathname);
+            await resumeExistingOrder(resumeId);
+        }
+
+        document.getElementById('searchInput').focus();
+    }
+
+    // Brings a bill that was never paid (e.g. left over from a previous
+    // session) back into the active order panel so it can actually be
+    // finished, instead of sitting stuck as "pending" forever — reached via
+    // the "Resume & Pay" link on the Sales Report page.
+    async function resumeExistingOrder(orderId) {
+        showLoading();
+        try {
+            const res = await fetch('/pos/order/' + orderId);
+            if (!res.ok) {
+                hideLoading();
+                toast('Could not load that order', 'error');
+                return;
+            }
+            const data = await res.json();
+            if (data.status === 'completed' || data.status === 'cancelled') {
+                hideLoading();
+                toast('That bill is already ' + data.status + ' — nothing to resume', 'error');
+                return;
+            }
+
+            currentOrder = data;
+            renderOrderHeader();
+            renderBill();
+            hideLoading();
+            toast('Resumed order ' + (data.order_number || '') + ' — finish billing below', 'success');
+        } catch (e) {
+            console.error('resumeExistingOrder error:', e);
+            hideLoading();
+            toast('Failed to resume order', 'error');
+        }
     }
 
     // Update shift status in banner
@@ -735,9 +995,22 @@
         }
     }
 
+    // Raw/included items (not sellable menu Products) — fetched once up
+    // front purely to populate the Free Item picker alongside menu items.
+    async function loadIngredients() {
+        try {
+            const res = await fetch('{{ route("pos.ingredients") }}');
+            if (!res.ok) return;
+            allIngredients = await res.json();
+        } catch (e) {
+            console.error('Load ingredients error:', e);
+        }
+    }
+
     function loadCategories() {
         const container = document.getElementById('categoriesContainer');
         container.innerHTML = '<button class="cat-pill" id="offersPill" onclick="toggleOffersMode()" style="background:#fdf4ff; color:#a21caf; border-color:#e9d5ff;"><i class="fas fa-gift" style="margin-right:4px;"></i>Offers</button>'
+            + '<button class="cat-pill" id="includeItemsPill" onclick="toggleIncludeItemsMode()" style="background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe;"><i class="fas fa-flask" style="margin-right:4px;"></i>Include Items</button>'
             + '<button class="cat-pill active" data-category="0" onclick="selectCategory(0, this)">All</button>';
         allCategories.forEach(function(cat) {
             const btn = document.createElement('button');
@@ -747,11 +1020,14 @@
             btn.onclick = function() { selectCategory(cat.id, btn); };
             container.appendChild(btn);
         });
+        ensureRovingDefault(container, container.querySelector('.cat-pill.active'), false);
     }
 
     function selectCategory(id, btn) {
         offersMode = false;
+        includeItemsMode = false;
         document.getElementById('offersPill').classList.remove('active');
+        document.getElementById('includeItemsPill').classList.remove('active');
         document.querySelectorAll('#categoriesContainer .cat-pill').forEach(function(b) { b.classList.remove('active'); });
         if (btn) btn.classList.add('active');
         loadProducts(document.getElementById('searchInput').value, id);
@@ -759,9 +1035,11 @@
 
     let offersMode = false;
     let allOffers = [];
+    let includeItemsMode = false;
 
     function toggleOffersMode() {
         offersMode = !offersMode;
+        includeItemsMode = false;
         document.querySelectorAll('#categoriesContainer .cat-pill').forEach(function(b) { b.classList.remove('active'); });
         if (offersMode) {
             document.getElementById('offersPill').classList.add('active');
@@ -769,6 +1047,115 @@
         } else {
             document.querySelector('#categoriesContainer .cat-pill[data-category="0"]').classList.add('active');
             renderProducts();
+        }
+    }
+
+    // "Include Items" — sell a raw/included item directly (e.g. "extra
+    // mayonnaise") rather than through one of the sellable menu Products.
+    // Shown as its own section, never mixed into the regular product grid.
+    async function toggleIncludeItemsMode() {
+        includeItemsMode = !includeItemsMode;
+        offersMode = false;
+        document.querySelectorAll('#categoriesContainer .cat-pill').forEach(function(b) { b.classList.remove('active'); });
+        if (includeItemsMode) {
+            document.getElementById('includeItemsPill').classList.add('active');
+            // Re-fetch rather than trust the initPos() prefetch — that one's
+            // fire-and-forget for the Free Item modal's benefit and may not
+            // have resolved yet if this is clicked right after page load.
+            await loadIngredients();
+            renderIncludeItems();
+        } else {
+            document.querySelector('#categoriesContainer .cat-pill[data-category="0"]').classList.add('active');
+            renderProducts();
+        }
+    }
+
+    function renderIncludeItems() {
+        const container = document.getElementById('productsContainer');
+        const captured = captureGridFocus(container);
+        if (!allIngredients.length) {
+            container.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#94a3b8; padding:48px 0; font-size:13px;"><i class="fas fa-flask" style="font-size:28px; display:block; margin-bottom:10px;"></i>No included items available</p>';
+            restoreGridFocus(container, captured);
+            return;
+        }
+        container.innerHTML = allIngredients.map(function(i) {
+            const hasPrice = i.selling_price !== null && i.selling_price > 0;
+            const outOfStock = i.quantity <= 0;
+            const disabled = !hasPrice || outOfStock;
+            const priceLabel = hasPrice
+                ? 'Rs. ' + i.selling_price.toFixed(2) + ' / ' + escapeHtml(i.unit)
+                : 'No price set';
+            const stockLabel = outOfStock
+                ? '<p style="font-size:10px; color:#ef4444; margin:2px 0 0; font-weight:700;">Out of Stock</p>'
+                : '<p style="font-size:10px; color:#64748b; margin:2px 0 0;">' + i.quantity.toFixed(2) + ' ' + escapeHtml(i.unit) + ' left</p>';
+            const cardExtra = disabled
+                ? 'tabindex="-1" aria-disabled="true" style="opacity:0.5; cursor:not-allowed; pointer-events:none;"'
+                : 'tabindex="-1" role="button" aria-label="Add ' + escapeHtml(i.name) + '" onclick="openIncludeItemModal(' + i.id + ', \'' + escapeJs(i.name) + '\', \'' + escapeJs(i.unit) + '\', ' + i.selling_price + ', ' + i.quantity + ')"';
+
+            return '<div class="product-card" data-ingredient-id="' + i.id + '" ' + cardExtra + '>'
+                + '<div style="height:130px; background:linear-gradient(135deg,#eff6ff,#dbeafe); border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:12px;">'
+                + '<i class="fas fa-flask" style="color:#1d4ed8; font-size:28px;"></i>'
+                + '</div>'
+                + '<p style="font-size:14px; font-weight:700; color:#0f172a; margin:0 0 5px; line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">' + escapeHtml(i.name) + '</p>'
+                + '<p style="font-size:14px; font-weight:900; color:#1d4ed8; margin:0;">' + priceLabel + '</p>'
+                + stockLabel
+                + '</div>';
+        }).join('');
+        restoreGridFocus(container, captured);
+    }
+
+    function openIncludeItemModal(ingredientId, name, unit, sellingPrice, stock) {
+        const hasActiveShift = {{ $activeShift ? 'true' : 'false' }};
+        if (!hasActiveShift) {
+            showShiftModal();
+            return;
+        }
+
+        document.getElementById('includeItemModalTitle').textContent = name;
+        document.getElementById('includeItemModalHint').textContent =
+            'Rs. ' + sellingPrice.toFixed(2) + ' per ' + unit + ' — ' + stock.toFixed(2) + ' ' + unit + ' in stock.';
+        document.getElementById('includeItemQtyLabel').textContent = 'Quantity (' + unit + ')';
+        const qtyInput = document.getElementById('includeItemQty');
+        qtyInput.value = 1;
+        qtyInput.dataset.ingredientId = ingredientId;
+        qtyInput.dataset.name = name;
+        openModal('includeItemModal');
+    }
+
+    async function submitIncludeItem() {
+        const qtyInput = document.getElementById('includeItemQty');
+        const ingredientId = parseInt(qtyInput.dataset.ingredientId);
+        const name = qtyInput.dataset.name || 'Item';
+        const qty = Math.max(1, parseInt(qtyInput.value) || 1);
+        if (!ingredientId) return;
+
+        if (!currentOrder || !currentOrder.id) {
+            const created = await createNewOrder();
+            if (!created) {
+                toast('Failed to create order. Please try again.', 'error');
+                return;
+            }
+        }
+
+        try {
+            const res = await fetch('{{ route("pos.item.add", ":id") }}'.replace(':id', currentOrder.id), {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ingredient_id: ingredientId, quantity: qty })
+            });
+            const data = await res.json();
+            if (!data.success) {
+                toast(data.message || 'Failed to add item', 'error');
+                return;
+            }
+
+            closeModal('includeItemModal');
+            await syncOrder();
+            renderBill();
+            toast(name + ' added to order', 'success');
+        } catch (e) {
+            console.error('Add include item error:', e);
+            toast('Failed to add item', 'error');
         }
     }
 
@@ -787,8 +1174,10 @@
 
     function renderOffers() {
         const container = document.getElementById('productsContainer');
+        const captured = captureGridFocus(container);
         if (!allOffers.length) {
             container.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#94a3b8; padding:48px 0; font-size:13px;"><i class="fas fa-gift" style="font-size:28px; display:block; margin-bottom:10px;"></i>No active offers</p>';
+            restoreGridFocus(container, captured);
             return;
         }
         container.innerHTML = allOffers.map(function(o) {
@@ -796,7 +1185,7 @@
             const imageHtml = o.image
                 ? '<img src="/storage/' + o.image + '" alt="' + escapeHtml(o.name) + '" style="width:100%; height:100%; object-fit:cover;">'
                 : '<i class="fas fa-gift" style="color:#a21caf; font-size:28px;"></i>';
-            return '<div class="product-card" onclick="addOfferToOrder(' + o.id + ', \'' + escapeJs(o.name) + '\')">'
+            return '<div class="product-card" tabindex="-1" role="button" data-offer-id="' + o.id + '" aria-label="Add offer ' + escapeHtml(o.name) + '" onclick="addOfferToOrder(' + o.id + ', \'' + escapeJs(o.name) + '\')">'
                 + '<div style="height:130px; background:linear-gradient(135deg,#fdf4ff,#fae8ff); border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; overflow:hidden;">'
                 + imageHtml
                 + '</div>'
@@ -805,6 +1194,7 @@
                 + (includes ? '<p style="font-size:10px; color:#64748b; margin:4px 0 0; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">Includes: ' + escapeHtml(includes) + '</p>' : '')
                 + '</div>';
         }).join('');
+        restoreGridFocus(container, captured);
     }
 
     async function addOfferToOrder(offerId, offerName) {
@@ -843,8 +1233,10 @@
 
     function renderProducts() {
         const container = document.getElementById('productsContainer');
+        const captured = captureGridFocus(container);
         if (allProducts.length === 0) {
             container.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#94a3b8; padding:48px 0; font-size:13px;"><i class="fas fa-search" style="font-size:28px; display:block; margin-bottom:10px;"></i>No products found</p>';
+            restoreGridFocus(container, captured);
             return;
         }
         container.innerHTML = allProducts.map(function(p) {
@@ -867,10 +1259,10 @@
                 stockBadge = '<p style="font-size:10px; color:#ef4444; margin:2px 0 0; font-weight:700;">Out of Stock</p>';
             }
             const cardExtra = isOutOfStock
-                ? 'style="opacity:0.5; cursor:not-allowed; pointer-events:none;"'
-                : 'onclick="addProductToOrder(' + p.id + ', \'' + escapeJs(p.name) + '\', ' + p.price + ')"';
+                ? 'tabindex="-1" aria-disabled="true" style="opacity:0.5; cursor:not-allowed; pointer-events:none;"'
+                : 'tabindex="-1" role="button" aria-label="Add ' + escapeHtml(p.name) + '" onclick="addProductToOrder(' + p.id + ', \'' + escapeJs(p.name) + '\', ' + p.price + ')"';
 
-            return '<div class="product-card" ' + cardExtra + '>'
+            return '<div class="product-card" data-product-id="' + p.id + '" ' + cardExtra + '>'
                 + '<div style="height:130px; background:linear-gradient(135deg,#eff6ff,#fee2e2); border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; overflow:hidden; position:relative;">'
                 + imageHtml
                 + '</div>'
@@ -879,6 +1271,7 @@
                 + stockBadge
                 + '</div>';
         }).join('');
+        restoreGridFocus(container, captured);
     }
 
     // ═══════════════════════════════════════════
@@ -1047,6 +1440,12 @@
         if (!item) return;
 
         let newQty = Math.max(1, parseInt(rawValue) || 1);
+        // This fires on every blur — including tabbing away without editing
+        // anything — so a no-op guard isn't just an optimization: without it,
+        // every Tab press off this field re-renders the whole bill (and
+        // fires a save request) for nothing, which stomps on the browser's
+        // in-flight focus transition to whatever's next.
+        if (newQty === item.quantity) return;
         const diff = newQty - item.quantity;
 
         // Enforce stock cap when increasing
@@ -1161,6 +1560,8 @@
             document.getElementById('customerInfoToggle').style.display = 'none';
             document.getElementById('activeOrderBanner').style.display   = 'none';
             document.getElementById('tokenNumberRow').style.display = 'none';
+            ensureRovingDefault(document.getElementById('orderHeaderPanel'), null, false);
+            ensureRovingDefault(document.getElementById('customerPanel'), null, false);
             return;
         }
 
@@ -1178,6 +1579,9 @@
 
         document.getElementById('tokenNumberRow').style.display = 'flex';
         document.getElementById('tokenNumberInput').value = currentOrder.token_number || '';
+
+        ensureRovingDefault(document.getElementById('orderHeaderPanel'), null, false);
+        ensureRovingDefault(document.getElementById('customerPanel'), null, false);
     }
 
     async function saveTokenNumber() {
@@ -1210,11 +1614,20 @@
 
     function renderBill() {
         const billEl = document.getElementById('billItems');
+        // Rebuilding innerHTML destroys every control's DOM node, dropping
+        // keyboard focus back to <body> — remember which item/role was
+        // focused (if any) so it can be restored on the freshly built nodes.
+        const focusedControl = document.activeElement.closest && document.activeElement.closest('[data-role]');
+        const hadFocus = billEl.contains(document.activeElement);
+        const focusedCard = focusedControl && focusedControl.closest('.bill-item-card');
+        const focusMemo = hadFocus ? { itemId: focusedCard ? focusedCard.dataset.itemId : null, role: focusedControl ? focusedControl.dataset.role : null } : null;
+
         if (!currentOrder || !currentOrder.items) {
             billEl.style.display = 'block';
             billEl.innerHTML = '<div style="text-align:center; padding:48px 0; color:#cbd5e1;"><i class="fas fa-utensils" style="font-size:36px; margin-bottom:12px; display:block;"></i><p style="font-size:13px; margin:0;">Tap New Order to begin</p></div>';
             setBottomControls(false);
             updateCloseButtonVisibility(false);
+            ensureRovingDefault(billEl, null, false);
             return;
         }
 
@@ -1229,7 +1642,7 @@
             billEl.style.gridTemplateColumns = 'repeat(2, 1fr)';
             billEl.style.gap = '8px';
             billEl.style.alignItems = 'start';
-            billEl.innerHTML = currentOrder.items.map(function(item) {
+            billEl.innerHTML = currentOrder.items.map(function(item, idx) {
                 const discPercent   = item.discount_percent || 0;
                 const isFreeItem    = discPercent >= 100;
                 const discRowOpen   = item.id && openDiscountRows.has(item.id);
@@ -1248,7 +1661,7 @@
 
                 // Editable quantity input (replaces static span)
                 const qtyControl = item.id
-                    ? '<input type="number" min="1" value="' + item.quantity + '" '
+                    ? '<input type="number" min="1" value="' + item.quantity + '" data-role="qty" '
                       + 'style="width:46px; text-align:center; border:1.5px solid #e2e8f0; border-radius:8px; font-size:15px; font-weight:800; color:#0f172a; padding:2px 0; outline:none; background:#fff;" '
                       + 'onblur="setQty(' + item.id + ', this.value)" '
                       + 'onkeydown="if(event.key===\'Enter\'){this.blur();event.preventDefault();}" '
@@ -1256,10 +1669,10 @@
                     : '<span style="min-width:22px; text-align:center; font-size:13px; font-weight:800; color:#0f172a;">' + item.quantity + '</span>';
 
                 const decBtn = item.id
-                    ? '<button type="button" class="qty-btn" onclick="decreaseQty(' + item.id + ')">−</button>'
+                    ? '<button type="button" class="qty-btn" data-role="dec" onclick="decreaseQty(' + item.id + ')">−</button>'
                     : '<button type="button" class="qty-btn" style="opacity:0.4;" disabled>−</button>';
                 const incBtn = item.id
-                    ? '<button type="button" class="qty-btn" onclick="increaseQty(' + item.id + ')"' + (atStockLimit ? ' disabled title="No more stock" style="opacity:0.4; cursor:not-allowed;"' : '') + '>+</button>'
+                    ? '<button type="button" class="qty-btn" data-role="inc" onclick="increaseQty(' + item.id + ')"' + (atStockLimit ? ' disabled title="No more stock" style="opacity:0.4; cursor:not-allowed;"' : '') + '>+</button>'
                     : '<button type="button" class="qty-btn" style="opacity:0.4;" disabled>+</button>';
 
                 const stockLeft = itemAvailStock !== null
@@ -1271,7 +1684,7 @@
                     : '';
 
                 const removeBtn = item.id
-                    ? '<button type="button" onclick="removeItem(' + item.id + ')" title="Remove" style="font-size:11px; color:#ef4444; background:none; border:none; cursor:pointer; padding:2px 3px; line-height:1;"><i class="fas fa-trash"></i></button>'
+                    ? '<button type="button" data-role="remove" onclick="removeItem(' + item.id + ')" title="Remove" style="font-size:11px; color:#ef4444; background:none; border:none; cursor:pointer; padding:2px 3px; line-height:1;"><i class="fas fa-trash"></i></button>'
                     : '';
 
                 // Discount toggle button (green when free, amber when partially discounted, grey when not)
@@ -1281,7 +1694,7 @@
                         ? 'background:#fef3c7; color:#92400e; border:1px solid #fde68a;'
                         : 'background:#f1f5f9; color:#64748b; border:1px solid #e2e8f0;');
                 const discBtn = item.id
-                    ? '<button type="button" onclick="toggleDiscountRow(' + item.id + ')" title="Discount" '
+                    ? '<button type="button" data-role="disc" onclick="toggleDiscountRow(' + item.id + ')" title="Discount" '
                       + 'style="font-size:9px; ' + discBtnStyle + ' border-radius:5px; padding:2px 6px; cursor:pointer; font-weight:700; line-height:1.3;">% off</button>'
                     : '';
 
@@ -1308,7 +1721,7 @@
                         + '</div>';
                 }
 
-                return '<div style="background:#fff; border:1px solid #eef2f7; border-radius:10px; padding:8px;">'
+                return '<div class="bill-item-card" data-item-id="' + (item.id || ('tmp-' + idx)) + '" style="background:#fff; border:1px solid #eef2f7; border-radius:10px; padding:8px;">'
                     // Header: thumb + name
                     + '<div style="display:flex; align-items:center; gap:6px;">'
                     + thumbHtml
@@ -1353,6 +1766,20 @@
         updateCloseButtonVisibility(hasItems);
         updateChange();
         scrollBillToBottom();
+
+        // Each product is its own Tab stop (so Tab moves product-to-product,
+        // "one by one") defaulting to its qty control — arrow keys adjust
+        // that product's quantity directly, wherever the focus is within its
+        // row. Every OTHER card just needs its tabindex bookkeeping fixed up;
+        // only the one that actually had focus before this re-render gets it
+        // back.
+        Array.from(billEl.querySelectorAll('.bill-item-card')).forEach(function(card) {
+            const isFocusedCard = !!(focusMemo && focusMemo.itemId === card.dataset.itemId);
+            const preferredEl = (isFocusedCard && focusMemo.role)
+                ? card.querySelector('[data-role="' + focusMemo.role + '"]')
+                : card.querySelector('[data-role="qty"]');
+            ensureRovingDefault(card, preferredEl, hadFocus && isFocusedCard);
+        });
     }
 
     function updateCloseButtonVisibility(hasItems) {
@@ -1368,6 +1795,7 @@
         document.getElementById('waiterPayRow').style.display       = hasItems ? 'flex' : 'none';
         document.getElementById('freeItemToggle').style.display     = (currentOrder && currentOrder.id) ? 'block' : 'none';
         if (!hasItems) setPaymentExpanded(false);
+        ensureRovingDefault(document.getElementById('bottomControlsPanel'), null, false);
     }
 
     function setPaymentExpanded(expanded) {
@@ -1376,6 +1804,7 @@
         if (!body) return;
         body.style.display = expanded ? 'block' : 'none';
         if (chevron) chevron.style.transform = expanded ? 'rotate(180deg)' : 'rotate(0deg)';
+        ensureRovingDefault(document.getElementById('bottomControlsPanel'), null, false);
     }
 
     function togglePaymentSection() {
@@ -1392,6 +1821,7 @@
         section.style.display = isOpen ? 'none' : 'block';
         toggle.style.background = isOpen ? 'none' : '#f0fdf4';
         chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        ensureRovingDefault(document.getElementById('customerPanel'), null, false);
     }
 
 
@@ -1429,11 +1859,15 @@
         });
         document.getElementById('cashSection').style.display = method === 'cash' ? 'flex' : 'none';
         document.getElementById('splitSection').style.display = method === 'split' ? 'block' : 'none';
+        // Split's own fields need the vertical room — shrink the method
+        // icons down so the Hold/Pay row below never gets pushed off-screen.
+        document.getElementById('paymentBody').classList.toggle('split-active', method === 'split');
         if (method !== 'cash') document.getElementById('changeDisplay').textContent = 'Rs. 0.00';
         if (method === 'split') updateSplitTotal();
         const _payLabels  = { cash: 'Cash', card: 'Card', bank_transfer: 'Bank', pickme: 'PickMe', uber: 'Uber', split: 'Split' };
         const _paySummary = document.getElementById('paymentMethodSummary');
         if (_paySummary) _paySummary.textContent = (_payLabels[method] || method);
+        ensureRovingDefault(document.getElementById('bottomControlsPanel'), null, false);
     }
 
     function updateSplitTotal() {
@@ -1699,30 +2133,54 @@
         if (!currentOrder || !currentOrder.id) return;
 
         const select = document.getElementById('freeItemProduct');
-        select.innerHTML = '<option value="">Select an item…</option>' + allProducts.map(function(p) {
-            return '<option value="' + p.id + '" data-name="' + escapeHtml(p.name) + '">' + escapeHtml(p.name) + ' (Rs. ' + p.price.toFixed(2) + ')</option>';
+        const productOptions = allProducts.map(function(p) {
+            return '<option value="product:' + p.id + '" data-name="' + escapeHtml(p.name) + '">' + escapeHtml(p.name) + ' (Rs. ' + p.price.toFixed(2) + ')</option>';
         }).join('');
+        // Raw/included items aren't sellable menu Products, so they have no
+        // retail price to show — the unit (g/ml/pcs) is the useful bit here.
+        const ingredientOptions = allIngredients.map(function(i) {
+            return '<option value="ingredient:' + i.id + '" data-name="' + escapeHtml(i.name) + '" data-unit="' + escapeHtml(i.unit) + '">' + escapeHtml(i.name) + ' (' + escapeHtml(i.unit) + ')</option>';
+        }).join('');
+
+        select.innerHTML = '<option value="">Select an item…</option>'
+            + (productOptions ? '<optgroup label="Menu Items">' + productOptions + '</optgroup>' : '')
+            + (ingredientOptions ? '<optgroup label="Included Items">' + ingredientOptions + '</optgroup>' : '');
         document.getElementById('freeItemQty').value = 1;
+        document.getElementById('freeItemQtyLabel').textContent = 'Quantity';
 
         openModal('freeItemModal');
     }
 
+    // Included items are measured, not counted — once one is picked, swap
+    // the generic "Quantity" label for "Quantity (unit)" so the cashier
+    // knows what number to type (e.g. 250 for ml, not "how many").
+    function onFreeItemSelectionChange() {
+        const select = document.getElementById('freeItemProduct');
+        const opt = select.options[select.selectedIndex];
+        const unit = opt ? opt.dataset.unit : null;
+        document.getElementById('freeItemQtyLabel').textContent = unit ? ('Quantity (' + unit + ')') : 'Quantity';
+    }
+
     async function submitFreeItem() {
         const select = document.getElementById('freeItemProduct');
-        const productId = parseInt(select.value);
         const qty = Math.max(1, parseInt(document.getElementById('freeItemQty').value) || 1);
 
-        if (!productId) {
+        if (!select.value) {
             toast('Select an item to give for free', 'error');
             return;
         }
         if (!currentOrder || !currentOrder.id) return;
 
+        const [type, idStr] = select.value.split(':');
+        const payload = { quantity: qty, is_free: true };
+        if (type === 'ingredient') payload.ingredient_id = parseInt(idStr);
+        else payload.product_id = parseInt(idStr);
+
         try {
             const res = await fetch('{{ route("pos.item.add", ":id") }}'.replace(':id', currentOrder.id), {
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ product_id: productId, quantity: qty, is_free: true })
+                body: JSON.stringify(payload)
             });
             const data = await res.json();
             if (!data.success) {
@@ -1788,6 +2246,40 @@
         toast('Bill discarded', 'success');
     }
 
+    // Parks the current bill (status -> hold) so it shows up as pending on the
+    // Sales Report page and can be brought back later via its "Resume & Pay"
+    // link. Unlike discard, the items stay reserved — the cached product
+    // stock counts are intentionally left untouched.
+    async function holdCurrentOrder() {
+        if (!currentOrder || !currentOrder.id) return;
+
+        if (!currentOrder.items || currentOrder.items.length === 0) {
+            toast('Add at least one item before holding this bill', 'error');
+            return;
+        }
+
+        try {
+            const res = await fetch('{{ route("pos.order.hold", ":id") }}'.replace(':id', currentOrder.id), {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({})
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                toast(data.message || 'Failed to hold bill', 'error');
+                return;
+            }
+        } catch (e) {
+            console.error('Hold order error:', e);
+            toast('Error holding bill', 'error');
+            return;
+        }
+
+        resetOrder();
+        renderProducts();
+        toast('Bill held — resume it anytime from Sales Report', 'success');
+    }
+
     // ═══════════════════════════════════════════
     // HELPERS
     // ═══════════════════════════════════════════
@@ -1825,6 +2317,13 @@
             b.classList.toggle('active', b.dataset.method === 'cash');
         });
         document.getElementById('cashSection').style.display = 'flex';
+        document.getElementById('paymentBody').classList.remove('split-active');
+
+        // Hand keyboard focus back to search so a cashier can start the next
+        // bill (typing a product name auto-creates a new order) without
+        // reaching for the mouse.
+        const search = document.getElementById('searchInput');
+        if (search) search.focus();
     }
 
     // Accepts either a single receipt's HTML, or an array of receipts that
@@ -1888,8 +2387,27 @@
         }
     }
 
-    function openModal(id)  { document.getElementById(id).classList.add('open'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    function openModal(id) {
+        const overlay = document.getElementById(id);
+        lastFocusedBeforeModal = document.activeElement;
+        overlay.classList.add('open');
+        const box = overlay.querySelector('.modal-box');
+        // Land on the first fillable field so a cashier can start typing right
+        // away; only fall back to a button/link when the modal has none (e.g.
+        // the "no active shift" prompt).
+        const field = box.querySelector('input, textarea, select');
+        const target = field || box.querySelector('button, a[href]');
+        if (target) target.focus();
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('open');
+        if (lastFocusedBeforeModal && document.body.contains(lastFocusedBeforeModal)) {
+            lastFocusedBeforeModal.focus();
+        }
+        lastFocusedBeforeModal = null;
+    }
+
     function showShiftModal() { openModal('shiftModal'); }
 
     function showLoading() { document.body.style.cursor = 'wait'; }
@@ -1924,6 +2442,169 @@
         document.getElementById('discountValue').addEventListener('input', recalcTotal);
         document.getElementById('discountType').addEventListener('change', recalcTotal);
 
+        // ── Search box: Enter quick-adds when the filter narrowed to one match.
+        // Moving into the product grid itself is Tab's job, not an arrow key's —
+        // this panel stays self-contained. ──
+        document.getElementById('searchInput').addEventListener('keydown', function(e) {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            const visible = offersMode ? allOffers : allProducts.filter(function(p) {
+                return p.is_unlimited_stock || getStock(p.id) > 0;
+            });
+            if (visible.length === 1) {
+                const only = visible[0];
+                if (offersMode) addOfferToOrder(only.id, only.name);
+                else addProductToOrder(only.id, only.name, only.price);
+            }
+        });
+
+        // ── Product/offer grid panel: arrow keys move the roving card, Enter/Space adds ──
+        registerRovingSync(document.getElementById('productsContainer'));
+        document.getElementById('productsContainer').addEventListener('keydown', function(e) {
+            const card = e.target.closest('.product-card');
+            if (!card || card.getAttribute('aria-disabled') === 'true') return;
+
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                // A card's onclick may open a modal (e.g. the Include Items
+                // quantity prompt). Without stopping propagation here, this
+                // same keydown keeps bubbling to the document-level modal
+                // handler, which sees a now-open modal and a non-button
+                // target and immediately "submits" it — the modal would
+                // flash open and close before you could type a quantity.
+                e.stopPropagation();
+                card.click();
+                return;
+            }
+
+            const cards = rovingItems(this);
+            const idx = cards.indexOf(card);
+            if (idx === -1) return;
+            const cols = gridColumnCount(cards);
+            let nextIdx;
+            if (e.key === 'ArrowRight') nextIdx = idx + 1;
+            else if (e.key === 'ArrowLeft') nextIdx = idx - 1;
+            else if (e.key === 'ArrowDown') nextIdx = idx + cols;
+            else if (e.key === 'ArrowUp') nextIdx = idx - cols;
+            else if (e.key === 'Home') nextIdx = 0;
+            else if (e.key === 'End') nextIdx = cards.length - 1;
+            else return;
+
+            e.preventDefault();
+            if (cards[nextIdx]) cards[nextIdx].focus();
+        });
+
+        // ── Categories / order header / customer / bottom-controls panels: a
+        // simple list of controls each — the generic linear roving handler
+        // covers all of them. ──
+        registerLinearRoving(document.getElementById('categoriesContainer'));
+        registerLinearRoving(document.getElementById('orderHeaderPanel'));
+        registerLinearRoving(document.getElementById('customerPanel'));
+        registerLinearRoving(document.getElementById('bottomControlsPanel'));
+
+        // ── Bill items panel: each PRODUCT is its own Tab stop (Tab moves
+        // product-to-product, defaulting to its qty control), so the roving
+        // sync here is scoped per-card rather than to the whole panel — a
+        // focused control only affects tabindex within its own card.
+        document.getElementById('billItems').addEventListener('focusin', function(e) {
+            const control = e.target.closest('[data-role]');
+            const card = control && control.closest('.bill-item-card');
+            if (!card) return;
+            rovingItems(card).forEach(function(el) { el.setAttribute('tabindex', el === control ? '0' : '-1'); });
+        });
+
+        // Up/down always adjusts that product's quantity, whichever of its
+        // controls currently has focus — the fast path a cashier reaches for
+        // most. Left/right cycles between dec/qty/inc/%off/remove within the
+        // same product (the qty <input>'s own left/right stays native, for
+        // the text caret).
+        document.getElementById('billItems').addEventListener('keydown', function(e) {
+            const control = e.target.closest('[data-role]');
+            if (!control) return;
+            const card = control.closest('.bill-item-card');
+            if (!card) return;
+
+            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                const itemId = card.dataset.itemId;
+                if (!itemId || itemId.indexOf('tmp-') === 0) return; // no server id yet
+                if (e.key === 'ArrowUp') increaseQty(parseInt(itemId, 10));
+                else decreaseQty(parseInt(itemId, 10));
+                return;
+            }
+
+            if (control.tagName !== 'INPUT' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+                e.preventDefault();
+                const ROLE_ORDER = ['dec', 'qty', 'inc', 'disc', 'remove'];
+                const dir = e.key === 'ArrowRight' ? 1 : -1;
+                for (let i = ROLE_ORDER.indexOf(control.dataset.role) + dir; i >= 0 && i < ROLE_ORDER.length; i += dir) {
+                    const target = card.querySelector('[data-role="' + ROLE_ORDER[i] + '"]');
+                    if (target && !target.disabled) { target.focus(); break; }
+                }
+            }
+        });
+
+        // ── Modal keyboard behavior: Escape closes, Enter submits, Tab is trapped inside ──
+        document.addEventListener('keydown', function(e) {
+            const openOverlay = document.querySelector('.modal-overlay.open');
+            if (!openOverlay) return;
+
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                closeModal(openOverlay.id);
+                return;
+            }
+
+            const tag = e.target.tagName;
+            if (e.key === 'Enter' && tag !== 'TEXTAREA' && tag !== 'BUTTON' && tag !== 'A') {
+                const primary = openOverlay.querySelector('[data-primary="true"]');
+                if (primary) {
+                    e.preventDefault();
+                    primary.click();
+                    return;
+                }
+            }
+
+            if (e.key === 'Tab') {
+                const box = openOverlay.querySelector('.modal-box');
+                const focusables = Array.from(box.querySelectorAll('input, textarea, select, button, a[href]'))
+                    .filter(function(el) { return !el.disabled && el.offsetParent !== null; });
+                if (!focusables.length) return;
+                const first = focusables[0];
+                const last = focusables[focusables.length - 1];
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault();
+                    last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            }
+        });
+
+        // ── Global function-key shortcuts for a mouse-free cashier workflow ──
+        document.addEventListener('keydown', function(e) {
+            if (document.querySelector('.modal-overlay.open')) return; // Escape/Enter/Tab handled above
+            if (e.key === 'F2') {
+                e.preventDefault();
+                createNewOrder();
+            } else if (e.key === 'F3') {
+                e.preventDefault();
+                const search = document.getElementById('searchInput');
+                search.focus();
+                search.select();
+            } else if (e.key === 'F4') {
+                e.preventDefault();
+                holdCurrentOrder();
+            } else if (e.key === 'F8') {
+                e.preventDefault();
+                closeCurrentOrder();
+            } else if (e.key === 'F9') {
+                e.preventDefault();
+                initiatePayment();
+            }
+        });
+
         // Block letters/alphabets on all number inputs (including dynamically created ones)
         var ALLOWED_KEYS = [8,9,13,27,46,35,36,37,38,39,40]; // backspace,tab,enter,esc,del,home,end,arrows
         document.addEventListener('keydown', function(e) {
@@ -1938,7 +2619,7 @@
         // Close modal on backdrop click
         document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
             overlay.addEventListener('click', function(e) {
-                if (e.target === overlay) overlay.classList.remove('open');
+                if (e.target === overlay) closeModal(overlay.id);
             });
         });
     }

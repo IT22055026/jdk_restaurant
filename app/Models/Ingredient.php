@@ -13,6 +13,7 @@ class Ingredient extends Model
         'low_stock_threshold',
         'supplier_id',
         'cost_per_unit',
+        'selling_price',
         'status',
     ];
 
@@ -20,6 +21,7 @@ class Ingredient extends Model
         'quantity' => 'decimal:3',
         'low_stock_threshold' => 'decimal:3',
         'cost_per_unit' => 'decimal:2',
+        'selling_price' => 'decimal:2',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

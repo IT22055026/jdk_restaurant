@@ -7,7 +7,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\User;
-use Carbon\Carbon;
+use App\Support\BusinessDay;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -16,8 +16,10 @@ class ReportsController extends Controller
 {
     public function paymentBreakdownJson(Request $request)
     {
-        $from = $request->input('from') ? Carbon::parse($request->input('from'))->startOfDay() : null;
-        $to   = $request->input('to')   ? Carbon::parse($request->input('to'))->endOfDay()     : null;
+        // Business dates (06:00-05:59 the next day), not calendar midnight —
+        // see App\Support\BusinessDay.
+        $from = $request->input('from') ? BusinessDay::boundsFor($request->input('from'))[0] : null;
+        $to   = $request->input('to')   ? BusinessDay::boundsFor($request->input('to'))[1]   : null;
 
         $query = Order::where('status', 'completed')->whereNotNull('payment_method')
                       ->select('payment_method',
@@ -55,8 +57,8 @@ class ReportsController extends Controller
 
     public function exportSalesRangePdf(Request $request)
     {
-        $from = $request->input('from') ? Carbon::parse($request->input('from'))->startOfDay() : Carbon::today()->startOfDay();
-        $to   = $request->input('to')   ? Carbon::parse($request->input('to'))->endOfDay()     : Carbon::today()->endOfDay();
+        $from = $request->input('from') ? BusinessDay::boundsFor($request->input('from'))[0] : BusinessDay::boundsFor(BusinessDay::today())[0];
+        $to   = $request->input('to')   ? BusinessDay::boundsFor($request->input('to'))[1]   : BusinessDay::boundsFor(BusinessDay::today())[1];
 
         $sales = Order::where('status', 'completed')
                       ->whereBetween('created_at', [$from, $to])
@@ -93,10 +95,10 @@ class ReportsController extends Controller
     private function baseReportData(): array
     {
         $totalRevenue  = Order::where('status', 'completed')->sum('total');
-        $todaySales    = Order::where('status', 'completed')->whereDate('created_at', Carbon::today())->sum('total');
+        $todaySales    = Order::where('status', 'completed')->businessDay(BusinessDay::today())->sum('total');
+        [$monthStart, $monthEnd] = BusinessDay::monthBoundsFor(BusinessDay::today());
         $monthRevenue  = Order::where('status', 'completed')
-                              ->whereYear('created_at', Carbon::now()->year)
-                              ->whereMonth('created_at', Carbon::now()->month)->sum('total');
+                              ->whereBetween('created_at', [$monthStart, $monthEnd])->sum('total');
         $totalOrders   = Order::where('status', 'completed')->count();
         $avgOrderValue = $totalOrders > 0 ? round($totalRevenue / $totalOrders, 2) : 0;
 
@@ -109,10 +111,10 @@ class ReportsController extends Controller
         $topProduct = $topProductRow?->product_name ?? 'N/A';
 
         $last7Days = collect(range(6, 0))->map(function ($daysAgo) {
-            $date = Carbon::today()->subDays($daysAgo);
+            $date = BusinessDay::today()->subDays($daysAgo);
             return [
                 'label'   => $date->format('D d'),
-                'revenue' => (float) Order::where('status', 'completed')->whereDate('created_at', $date)->sum('total'),
+                'revenue' => (float) Order::where('status', 'completed')->businessDay($date)->sum('total'),
             ];
         });
         $chartLabels = $last7Days->pluck('label')->toJson();
@@ -158,10 +160,10 @@ class ReportsController extends Controller
     {
         $totalRevenue  = Order::where('status', 'completed')->sum('total');
         $todaySales    = Order::where('status', 'completed')
-                              ->whereDate('created_at', Carbon::today())->sum('total');
+                              ->businessDay(BusinessDay::today())->sum('total');
+        [$monthStart, $monthEnd] = BusinessDay::monthBoundsFor(BusinessDay::today());
         $monthRevenue  = Order::where('status', 'completed')
-                              ->whereYear('created_at',  Carbon::now()->year)
-                              ->whereMonth('created_at', Carbon::now()->month)->sum('total');
+                              ->whereBetween('created_at', [$monthStart, $monthEnd])->sum('total');
         $totalOrders   = Order::where('status', 'completed')->count();
         $avgOrderValue = $totalOrders > 0 ? round($totalRevenue / $totalOrders, 2) : 0;
 
@@ -255,10 +257,10 @@ class ReportsController extends Controller
     {
         $totalRevenue  = Order::where('status', 'completed')->sum('total');
         $todaySales    = Order::where('status', 'completed')
-                              ->whereDate('created_at', Carbon::today())->sum('total');
+                              ->businessDay(BusinessDay::today())->sum('total');
+        [$monthStart, $monthEnd] = BusinessDay::monthBoundsFor(BusinessDay::today());
         $monthRevenue  = Order::where('status', 'completed')
-                              ->whereYear('created_at',  Carbon::now()->year)
-                              ->whereMonth('created_at', Carbon::now()->month)->sum('total');
+                              ->whereBetween('created_at', [$monthStart, $monthEnd])->sum('total');
         $totalOrders   = Order::where('status', 'completed')->count();
         $avgOrderValue = $totalOrders > 0 ? round($totalRevenue / $totalOrders, 2) : 0;
 

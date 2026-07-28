@@ -50,6 +50,7 @@ class IngredientController extends Controller
             'low_stock_threshold' => 'nullable|numeric|min:0',
             'supplier_id' => 'nullable|exists:suppliers,id',
             'cost_per_unit' => 'nullable|numeric|min:0',
+            'selling_price' => 'nullable|numeric|min:0',
             'status' => 'required|in:active,inactive',
         ]);
 
@@ -79,6 +80,7 @@ class IngredientController extends Controller
             'low_stock_threshold' => 'nullable|numeric|min:0',
             'supplier_id' => 'nullable|exists:suppliers,id',
             'cost_per_unit' => 'nullable|numeric|min:0',
+            'selling_price' => 'nullable|numeric|min:0',
             'status' => 'required|in:active,inactive',
         ]);
 

@@ -93,6 +93,18 @@
                         @error('cost_per_unit')
                             <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
                         @enderror
+                        <p class="text-xs text-gray-500 mt-2">What you pay the supplier — for stock valuation, not what a customer is charged.</p>
+                    </div>
+
+                    <div>
+                        <label for="selling_price" class="block text-sm font-semibold text-gray-900 mb-2">Selling Price (per unit)</label>
+                        <input type="number" name="selling_price" id="selling_price" value="{{ old('selling_price') }}" step="0.01" min="0"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent {{ $errors->has('selling_price') ? 'border-red-600' : '' }}"
+                            placeholder="0.00">
+                        @error('selling_price')
+                            <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
+                        @enderror
+                        <p class="text-xs text-gray-500 mt-2">What to charge a customer buying this directly in POS (e.g. "extra mayonnaise"). Leave blank to keep it un-sellable on its own — it'll only show as free-item-eligible.</p>
                     </div>
 
                     <div>

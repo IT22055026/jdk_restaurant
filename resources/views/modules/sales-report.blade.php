@@ -190,23 +190,23 @@
         </div>
     </div>
 
-    <!-- Revoke Bill Modal -->
+    <!-- Revoke / Discard Bill Modal (shared — copy + endpoint swap based on the target bill's status) -->
     <div id="revokeModal" class="modal">
         <div class="modal-content" style="max-width: 420px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <h3 style="font-size: 18px; font-weight: 700; color: #1e293b;"><i class="fas fa-rotate-left" style="color:#dc2626; margin-right:6px;"></i>Revoke Bill</h3>
+                <h3 id="revokeModalTitle" style="font-size: 18px; font-weight: 700; color: #1e293b;"><i class="fas fa-rotate-left" style="color:#dc2626; margin-right:6px;"></i>Revoke Bill</h3>
                 <button onclick="closeRevokeModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b;">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <p style="font-size: 13px; color: #64748b; margin: 0 0 10px;">
+            <p id="revokeModalCopy" style="font-size: 13px; color: #64748b; margin: 0 0 10px;">
                 This reverses a paid bill — its items are added back to stock, its revenue is removed from reports, and it's recorded as revoked for audit. This cannot be undone.
             </p>
-            <textarea id="revokeReasonInput" rows="3" placeholder="Reason for revoking this bill…"
+            <textarea id="revokeReasonInput" rows="3" placeholder="Reason…"
                 style="width:100%; font-size:13px; border:1.5px solid #e2e8f0; border-radius:8px; padding:10px; outline:none; resize:none;"></textarea>
             <div style="display:flex; gap:8px; margin-top:14px;">
                 <button onclick="closeRevokeModal()" class="btn btn-secondary" style="flex:1; justify-content:center;">Cancel</button>
-                <button onclick="submitRevoke()" class="btn btn-danger" style="flex:1; justify-content:center;">Revoke Bill</button>
+                <button id="revokeModalConfirmBtn" onclick="submitRevoke()" class="btn btn-danger" style="flex:1; justify-content:center;">Revoke Bill</button>
             </div>
         </div>
     </div>
@@ -233,6 +233,9 @@
         }
 
         let revokeTargetId = null;
+        let revokeMode = 'revoke'; // 'revoke' (completed bill, reverses payment) or 'discard' (open bill, never paid)
+
+        const OPEN_STATUSES = ['pending', 'confirmed', 'hold'];
 
         function statusBadgeFor(bill) {
             if (bill.status === 'cancelled') {
@@ -285,11 +288,26 @@
                             detail = `<div style="font-size:11px; color:#94a3b8; margin-top:3px;">${bill.discard_reason ? 'Reason: ' + bill.discard_reason : ''}${bill.discarded_by ? ' — by ' + bill.discarded_by : ''}</div>`;
                         }
 
-                        const revokeBtn = bill.status === 'completed'
-                            ? `<button onclick="openRevokeModal(${bill.id})" class="btn btn-danger" style="font-size: 11px;">
+                        let extraBtns = '';
+                        if (bill.status === 'completed') {
+                            extraBtns = `
+                                <button onclick="reprintBill(${bill.id})" class="btn btn-primary" style="font-size: 11px;">
+                                    <i class="fas fa-print"></i> Re-print Bill
+                                </button>
+                                <button onclick="openRevokeModal(${bill.id}, 'revoke')" class="btn btn-danger" style="font-size: 11px;">
                                     <i class="fas fa-rotate-left"></i> Revoke Bill
-                               </button>`
-                            : '';
+                                </button>`;
+                        } else if (OPEN_STATUSES.includes(bill.status)) {
+                            // These bills were started but never paid off — give staff a way
+                            // to always resolve them instead of leaving them stuck as "pending".
+                            extraBtns = `
+                                <a href="/pos?resume=${bill.id}" class="btn btn-primary" style="font-size: 11px; text-decoration:none;">
+                                    <i class="fas fa-play"></i> Resume &amp; Pay
+                                </a>
+                                <button onclick="openRevokeModal(${bill.id}, 'discard')" class="btn btn-danger" style="font-size: 11px;">
+                                    <i class="fas fa-ban"></i> Discard
+                                </button>`;
+                        }
 
                         return `
                         <tr class="table-row">
@@ -306,7 +324,7 @@
                                 <button onclick="viewItems(${bill.id})" class="btn btn-primary" style="font-size: 11px;">
                                     <i class="fas fa-list"></i> View Items
                                 </button>
-                                ${revokeBtn}
+                                ${extraBtns}
                             </td>
                         </tr>
                     `;
@@ -398,9 +416,34 @@
             document.getElementById('itemsModal').classList.remove('active');
         }
 
-        function openRevokeModal(orderId) {
+        const REVOKE_MODES = {
+            revoke: {
+                title: '<i class="fas fa-rotate-left" style="color:#dc2626; margin-right:6px;"></i>Revoke Bill',
+                copy: "This reverses a paid bill — its items are added back to stock, its revenue is removed from reports, and it's recorded as revoked for audit. This cannot be undone.",
+                placeholder: 'Reason for revoking this bill…',
+                confirmLabel: 'Revoke Bill',
+                endpoint: (id) => `/pos/order/${id}/revoke`,
+                failMessage: 'Failed to revoke bill',
+            },
+            discard: {
+                title: '<i class="fas fa-ban" style="color:#dc2626; margin-right:6px;"></i>Discard Bill',
+                copy: "This closes out a bill that was never paid — nothing is added to reports and it can't be resumed afterwards. This cannot be undone.",
+                placeholder: 'Reason for discarding this bill…',
+                confirmLabel: 'Discard Bill',
+                endpoint: (id) => `/pos/order/${id}/cancel`,
+                failMessage: 'Failed to discard bill',
+            },
+        };
+
+        function openRevokeModal(orderId, mode) {
             revokeTargetId = orderId;
+            revokeMode = mode || 'revoke';
+            const cfg = REVOKE_MODES[revokeMode];
+            document.getElementById('revokeModalTitle').innerHTML = cfg.title;
+            document.getElementById('revokeModalCopy').textContent = cfg.copy;
+            document.getElementById('revokeReasonInput').placeholder = cfg.placeholder;
             document.getElementById('revokeReasonInput').value = '';
+            document.getElementById('revokeModalConfirmBtn').textContent = cfg.confirmLabel;
             document.getElementById('revokeModal').classList.add('active');
         }
 
@@ -410,14 +453,15 @@
         }
 
         function submitRevoke() {
+            const cfg = REVOKE_MODES[revokeMode];
             const reason = document.getElementById('revokeReasonInput').value.trim();
             if (!reason) {
-                alert('Please enter a reason for revoking this bill');
+                alert('Please enter a reason');
                 return;
             }
             if (!revokeTargetId) return;
 
-            fetch(`/pos/order/${revokeTargetId}/revoke`, {
+            fetch(cfg.endpoint(revokeTargetId), {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -432,13 +476,102 @@
                         closeRevokeModal();
                         loadSalesReport();
                     } else {
-                        alert(data.message || 'Failed to revoke bill');
+                        alert(data.message || cfg.failMessage);
                     }
                 })
                 .catch(err => {
                     console.error(err);
-                    alert('Failed to revoke bill');
+                    alert(cfg.failMessage);
                 });
+        }
+
+        async function reprintBill(orderId) {
+            try {
+                const res = await fetch(`/pos/order/${orderId}/receipt/reprint`);
+                const data = await res.json();
+                if (data.success) {
+                    printThermalReceipt(data);
+                } else {
+                    alert('Error: ' + (data.message || 'Could not load receipt'));
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Failed to load receipt');
+            }
+        }
+
+        function printThermalReceipt(d) {
+            const CO_NAME    = "Cafe' Kdj - BBQ";
+            const CO_TAGLINE = 'Fusion Food Court';
+            const CO_CONTACT = '07777-04555';
+            const CO_ADDRESS = '#9, Galle Road, Dehiwala';
+
+            const itemRows = d.items.map(function(i) {
+                return `<tr>
+                    <td style="padding:3px 0; vertical-align:top; width:62%;">${i.product_name}</td>
+                    <td style="text-align:center; padding:3px 0; vertical-align:top; width:10%;">${i.quantity}</td>
+                    <td style="text-align:right; padding:3px 0; vertical-align:top; width:28%;">Rs.${parseFloat(i.subtotal).toFixed(2)}</td>
+                </tr>`;
+            }).join('');
+
+            const html = `
+                <div style="text-align:center; padding-bottom:8px;">
+                    <img src="/images/KDJ_logo.png" style="max-width:120px; max-height:120px; margin-bottom:6px; display:block; margin-left:auto; margin-right:auto;" />
+                    <div style="font-size:16px; font-weight:900;">${CO_NAME}</div>
+                    <div style="font-size:12px;">${CO_TAGLINE}</div>
+                    <div style="font-size:11px;">${CO_ADDRESS}</div>
+                    <div style="font-size:11px;">${CO_CONTACT}</div>
+                </div>
+
+                <div style="border-top:2px solid #000; border-bottom:2px solid #000; padding:6px 0; margin-bottom:8px;">
+                    <div style="text-align:center; font-size:16px; font-weight:900; color: #2563eb; margin-bottom: 5px;">*** RE-PRINT ***</div>
+                    <div style="text-align:center; font-size:14px; letter-spacing:2px; margin-bottom:5px;">FINAL BILL</div>
+                    <table width="100%" cellspacing="0" cellpadding="2" style="font-size:12px; font-weight:900;">
+                        <tr><td style="width:35%;">Order</td><td style="text-align:right; width:65%;">${d.order_number}</td></tr>
+                        ${d.token_number ? `<tr><td>Token</td><td style="text-align:right;">#${String(d.token_number).padStart(2, '0')}</td></tr>` : ''}
+                        ${d.customer_name ? `<tr><td>Customer</td><td style="text-align:right;">${d.customer_name}</span></td></tr>` : ''}
+                        <tr><td>Date</td><td style="text-align:right;">${d.printed_at}</td></tr>
+                    </table>
+                </div>
+
+                <table width="100%" cellspacing="0" cellpadding="2" style="font-size:13px; font-weight:900;">
+                    <thead><tr style="border-bottom:1px dashed #000;">
+                        <th style="text-align:left; width:62%;">ITEM</th>
+                        <th style="text-align:center; width:10%;">QTY</th>
+                        <th style="text-align:right; width:28%;">AMOUNT</th>
+                    </tr></thead>
+                    <tbody>${itemRows}</tbody>
+                </table>
+
+                <table width="100%" cellspacing="0" cellpadding="2" style="font-size:13px; font-weight:900; border-top:1px dashed #000; margin-top:4px;">
+                    <tr><td style="width:65%;">Subtotal</td><td style="text-align:right; width:35%;">Rs.${parseFloat(d.subtotal).toFixed(2)}</td></tr>
+                    ${d.discount_amount > 0 ? `<tr><td>Discount</td><td style="text-align:right;">-Rs.${parseFloat(d.discount_amount).toFixed(2)}</td></tr>` : ''}
+                    <tr style="border-top:1px solid #000; font-size:17px;"><td style="padding-top:4px;">TOTAL</td><td style="text-align:right; padding-top:4px;">Rs.${parseFloat(d.total).toFixed(2)}</td></tr>
+                </table>
+
+                <div style="border-top:1px dashed #000; margin-top:8px; padding-top:6px; font-size:12px; font-weight:900;">
+                    <div>Payment: ${d.payment_method || 'N/A'}</div>
+                    <div>Paid: Rs.${parseFloat(d.amount_paid || 0).toFixed(2)}</div>
+                    ${(d.change_amount > 0) ? `<div>Change: Rs.${parseFloat(d.change_amount).toFixed(2)}</div>` : ''}
+                </div>
+
+                <div style="text-align:center; font-size:11px; margin-top:10px; border-top:1px dashed #000; padding-top:8px; line-height:1.2;">
+                    Thank you for dining with us!<br>
+                    RE-PRINTED AT: ${new Date().toLocaleString()}<br>
+                    Powered By JAAN Network (PVT) Ltd
+                </div>
+            `;
+
+            const w = window.open('', '', 'width=400');
+            w.document.write(`
+                <!DOCTYPE html><html><head><style>
+                @page { size: 80mm auto; margin: 0; }
+                body { font-family: 'Courier New', monospace; width: 100%; margin: 0; padding: 4mm 5mm; font-size: 14px; font-weight: 900 !important; color: #000; }
+                * { box-sizing: border-box; font-weight: 900 !important; }
+                table { border-collapse: collapse; }
+                </style></head><body onload="window.print(); window.close();">${html}</body></html>
+            `);
+            w.document.close();
         }
 
         function resetFilters() {

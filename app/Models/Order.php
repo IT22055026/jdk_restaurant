@@ -9,6 +9,8 @@ class Order extends Model
 {
     protected $fillable = [
         'order_number',
+        'business_date',
+        'daily_sequence',
         'token_date',
         'token_number',
         'customer_id',
@@ -36,6 +38,7 @@ class Order extends Model
     ];
 
     protected $casts = [
+        'business_date' => 'date',
         'token_date' => 'date',
         'subtotal' => 'decimal:2',
         'discount_amount' => 'decimal:2',

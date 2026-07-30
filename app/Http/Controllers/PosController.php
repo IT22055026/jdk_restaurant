@@ -18,7 +18,6 @@ use App\Services\ProductStockService;
 use App\Support\BusinessDay;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class PosController extends Controller
 {
@@ -109,18 +108,50 @@ class PosController extends Controller
             'waiter_name' => 'nullable|string',
         ]);
 
-        $order = Order::create([
-            'order_number' => (string) Str::uuid(), // temp unique placeholder, replaced below once the id is known
-            'customer_id' => $validated['customer_id'] ?? null,
-            'customer_name' => $validated['customer_name'] ?? null,
-            'customer_phone' => $validated['customer_phone'] ?? null,
-            'user_id' => $this->currentUser()->id,
-            'waiter_name' => $validated['waiter_name'] ?? $this->currentUser()->name,
-        ]);
+        // ORD-{business date}-{sequence, resets to 0001 each business day}.
+        // The trading day runs 06:00-05:59 the next calendar day (see
+        // BusinessDay), so an order placed at 1am still numbers under
+        // yesterday's date/sequence, matching the token numbering it sits
+        // alongside.
+        $businessDate = BusinessDay::today()->toDateString();
+        $order = null;
 
-        // Sequential, human-readable order number derived from the auto-increment id
-        // (guaranteed unique by the DB) instead of a random string.
-        $order->update(['order_number' => 'ORD-' . str_pad($order->id, 6, '0', STR_PAD_LEFT)]);
+        // lockForUpdate() alone can't stop two simultaneous "first order of
+        // the day" requests from both computing sequence 1 (there's no row
+        // yet to lock), so the real guarantee is the (business_date,
+        // daily_sequence) unique constraint — retry with the next number on
+        // conflict rather than fail the request.
+        for ($attempt = 1; $attempt <= 5; $attempt++) {
+            try {
+                $order = DB::transaction(function () use ($validated, $businessDate) {
+                    // whereDate(), not where() — the 'date' cast serializes
+                    // business_date with a full datetime format when saving
+                    // (e.g. "2026-07-30 00:00:00"), so a plain equality check
+                    // against the bare date string would never match.
+                    $nextSequence = (Order::whereDate('business_date', $businessDate)->lockForUpdate()->max('daily_sequence') ?? 0) + 1;
+
+                    return Order::create([
+                        'order_number' => 'ORD-' . str_replace('-', '', $businessDate) . '-' . str_pad($nextSequence, 4, '0', STR_PAD_LEFT),
+                        'business_date' => $businessDate,
+                        'daily_sequence' => $nextSequence,
+                        'customer_id' => $validated['customer_id'] ?? null,
+                        'customer_name' => $validated['customer_name'] ?? null,
+                        'customer_phone' => $validated['customer_phone'] ?? null,
+                        'user_id' => $this->currentUser()->id,
+                        'waiter_name' => $validated['waiter_name'] ?? $this->currentUser()->name,
+                    ]);
+                });
+                break;
+            } catch (\PDOException $e) {
+                // Illuminate\Database\QueryException extends PDOException, but
+                // at least on SQLite a bare PDOException can propagate from
+                // inside the transaction too — catch the parent class so both
+                // are retried instead of only Laravel's wrapped form.
+                if ($attempt === 5) {
+                    throw $e;
+                }
+            }
+        }
 
         return response()->json([
             'success' => true,

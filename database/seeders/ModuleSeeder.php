@@ -134,11 +134,14 @@ class ModuleSeeder extends Seeder
         $allModules = DB::table('modules')->get();
         $posModuleId = DB::table('modules')->where('name', 'POS & Billing')->first()->id;
         $shiftsModuleId = DB::table('modules')->where('name', 'Shifts & Till Management')->first()->id ?? null;
+        $salesReportModuleId = DB::table('modules')->where('name', 'Sales Report')->first()->id ?? null;
 
-        // Cashiers only ever touch the till at the start/end of their shift,
-        // so besides POS & Billing they also get Shifts & Till Management —
-        // everything else (reports, inventory, settings, etc.) stays admin/manager-only.
-        $cashierModuleIds = array_filter([$posModuleId, $shiftsModuleId]);
+        // Cashiers only ever touch the till at the start/end of their shift and
+        // need to check how their own sales landed, so besides POS & Billing
+        // they also get Shifts & Till Management and Sales Report — everything
+        // else (customers, inventory, employees, settings, etc.) stays
+        // admin/manager-only.
+        $cashierModuleIds = array_filter([$posModuleId, $shiftsModuleId, $salesReportModuleId]);
 
         foreach ($allModules as $module) {
             DB::table('role_module')->insertOrIgnore([

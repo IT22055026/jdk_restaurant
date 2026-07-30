@@ -145,6 +145,7 @@
                         </tbody>
                     </table>
                 </div>
+                <div id="tokenPaginationContainer"></div>
             </div>
 
         </div>
@@ -167,6 +168,18 @@
     </div>
 
     <script>
+        // Client-side pagination — see order-history.blade.php for the same
+        // pattern: the current page only resets on a user-initiated load
+        // (spinner shown), never on the silent 5s auto-refresh below.
+        let allTokenOrders = [];
+        let tokenCurrentPage = 1;
+        const TOKEN_PER_PAGE = 10;
+
+        function goToTokenPage(page) {
+            tokenCurrentPage = page;
+            renderTokenPage();
+        }
+
         function loadTokenHistory(showSpinner = false) {
             const search = document.getElementById('searchInput').value;
             const tbody = document.getElementById('tokenTableBody');
@@ -183,35 +196,109 @@
                 .then(data => {
                     if (!Array.isArray(data)) {
                         tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #ef4444;">Error loading token history</td></tr>';
+                        document.getElementById('tokenPaginationContainer').innerHTML = '';
                         return;
                     }
 
-                    if (data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #94a3b8;">No token records found</td></tr>';
-                        return;
-                    }
-
-                    tbody.innerHTML = data.map(order => {
-                        return `
-                            <tr class="table-row">
-                                <td style="padding: 12px 16px; font-weight: 600; color: #1e293b;">${order.order_number}</td>
-                                <td style="padding: 12px 16px;">${order.token_number ? `<span class="badge badge-token">#${String(order.token_number).padStart(2, '0')}</span>` : '<span style="color:#94a3b8;">—</span>'}</td>
-                                <td style="padding: 12px 16px; color: #475569;">${order.customer_name}</td>
-                                <td style="padding: 12px 16px; color: #475569;">${order.items_count}</td>
-                                <td style="padding: 12px 16px; color: #475569; font-size: 13px;">${order.token_printed_at || '-'}</td>
-                                <td style="padding: 12px 16px; text-align: center;">
-                                    <button onclick="reprintToken(${order.id})" class="btn btn-primary" style="font-size: 11px; padding: 6px 16px;">
-                                        <i class="fas fa-print"></i> Re-print Token
-                                    </button>
-                                </td>
-                            </tr>
-                        `;
-                    }).join('');
+                    allTokenOrders = data;
+                    if (showSpinner) tokenCurrentPage = 1;
+                    else if (tokenCurrentPage > Math.max(1, Math.ceil(allTokenOrders.length / TOKEN_PER_PAGE))) tokenCurrentPage = 1;
+                    renderTokenPage();
                 })
                 .catch(err => {
                     console.error(err);
                     tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #ef4444;">Failed to load token history</td></tr>';
+                    document.getElementById('tokenPaginationContainer').innerHTML = '';
                 });
+        }
+
+        function renderTokenPage() {
+            const tbody = document.getElementById('tokenTableBody');
+
+            if (allTokenOrders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #94a3b8;">No token records found</td></tr>';
+                document.getElementById('tokenPaginationContainer').innerHTML = '';
+                return;
+            }
+
+            const start = (tokenCurrentPage - 1) * TOKEN_PER_PAGE;
+            const pageOrders = allTokenOrders.slice(start, start + TOKEN_PER_PAGE);
+
+            tbody.innerHTML = pageOrders.map(order => {
+                return `
+                    <tr class="table-row">
+                        <td style="padding: 12px 16px; font-weight: 600; color: #1e293b;">${order.order_number}</td>
+                        <td style="padding: 12px 16px;">${order.token_number ? `<span class="badge badge-token">#${String(order.token_number).padStart(2, '0')}</span>` : '<span style="color:#94a3b8;">—</span>'}</td>
+                        <td style="padding: 12px 16px; color: #475569;">${order.customer_name}</td>
+                        <td style="padding: 12px 16px; color: #475569;">${order.items_count}</td>
+                        <td style="padding: 12px 16px; color: #475569; font-size: 13px;">${order.token_printed_at || '-'}</td>
+                        <td style="padding: 12px 16px; text-align: center;">
+                            <button onclick="reprintToken(${order.id})" class="btn btn-primary" style="font-size: 11px; padding: 6px 16px;">
+                                <i class="fas fa-print"></i> Re-print Token
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            renderPagination('tokenPaginationContainer', allTokenOrders.length, tokenCurrentPage, TOKEN_PER_PAGE, 'goToTokenPage');
+        }
+
+        // Mirrors Laravel's own pagination::tailwind view (same classes),
+        // so it inherits the exact same dark-mode styling as every other
+        // paginated list in the app instead of needing its own overrides.
+        function renderPagination(containerId, totalItems, currentPage, perPage, onPageChangeFn) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
+            if (totalItems === 0 || totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            const firstItem = (currentPage - 1) * perPage + 1;
+            const lastItem = Math.min(currentPage * perPage, totalItems);
+
+            const pages = [];
+            const addPage = (p) => { if (p >= 1 && p <= totalPages && !pages.includes(p)) pages.push(p); };
+            addPage(1);
+            for (let p = currentPage - 1; p <= currentPage + 1; p++) addPage(p);
+            addPage(totalPages);
+            pages.sort((a, b) => a - b);
+
+            let pageLinksHtml = '';
+            let prevShown = null;
+            pages.forEach(p => {
+                if (prevShown !== null && p - prevShown > 1) {
+                    pageLinksHtml += '<span aria-disabled="true"><span class="inline-flex items-center px-4 py-2 -ml-px text-sm font-medium text-gray-700 bg-white border border-gray-300 cursor-default leading-5">...</span></span>';
+                }
+                if (p === currentPage) {
+                    pageLinksHtml += `<span aria-current="page"><span class="inline-flex items-center px-4 py-2 -ml-px text-sm font-medium text-gray-700 bg-gray-200 border border-gray-300 cursor-default leading-5">${p}</span></span>`;
+                } else {
+                    pageLinksHtml += `<a href="javascript:void(0)" onclick="${onPageChangeFn}(${p})" class="inline-flex items-center px-4 py-2 -ml-px text-sm font-medium text-gray-700 bg-white border border-gray-300 leading-5 hover:text-gray-700 focus:outline-none focus:ring ring-gray-300 focus:border-blue-300 active:bg-gray-100 active:text-gray-700 transition ease-in-out duration-150 hover:bg-gray-100" aria-label="Go to page ${p}">${p}</a>`;
+                }
+                prevShown = p;
+            });
+
+            const prevHtml = currentPage === 1
+                ? '<span aria-disabled="true" aria-label="Previous"><span class="inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 cursor-not-allowed rounded-l-md leading-5" aria-hidden="true"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg></span></span>'
+                : `<a href="javascript:void(0)" onclick="${onPageChangeFn}(${currentPage - 1})" rel="prev" class="inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md leading-5 hover:text-gray-400 focus:outline-none focus:ring ring-gray-300 focus:border-blue-300 active:bg-gray-100 active:text-gray-500 transition ease-in-out duration-150 hover:bg-gray-100" aria-label="Previous"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg></a>`;
+
+            const nextHtml = currentPage === totalPages
+                ? '<span aria-disabled="true" aria-label="Next"><span class="inline-flex items-center px-2 py-2 -ml-px text-sm font-medium text-gray-500 bg-white border border-gray-300 cursor-not-allowed rounded-r-md leading-5" aria-hidden="true"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg></span></span>'
+                : `<a href="javascript:void(0)" onclick="${onPageChangeFn}(${currentPage + 1})" rel="next" class="inline-flex items-center px-2 py-2 -ml-px text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r-md leading-5 hover:text-gray-400 focus:outline-none focus:ring ring-gray-300 focus:border-blue-300 active:bg-gray-100 active:text-gray-500 transition ease-in-out duration-150 hover:bg-gray-100" aria-label="Next"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg></a>`;
+
+            container.innerHTML = `
+                <nav role="navigation" aria-label="Pagination Navigation" class="px-6 py-4 border-t border-gray-200">
+                    <div class="sm:flex sm:gap-2 sm:items-center sm:justify-between" style="display:flex; flex-wrap:wrap; gap:12px;">
+                        <p class="text-sm text-gray-700 leading-5">
+                            Showing <span class="font-medium">${firstItem}</span> to <span class="font-medium">${lastItem}</span> of <span class="font-medium">${totalItems}</span> results
+                        </p>
+                        <span class="inline-flex rounded-md shadow-sm">${prevHtml}${pageLinksHtml}${nextHtml}</span>
+                    </div>
+                </nav>
+            `;
         }
 
         async function reprintToken(orderId) {

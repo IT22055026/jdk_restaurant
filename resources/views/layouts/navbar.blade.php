@@ -3,6 +3,10 @@
     $navHasDashboardAccess = in_array('Reports', $navUserModules);
     $navHasInventoryAccess = in_array('Inventory & Products', $navUserModules);
     $navHasSettingsAccess = in_array('Settings', $navUserModules);
+    // No Dashboard for this role — Sales Report is the closest thing a
+    // Cashier has to a "home" page, so send the logo there instead of a
+    // dead link.
+    $navHasSalesReportAccess = in_array('Sales Report', $navUserModules);
 @endphp
 <nav class="navbar fixed top-0 left-0 right-0 z-50">
     <div class="navbar-inner">
@@ -13,6 +17,10 @@
             </button>
             @if($navHasDashboardAccess)
                 <a href="{{ route('dashboard') }}" class="navbar-logo-wrap">
+                    <img src="{{ asset('images/jaan_logo.jpg') }}" alt="Logo" class="navbar-logo">
+                </a>
+            @elseif($navHasSalesReportAccess)
+                <a href="{{ route('sales-report.index') }}" class="navbar-logo-wrap">
                     <img src="{{ asset('images/jaan_logo.jpg') }}" alt="Logo" class="navbar-logo">
                 </a>
             @else

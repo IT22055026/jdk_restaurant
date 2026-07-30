@@ -169,6 +169,7 @@
                             </tbody>
                         </table>
                     </div>
+                    <div id="billsPaginationContainer"></div>
                 </div>
 
             </div>
@@ -232,6 +233,76 @@
             return method ? (PAYMENT_METHODS[method]?.label || method.replace('_', ' ')) : '—';
         }
 
+        // Client-side pagination — the API returns every bill matching the
+        // current search/status/date filters in one shot (needed for the
+        // summary totals above the table), so paging just slices that
+        // already-fetched array instead of re-querying the server.
+        let allBills = [];
+        let billsCurrentPage = 1;
+        const BILLS_PER_PAGE = 10;
+
+        function goToBillsPage(page) {
+            billsCurrentPage = page;
+            renderBillsPage();
+        }
+
+        // Mirrors Laravel's own pagination::tailwind view (same classes),
+        // so it inherits the exact same dark-mode styling as every other
+        // paginated list in the app instead of needing its own overrides.
+        function renderPagination(containerId, totalItems, currentPage, perPage, onPageChangeFn) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
+            if (totalItems === 0 || totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            const firstItem = (currentPage - 1) * perPage + 1;
+            const lastItem = Math.min(currentPage * perPage, totalItems);
+
+            const pages = [];
+            const addPage = (p) => { if (p >= 1 && p <= totalPages && !pages.includes(p)) pages.push(p); };
+            addPage(1);
+            for (let p = currentPage - 1; p <= currentPage + 1; p++) addPage(p);
+            addPage(totalPages);
+            pages.sort((a, b) => a - b);
+
+            let pageLinksHtml = '';
+            let prevShown = null;
+            pages.forEach(p => {
+                if (prevShown !== null && p - prevShown > 1) {
+                    pageLinksHtml += '<span aria-disabled="true"><span class="inline-flex items-center px-4 py-2 -ml-px text-sm font-medium text-gray-700 bg-white border border-gray-300 cursor-default leading-5">...</span></span>';
+                }
+                if (p === currentPage) {
+                    pageLinksHtml += `<span aria-current="page"><span class="inline-flex items-center px-4 py-2 -ml-px text-sm font-medium text-gray-700 bg-gray-200 border border-gray-300 cursor-default leading-5">${p}</span></span>`;
+                } else {
+                    pageLinksHtml += `<a href="javascript:void(0)" onclick="${onPageChangeFn}(${p})" class="inline-flex items-center px-4 py-2 -ml-px text-sm font-medium text-gray-700 bg-white border border-gray-300 leading-5 hover:text-gray-700 focus:outline-none focus:ring ring-gray-300 focus:border-blue-300 active:bg-gray-100 active:text-gray-700 transition ease-in-out duration-150 hover:bg-gray-100" aria-label="Go to page ${p}">${p}</a>`;
+                }
+                prevShown = p;
+            });
+
+            const prevHtml = currentPage === 1
+                ? '<span aria-disabled="true" aria-label="Previous"><span class="inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 cursor-not-allowed rounded-l-md leading-5" aria-hidden="true"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg></span></span>'
+                : `<a href="javascript:void(0)" onclick="${onPageChangeFn}(${currentPage - 1})" rel="prev" class="inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md leading-5 hover:text-gray-400 focus:outline-none focus:ring ring-gray-300 focus:border-blue-300 active:bg-gray-100 active:text-gray-500 transition ease-in-out duration-150 hover:bg-gray-100" aria-label="Previous"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg></a>`;
+
+            const nextHtml = currentPage === totalPages
+                ? '<span aria-disabled="true" aria-label="Next"><span class="inline-flex items-center px-2 py-2 -ml-px text-sm font-medium text-gray-500 bg-white border border-gray-300 cursor-not-allowed rounded-r-md leading-5" aria-hidden="true"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg></span></span>'
+                : `<a href="javascript:void(0)" onclick="${onPageChangeFn}(${currentPage + 1})" rel="next" class="inline-flex items-center px-2 py-2 -ml-px text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r-md leading-5 hover:text-gray-400 focus:outline-none focus:ring ring-gray-300 focus:border-blue-300 active:bg-gray-100 active:text-gray-500 transition ease-in-out duration-150 hover:bg-gray-100" aria-label="Next"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg></a>`;
+
+            container.innerHTML = `
+                <nav role="navigation" aria-label="Pagination Navigation" class="px-6 py-4 border-t border-gray-200">
+                    <div class="sm:flex sm:gap-2 sm:items-center sm:justify-between" style="display:flex; flex-wrap:wrap; gap:12px;">
+                        <p class="text-sm text-gray-700 leading-5">
+                            Showing <span class="font-medium">${firstItem}</span> to <span class="font-medium">${lastItem}</span> of <span class="font-medium">${totalItems}</span> results
+                        </p>
+                        <span class="inline-flex rounded-md shadow-sm">${prevHtml}${pageLinksHtml}${nextHtml}</span>
+                    </div>
+                </nav>
+            `;
+        }
+
         let revokeTargetId = null;
         let revokeMode = 'revoke'; // 'revoke' (completed bill, reverses payment) or 'discard' (open bill, never paid)
 
@@ -271,69 +342,84 @@
                 .then(data => {
                     if (!Array.isArray(data)) {
                         tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 40px; color: #ef4444;">Error loading bills</td></tr>';
+                        document.getElementById('billsPaginationContainer').innerHTML = '';
                         return;
                     }
 
                     updateSummary(data);
-
-                    if (data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 40px; color: #94a3b8;">No bills found</td></tr>';
-                        return;
-                    }
-
-                    tbody.innerHTML = data.map(bill => {
-                        const badge = statusBadgeFor(bill);
-                        let detail = '';
-                        if (bill.status === 'cancelled') {
-                            detail = `<div style="font-size:11px; color:#94a3b8; margin-top:3px;">${bill.discard_reason ? 'Reason: ' + bill.discard_reason : ''}${bill.discarded_by ? ' — by ' + bill.discarded_by : ''}</div>`;
-                        }
-
-                        let extraBtns = '';
-                        if (bill.status === 'completed') {
-                            extraBtns = `
-                                <button onclick="reprintBill(${bill.id})" class="btn btn-primary" style="font-size: 11px;">
-                                    <i class="fas fa-print"></i> Re-print Bill
-                                </button>
-                                <button onclick="openRevokeModal(${bill.id}, 'revoke')" class="btn btn-danger" style="font-size: 11px;">
-                                    <i class="fas fa-rotate-left"></i> Revoke Bill
-                                </button>`;
-                        } else if (OPEN_STATUSES.includes(bill.status)) {
-                            // These bills were started but never paid off — give staff a way
-                            // to always resolve them instead of leaving them stuck as "pending".
-                            extraBtns = `
-                                <a href="/pos?resume=${bill.id}" class="btn btn-primary" style="font-size: 11px; text-decoration:none;">
-                                    <i class="fas fa-play"></i> Resume &amp; Pay
-                                </a>
-                                <button onclick="openRevokeModal(${bill.id}, 'discard')" class="btn btn-danger" style="font-size: 11px;">
-                                    <i class="fas fa-ban"></i> Discard
-                                </button>`;
-                        }
-
-                        return `
-                        <tr class="table-row">
-                            <td style="padding: 12px 16px; font-weight: 600; color: #1e293b;">${bill.order_number}</td>
-                            <td style="padding: 12px 16px; text-align: center;">
-                                ${bill.token_number ? `<span class="badge badge-token">#${String(bill.token_number).padStart(2, '0')}</span>` : '<span style="color:#cbd5e1;">—</span>'}
-                            </td>
-                            <td style="padding: 12px 16px; color: #475569;">${bill.customer_name}</td>
-                            <td style="padding: 12px 16px; text-align: center; color: #475569;">${paymentLabel(bill.payment_method)}</td>
-                            <td style="padding: 12px 16px; text-align: right; font-weight: 600; color: #1e293b;">Rs. ${parseFloat(bill.total).toFixed(2)}</td>
-                            <td style="padding: 12px 16px;"><span class="badge ${badge.cls}">${badge.label}</span>${detail}</td>
-                            <td style="padding: 12px 16px; color: #475569; font-size: 13px;">${bill.created_at}</td>
-                            <td style="padding: 12px 16px; text-align: center; white-space: nowrap;">
-                                <button onclick="viewItems(${bill.id})" class="btn btn-primary" style="font-size: 11px;">
-                                    <i class="fas fa-list"></i> View Items
-                                </button>
-                                ${extraBtns}
-                            </td>
-                        </tr>
-                    `;
-                    }).join('');
+                    allBills = data;
+                    billsCurrentPage = 1;
+                    renderBillsPage();
                 })
                 .catch(err => {
                     console.error(err);
                     tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 40px; color: #ef4444;">Failed to load bills</td></tr>';
+                    document.getElementById('billsPaginationContainer').innerHTML = '';
                 });
+        }
+
+        function renderBillsPage() {
+            const tbody = document.getElementById('billsTableBody');
+
+            if (allBills.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 40px; color: #94a3b8;">No bills found</td></tr>';
+                document.getElementById('billsPaginationContainer').innerHTML = '';
+                return;
+            }
+
+            const start = (billsCurrentPage - 1) * BILLS_PER_PAGE;
+            const pageBills = allBills.slice(start, start + BILLS_PER_PAGE);
+
+            tbody.innerHTML = pageBills.map(bill => {
+                const badge = statusBadgeFor(bill);
+                let detail = '';
+                if (bill.status === 'cancelled') {
+                    detail = `<div style="font-size:11px; color:#94a3b8; margin-top:3px;">${bill.discard_reason ? 'Reason: ' + bill.discard_reason : ''}${bill.discarded_by ? ' — by ' + bill.discarded_by : ''}</div>`;
+                }
+
+                let extraBtns = '';
+                if (bill.status === 'completed') {
+                    extraBtns = `
+                        <button onclick="reprintBill(${bill.id})" class="btn btn-primary" style="font-size: 11px;">
+                            <i class="fas fa-print"></i> Re-print Bill
+                        </button>
+                        <button onclick="openRevokeModal(${bill.id}, 'revoke')" class="btn btn-danger" style="font-size: 11px;">
+                            <i class="fas fa-rotate-left"></i> Revoke Bill
+                        </button>`;
+                } else if (OPEN_STATUSES.includes(bill.status)) {
+                    // These bills were started but never paid off — give staff a way
+                    // to always resolve them instead of leaving them stuck as "pending".
+                    extraBtns = `
+                        <a href="/pos?resume=${bill.id}" class="btn btn-primary" style="font-size: 11px; text-decoration:none;">
+                            <i class="fas fa-play"></i> Resume &amp; Pay
+                        </a>
+                        <button onclick="openRevokeModal(${bill.id}, 'discard')" class="btn btn-danger" style="font-size: 11px;">
+                            <i class="fas fa-ban"></i> Discard
+                        </button>`;
+                }
+
+                return `
+                <tr class="table-row">
+                    <td style="padding: 12px 16px; font-weight: 600; color: #1e293b;">${bill.order_number}</td>
+                    <td style="padding: 12px 16px; text-align: center;">
+                        ${bill.token_number ? `<span class="badge badge-token">#${String(bill.token_number).padStart(2, '0')}</span>` : '<span style="color:#cbd5e1;">—</span>'}
+                    </td>
+                    <td style="padding: 12px 16px; color: #475569;">${bill.customer_name}</td>
+                    <td style="padding: 12px 16px; text-align: center; color: #475569;">${paymentLabel(bill.payment_method)}</td>
+                    <td style="padding: 12px 16px; text-align: right; font-weight: 600; color: #1e293b;">Rs. ${parseFloat(bill.total).toFixed(2)}</td>
+                    <td style="padding: 12px 16px;"><span class="badge ${badge.cls}">${badge.label}</span>${detail}</td>
+                    <td style="padding: 12px 16px; color: #475569; font-size: 13px;">${bill.created_at}</td>
+                    <td style="padding: 12px 16px; text-align: center; white-space: nowrap;">
+                        <button onclick="viewItems(${bill.id})" class="btn btn-primary" style="font-size: 11px;">
+                            <i class="fas fa-list"></i> View Items
+                        </button>
+                        ${extraBtns}
+                    </td>
+                </tr>
+            `;
+            }).join('');
+
+            renderPagination('billsPaginationContainer', allBills.length, billsCurrentPage, BILLS_PER_PAGE, 'goToBillsPage');
         }
 
         function updateSummary(bills) {

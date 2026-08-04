@@ -18,6 +18,7 @@ class Order extends Model
         'customer_phone',
         'user_id',
         'status',
+        'order_type',
         'subtotal',
         'discount_amount',
         'tax_amount',
@@ -36,6 +37,7 @@ class Order extends Model
         'discarded_by',
         'discarded_at',
     ];
+
 
     protected $casts = [
         'business_date' => 'date',

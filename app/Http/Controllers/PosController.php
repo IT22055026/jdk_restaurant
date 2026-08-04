@@ -106,6 +106,7 @@ class PosController extends Controller
             'customer_name' => 'nullable|string',
             'customer_phone' => 'nullable|string',
             'waiter_name' => 'nullable|string',
+            'order_type' => 'nullable|in:dine_in,takeaway',
         ]);
 
         // ORD-{business date}-{sequence, resets to 0001 each business day}.
@@ -139,6 +140,7 @@ class PosController extends Controller
                         'customer_phone' => $validated['customer_phone'] ?? null,
                         'user_id' => $this->currentUser()->id,
                         'waiter_name' => $validated['waiter_name'] ?? $this->currentUser()->name,
+                        'order_type' => $validated['order_type'] ?? 'dine_in',
                     ]);
                 });
                 break;
@@ -158,6 +160,7 @@ class PosController extends Controller
             'order_id' => $order->id,
             'order_number' => $order->order_number,
             'token_number' => $order->token_number,
+            'order_type' => $order->order_type,
         ]);
     }
 
@@ -231,6 +234,7 @@ class PosController extends Controller
             'token_number' => $order->token_number,
             'token_date' => $order->token_date?->toDateString(),
             'status' => $order->status,
+            'order_type' => $order->order_type ?? 'dine_in',
             'customer_name' => $order->customer_name,
             'customer_phone' => $order->customer_phone,
             'live_bill_enabled' => $order->live_bill_enabled,
@@ -240,6 +244,31 @@ class PosController extends Controller
             'tax_amount' => (float) $order->tax_amount,
             'total' => (float) $order->total,
             'items' => $itemsData,
+        ]);
+    }
+
+    /**
+     * Update the order type (dine_in / takeaway) for an open order.
+     * Called by the POS dropdown whenever the cashier switches it.
+     */
+    public function updateOrderType(Request $request, Order $order)
+    {
+        if (in_array($order->status, ['completed', 'cancelled'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot change order type on a completed or cancelled bill',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'order_type' => 'required|in:dine_in,takeaway',
+        ]);
+
+        $order->update(['order_type' => $validated['order_type']]);
+
+        return response()->json([
+            'success' => true,
+            'order_type' => $order->order_type,
         ]);
     }
 
@@ -572,6 +601,7 @@ class PosController extends Controller
             'token_number' => $order->token_number,
             'customer_name' => $order->customer_name ?? 'Walk-in',
             'status' => $order->status,
+            'order_type' => $order->order_type ?? 'dine_in',
             'items_count' => $order->items->where('is_offer_component', false)->count(),
             'subtotal' => (float) $order->subtotal,
             'discount_amount' => (float) $order->discount_amount,
@@ -801,6 +831,7 @@ class PosController extends Controller
             'amount_paid' => 'required|numeric|min:0',
             'discount_type' => 'nullable|in:percentage,fixed',
             'discount_value' => 'nullable|numeric|min:0',
+            'order_type' => 'nullable|in:dine_in,takeaway',
         ]);
 
         // PickMe/Uber orders are delivery orders with no physical token handed
@@ -887,6 +918,7 @@ class PosController extends Controller
             'change_amount' => $change,
             'printed_at' => now(),
             'kot_printed_at' => $order->kot_printed_at ?? (count($kotItems) > 0 ? now() : null),
+            'order_type' => $validated['order_type'] ?? ($order->order_type ?? 'dine_in'),
         ]);
 
         // Record transaction in active shift
@@ -920,6 +952,7 @@ class PosController extends Controller
             'order_number' => $order->order_number,
             'token_number' => $order->token_number,
             'token_date' => $order->token_date?->toDateString(),
+            'order_type' => $order->order_type ?? 'dine_in',
             'customer_name' => $order->customer_name,
             'customer_phone' => $order->customer_phone,
             'subtotal' => (float) $subtotal,

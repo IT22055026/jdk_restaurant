@@ -58,9 +58,9 @@ class ProductStockService
             }
         }
 
-        if (!empty($shortfalls)) {
-            throw new InsufficientStockException('Not enough stock to print token: ' . implode('; ', $shortfalls));
-        }
+        // if (!empty($shortfalls)) {
+        //     throw new InsufficientStockException('Not enough stock to print token: ' . implode('; ', $shortfalls));
+        // }
 
         $applied = [];
         foreach ($itemDeltas as $entry) {

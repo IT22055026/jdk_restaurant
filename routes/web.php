@@ -103,6 +103,7 @@ Route::middleware(['auth', 'module.access'])->group(function () {
     Route::post('/pos/order/{order}/live-bill', [PosController::class, 'toggleLiveBill'])->name('pos.order.live_bill');
     Route::post('/pos/order/{order}/cancel', [PosController::class, 'cancelOrder'])->name('pos.order.cancel');
     Route::post('/pos/order/{order}/hold', [PosController::class, 'holdOrder'])->name('pos.order.hold');
+    Route::post('/pos/order/{order}/order-type', [PosController::class, 'updateOrderType'])->name('pos.order.order_type');
     Route::get('/pos/products', [PosController::class, 'getProducts'])->name('pos.products');
     Route::get('/pos/ingredients', [PosController::class, 'getIngredients'])->name('pos.ingredients');
     Route::post('/pos/order/{order}/pay', [PosController::class, 'payOrder'])->name('pos.order.pay');

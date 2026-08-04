@@ -395,6 +395,15 @@
                         <i class="fas fa-chevron-down" id="paymentChevron" style="font-size:10px; color:#64748b; transition:transform 0.15s;"></i>
                     </span>
                 </button>
+                <!-- Dropdown for dining or tackeaway options -->
+                <div>
+                    <div style="font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:#94a3b8; margin-bottom:3px;">Order Type</div>
+                    <select id="orderType" onchange="updateOrderType()"
+                            style="width:100%; font-size:12px; border:1px solid #e2e8f0; border-radius:6px; padding:5px 6px; background:#f8fafc; outline:none; cursor:pointer;">
+                        <option value="dine_in">Dine In</option>
+                        <option value="takeaway">Takeaway</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Payment details (collapsible, hidden until items exist) -->
@@ -636,7 +645,7 @@
                 const possible = r.quantity_per_unit > 0 ? Math.floor(remaining / r.quantity_per_unit) : Infinity;
                 if (possible < unitsPossible) unitsPossible = possible;
             });
-            return Math.max(0, unitsPossible === Infinity ? 0 : unitsPossible);
+            return unitsPossible ;
         }
         return stockCache.hasOwnProperty(productId) ? stockCache[productId] : null;
     }
@@ -828,6 +837,9 @@
             }
 
             currentOrder = data;
+            // Restore the order type dropdown to match the resumed order
+            const orderTypeEl = document.getElementById('orderType');
+            if (orderTypeEl) orderTypeEl.value = data.order_type || 'dine_in';
             renderOrderHeader();
             renderBill();
             hideLoading();
@@ -1249,18 +1261,19 @@
             }
 
             const availableQty = p.is_unlimited_stock ? null : getStock(p.id);
-            const isOutOfStock = !p.is_unlimited_stock && availableQty <= 0;
+            // const isOutOfStock = !p.is_unlimited_stock && availableQty <= 0;
             let stockBadge;
             if (p.is_unlimited_stock) {
-                stockBadge = '<p style="font-size:10px; color:#16a34a; margin:2px 0 0; font-weight:600;">∞ Unlimited</p>';
-            } else if (availableQty > 0) {
-                stockBadge = '<p style="font-size:10px; color:#64748b; margin:2px 0 0;">Stock: ' + availableQty + '</p>';
+                stockBadge = '<p style="font-size:15px; color:#16a34a; margin:2px 0 0; font-weight:600;">∞ Unlimited</p>';
             } else {
-                stockBadge = '<p style="font-size:10px; color:#ef4444; margin:2px 0 0; font-weight:700;">Out of Stock</p>';
+                stockBadge = '<p style="font-size:15px; font-weight:600; margin:2px 0 0; color:' +
+                (availableQty < 0 ? '#ef4444' : '#64748b') +
+                ';">Stock: ' + availableQty + '</p>';
             }
-            const cardExtra = isOutOfStock
-                ? 'tabindex="-1" aria-disabled="true" style="opacity:0.5; cursor:not-allowed; pointer-events:none;"'
-                : 'tabindex="-1" role="button" aria-label="Add ' + escapeHtml(p.name) + '" onclick="addProductToOrder(' + p.id + ', \'' + escapeJs(p.name) + '\', ' + p.price + ')"';
+            // const cardExtra = isOutOfStock
+            //     ? 'tabindex="-1" aria-disabled="true" style="opacity:0.5; cursor:not-allowed; pointer-events:none;"'
+            //     : 'tabindex="-1" role="button" aria-label="Add ' + escapeHtml(p.name) + '" onclick="addProductToOrder(' + p.id + ', \'' + escapeJs(p.name) + '\', ' + p.price + ')"';
+            const cardExtra = 'tabindex="-1" role="button" aria-label="Add ' + escapeHtml(p.name) + '" onclick="addProductToOrder(' + p.id + ', \'' + escapeJs(p.name) + '\', ' + p.price + ')"';
 
             return '<div class="product-card" data-product-id="' + p.id + '" ' + cardExtra + '>'
                 + '<div style="height:130px; background:linear-gradient(135deg,#eff6ff,#fee2e2); border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; overflow:hidden; position:relative;">'
@@ -1304,10 +1317,10 @@
 
         // Check stock before adding
         const availBeforeAdd = getStock(productId);
-        if (availBeforeAdd !== null && availBeforeAdd <= 0) {
-            toast('This item is out of stock', 'error');
-            return;
-        }
+        // if (availBeforeAdd !== null && availBeforeAdd <= 0) {
+        //     toast('This item is out of stock', 'error');
+        //     return;
+        // }
 
         // Optimistic update - only increase qty if item exists and NOT printed to kitchen
         const existing = currentOrder.items.find(function(i) {
@@ -1328,7 +1341,7 @@
         renderBill();
         renderProducts();
 
-        try {
+        try {  
             const res = await fetch('{{ route("pos.item.add", ":id") }}'.replace(':id', currentOrder.id), {
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' },
@@ -1849,6 +1862,26 @@
     }
 
     // ═══════════════════════════════════════════
+    // ORDER TYPE
+    // ═══════════════════════════════════════════
+
+    async function updateOrderType() {
+        const sel = document.getElementById('orderType');
+        if (!sel || !currentOrder || !currentOrder.id) return;
+        const orderType = sel.value;
+        try {
+            await fetch('{{ route("pos.order.order_type", ":id") }}'.replace(':id', currentOrder.id), {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ order_type: orderType })
+            });
+            if (currentOrder) currentOrder.order_type = orderType;
+        } catch (e) {
+            console.error('updateOrderType error:', e);
+        }
+    }
+
+    // ═══════════════════════════════════════════
     // PAYMENT
     // ═══════════════════════════════════════════
 
@@ -1966,6 +1999,7 @@
             amount_paid:    amountPaid,
             discount_type:  document.getElementById('discountType').value || null,
             discount_value: parseFloat(document.getElementById('discountValue').value) || 0,
+            order_type:     (document.getElementById('orderType') ? document.getElementById('orderType').value : null) || (currentOrder.order_type || 'dine_in'),
         };
 
         if (selectedPaymentMethod === 'cash') {
@@ -2034,6 +2068,7 @@
             // ── RECEIPT METADATA ──
             + '<div style="border-top:2px solid #000; border-bottom:2px solid #000; padding:6px 0; margin-bottom:8px;">'
             + '<div style="text-align:center; font-size:13px; letter-spacing:3px; color:#000; margin-bottom:5px;">RECEIPT</div>'
+            + (d.order_type ? '<div style="text-align:center; font-size:11px; font-weight:700; letter-spacing:2px; color:#000; margin-bottom:4px;">' + (d.order_type === 'takeaway' ? '📦 TAKEAWAY' : '🍽️ DINE IN') + '</div>' : '')
             + '<table width="100%" cellspacing="0" cellpadding="2" style="font-size:11px; color:#000; width:100%; table-layout:fixed;">'
             + (d.customer_name  ? '<tr><td style="width:35%;">Customer</td><td style="text-align:right; width:65%;">' + escapeHtml(d.customer_name) + '</td></tr>' : '')
             + (d.customer_phone ? '<tr><td>Phone</td><td style="text-align:right;">' + d.customer_phone + '</td></tr>' : '')
@@ -2104,16 +2139,16 @@
 
     function buildTokenHtml(data) {
         const deliveryLabels = { pickme: 'PICKME DELIVERY', uber: 'UBER DELIVERY' };
-        const heading = data.token_number
-            ? '#' + String(data.token_number).padStart(2, '0')
-            : (deliveryLabels[data.payment_method] || 'NO TOKEN');
+        const specialLabel = !data.token_number ? (deliveryLabels[data.payment_method] || 'NO TOKEN') : null;
 
         return '<div style="text-align:center;">'
-            + '<img src="/images/KDJ_logo.png" style="max-width:70px; max-height:70px; margin-bottom:4px; display:inline-block;" />'
+            // + '<img src="/images/KDJ_logo.png" style="max-width:70px; max-height:70px; margin-bottom:4px; display:inline-block;" />'
             + '</div>'
-            + '<div style="text-align:center; font-weight:900; font-size:' + (data.token_number ? '32px' : '20px') + '; border-bottom:2px solid #000; padding-bottom:8px; margin-bottom:10px; color:#000;">' + heading + '</div>'
+            // Show special label (delivery/no-token) at top only when there is no token number
+            // + (specialLabel ? '<div style="text-align:center; font-weight:900; font-size:20px; border-bottom:2px solid #000; padding-bottom:8px; margin-bottom:10px; color:#000;">' + specialLabel + '</div>' : '')
             + '<div style="font-size:13px; font-weight:800; color:#000;">Order: ' + data.order_number + '</div>'
-            + '<div style="font-size:10px; color:#000; margin-bottom:10px;">' + new Date().toLocaleString() + '</div>'
+            + '<div style="font-size:10px; color:#000; margin-bottom:6px;">' + new Date().toLocaleString() + '</div>'
+            + (data.order_type ? '<div style="font-size:11px; font-weight:700; color:#000; letter-spacing:1px; margin-bottom:10px; border:1px solid #000; display:inline-block; padding:2px 8px; border-radius:4px;">' + (data.order_type === 'takeaway' ? 'TAKEAWAY' : 'DINE IN') + '</div>' : '')
             + '<div style="border-top:1px solid #000; padding-top:10px;">'
             + data.items.map(function(i) {
                 return '<div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700; margin:8px 0; border-bottom:1px dashed #000; padding-bottom:6px; color:#000;">'
@@ -2122,7 +2157,14 @@
                     + '</div>'
                     + (i.kitchen_notes ? '<div style="font-size:11px; color:#000; margin-top:-4px; margin-bottom:6px;">Note: ' + escapeHtml(i.kitchen_notes) + '</div>' : '');
             }).join('')
-            + '</div>';
+            + '</div>'
+            // ── TOKEN NUMBER at the bottom ──
+            + (data.token_number
+                ? '<div style="text-align:center; border-top:2px solid #000; padding-top:8px; margin-top:10px;">'
+                    + '<div style="font-size:11px; letter-spacing:3px; color:#000;">TOKEN NUMBER</div>'
+                    + '<div style="font-size:48px; font-weight:900; color:#000; line-height:1.2;">#' + String(data.token_number).padStart(2, '0') + '</div>'
+                    + '</div>'
+                : '');
     }
 
     function printBillContent() {

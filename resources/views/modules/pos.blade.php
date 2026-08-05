@@ -2030,63 +2030,76 @@
         }
     }
 
+    window.googleReviewQrDataUri = '';
+    (function preloadGoogleReviewQr() {
+        const targetUrl = 'https://www.google.com/maps/place//data=!4m3!3m2!1s0x3ae25b3ace14ea05:0x448c982eb6a931a0!12e1?source=g.page.m.ia._&utm_source=gbp&laa=nmx-review-solicitation-ia2';
+        const qrApiUrl = window.location.origin + '/qr-code/generate?text=' + encodeURIComponent(targetUrl);
+        fetch(qrApiUrl)
+            .then(function(r) { return r.blob(); })
+            .then(function(blob) {
+                const reader = new FileReader();
+                reader.onloadend = function() { window.googleReviewQrDataUri = reader.result; };
+                reader.readAsDataURL(blob);
+            })
+            .catch(function(e) { console.error('QR Preload Error:', e); });
+    })();
+
     function showPaidBill(d) {
         const methodLabel = { cash:'Cash', card:'Card', bank_transfer:'Bank Transfer', mixed:'Mixed', pickme:'PickMe', uber:'Uber' };
         const now = new Date();
         const dateStr = now.toLocaleDateString('en-GB') + ', ' + now.toLocaleTimeString('en-GB');
 
         // ── Update these values to match your restaurant ──
-        const CO_NAME    = "Cafe' Kdj - BBQ";
-        const CO_TAGLINE = 'Fusion Food Court';
-        const CO_CONTACT = '07777-04555';
-        const CO_ADDRESS = '#9, Galle Road, Dehiwala';
+        const rest = {
+            name: "Cafe' Kdj - BBQ",
+            address: "Fusion Food Court\n#9, Galle Road, Dehiwala",
+            phone: "07777-04555"
+        };
 
-        const itemRows = d.items.map(function(i) {
-            const isFreeItem = (i.discount_percent || 0) >= 100;
-            const discLabel = isFreeItem ? ' (FREE GIFT)' : (i.discount_percent > 0 ? ' (-' + i.discount_percent + '%)' : '');
-            const amountCell = isFreeItem
-                ? '<span style="text-decoration:line-through;">Rs.' + (i.unit_price * i.quantity).toFixed(2) + '</span> <strong>FREE</strong>'
-                : 'Rs.' + i.subtotal.toFixed(2);
-            return '<tr>'
-                + '<td style="padding:3px 0; vertical-align:top; width:62%;">' + escapeHtml(i.product_name)
-                + '<br><span style="font-size:10px;">1 x Rs.' + i.unit_price.toFixed(2) + discLabel + '</span></td>'
-                + '<td style="text-align:center; padding:3px 0; vertical-align:top; width:10%;">' + i.quantity + '</td>'
-                + '<td style="text-align:right; padding:3px 0; vertical-align:top; width:28%;">' + amountCell + '</td>'
-                + '</tr>';
-        }).join('');
+        const deliveryLabels = { pickme: 'PICKME DELIVERY', uber: 'UBER DELIVERY' };
+        const specialLabel = !d.token_number ? (deliveryLabels[d.payment_method] || null) : null;
+        const qrImageSrc = (typeof window !== 'undefined' && window.googleReviewQrDataUri) ? window.googleReviewQrDataUri : (window.location.origin + '/qr-code/generate?text=' + encodeURIComponent('https://www.google.com/maps/place//data=!4m3!3m2!1s0x3ae25b3ace14ea05:0x448c982eb6a931a0!12e1?source=g.page.m.ia._&utm_source=gbp&laa=nmx-review-solicitation-ia2'));
 
-        // ── HEADER: Logo + Company Details ──
-        const html =
-            '<div style="text-align:center; padding-bottom:8px;">'
-            + '<img src="/images/KDJ_logo.png" style="max-width:150px; max-height:150px; margin-bottom:6px; display:block; margin-left:auto; margin-right:auto;" />'
-            + '<div style="font-size:14px; letter-spacing:1px; color:#000; font-weight:bold;">' + CO_NAME + '</div>'
-            + '<div style="font-size:11px; color:#000;">' + CO_TAGLINE + '</div>'
-            + '<div style="font-size:11px; color:#000;">' + CO_ADDRESS + '</div>'
-            + '<div style="font-size:11px; color:#000;">' + CO_CONTACT + '</div>'
+        let html = ''
+            // ── HEADER ──
+            + '<div style="text-align:center;">'
+            + '<img src="/images/KDJ_logo.png" style="max-width:120px; max-height:120px; margin-bottom:4px; display:inline-block;" />'
+            + '<div style="font-size:16px; font-weight:bold; color:#000;">' + escapeHtml(rest.name) + '</div>'
+            + '<div style="font-size:11px; white-space:pre-line; color:#000;">' + escapeHtml(rest.address) + '</div>'
+            + '<div style="font-size:11px; color:#000;">' + escapeHtml(rest.phone) + '</div>'
             + '</div>'
 
-            // ── RECEIPT METADATA ──
-            + '<div style="border-top:2px solid #000; border-bottom:2px solid #000; padding:6px 0; margin-bottom:8px;">'
-            + '<div style="text-align:center; font-size:13px; letter-spacing:3px; color:#000; margin-bottom:5px;">RECEIPT</div>'
-            + (d.order_type ? '<div style="text-align:center; font-size:11px; font-weight:700; letter-spacing:2px; color:#000; margin-bottom:4px;">' + (d.order_type === 'takeaway' ? '📦 TAKEAWAY' : '🍽️ DINE IN') + '</div>' : '')
-            + '<table width="100%" cellspacing="0" cellpadding="2" style="font-size:11px; color:#000; width:100%; table-layout:fixed;">'
-            + (d.customer_name  ? '<tr><td style="width:35%;">Customer</td><td style="text-align:right; width:65%;">' + escapeHtml(d.customer_name) + '</td></tr>' : '')
-            + (d.customer_phone ? '<tr><td>Phone</td><td style="text-align:right;">' + d.customer_phone + '</td></tr>' : '')
-            + '<tr><td style="width:35%;">Date</td><td style="text-align:right; width:65%;">' + dateStr + '</td></tr>'
-            + '</table>'
+            + '<div style="text-align:center; font-size:13px; font-weight:bold; margin-top:8px; border-top:1px dashed #000; padding-top:4px; color:#000;">R E C E I P T</div>'
+
+            // Special label for non-tokenized receipts (pickme / uber / no-token)
+            + (specialLabel ? '<div style="text-align:center; font-weight:900; font-size:18px; margin-top:4px; color:#000;">' + specialLabel + '</div>' : '')
+
+            + (d.order_type ? '<div style="text-align:center; margin-top:6px;"><span style="font-size:11px; font-weight:700; color:#000; letter-spacing:1px; border:1px solid #000; display:inline-block; padding:2px 8px; border-radius:4px;">' + (d.order_type === 'takeaway' ? 'TAKEAWAY' : 'DINE IN') + '</span></div>' : '')
+
+            // ── METADATA (two simple lines) ──
+            + '<div style="font-size:11px; color:#000; margin-top:6px;">'
+            + '<div>Order: ' + d.order_number + '</div>'
+            + '<div>Date: ' + dateStr + '</div>'
             + '</div>'
 
-            // ── ITEM TABLE ──
-            + '<table width="100%" cellspacing="0" cellpadding="2" style="font-size:12px; color:#000; width:100%; table-layout:fixed;">'
-            + '<thead><tr style="border-bottom:1px dashed #000;">'
-            + '<th style="text-align:left; padding-bottom:4px; font-size:11px; width:62%;">ITEM</th>'
-            + '<th style="text-align:center; padding-bottom:4px; font-size:11px; width:10%;">QTY</th>'
-            + '<th style="text-align:right; padding-bottom:4px; font-size:11px; width:28%;">AMOUNT</th>'
-            + '</tr></thead>'
-            + '<tbody>' + itemRows + '</tbody>'
-            + '</table>'
+            // ── ITEMS TABLE ──
+            + '<table width="100%" cellspacing="0" cellpadding="2" style="font-size:12px; color:#000; border-top:1px solid #000; margin-top:6px; width:100%; table-layout:fixed;">'
+            + '<tr style="border-bottom:1px dashed #000;"><th style="text-align:left; width:65%;">ITEM</th><th style="text-align:center; width:10%;">QTY</th><th style="text-align:right; width:25%;">AMOUNT</th></tr>';
 
-            // ── SUMMARY ──
+        (d.items || []).forEach(function(item) {
+            html += '<tr>'
+                 + '<td style="font-weight:bold;">' + escapeHtml(item.product_name) + '</td>'
+                 + '<td style="text-align:center;">' + item.quantity + '</td>'
+                 + '<td style="text-align:right;">Rs.' + item.subtotal.toFixed(2) + '</td>'
+                 + '</tr>'
+                 + '<tr>'
+                 + '<td colspan="3" style="font-size:10px; color:#000; padding-bottom:4px;">' + item.quantity + ' x Rs.' + item.unit_price.toFixed(2) + '</td>'
+                 + '</tr>';
+        });
+
+        html += '</table>'
+
+            // ── TOTALS ──
             + '<table width="100%" cellspacing="0" cellpadding="2" style="font-size:12px; color:#000; border-top:1px dashed #000; margin-top:4px; width:100%; table-layout:fixed;">'
             + '<tr><td style="width:65%;">Subtotal</td><td style="text-align:right; width:35%;">Rs.' + d.subtotal.toFixed(2) + '</td></tr>'
             + (d.discount_amount > 0 ? '<tr><td>Discount</td><td style="text-align:right;">-Rs.' + d.discount_amount.toFixed(2) + '</td></tr>' : '')
@@ -2108,7 +2121,10 @@
                 : '')
 
             // ── FOOTER ──
-            + '<div style="text-align:center; font-size:11px; margin-top:8px; color:#000; border-top:1px dashed #000; padding-top:6px;">Thank you for dining with us!<br>We look forward to seeing you again.<br>Powered By JAAN Network (PVT) Ltd</div>';
+            + '<div style="text-align:center; font-size:11px; margin-top:8px; color:#000; border-top:1px dashed #000; padding-top:6px;">'
+            + '<div style="font-size:11px; font-weight:bold; margin-bottom:4px;">Please drop a google review,cafe kdj</div>'
+            + '<img src="' + qrImageSrc + '" onerror="this.src=\'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https%3A%2F%2Fwww.google.com%2Fmaps%2Fplace%2F%2Fdata%3D!4m3!3m2!1s0x3ae25b3ace14ea05%3A0x448c982eb6a931a0!12e1%3Fsource%3Dg.page.m.ia._%26utm_source%3Dgbp%26laa%3Dnmx-review-solicitation-ia2\'" style="width:110px; height:110px; margin:6px auto 4px auto; display:block;" alt="Google Review QR" />'
+            + '</div>';
 
         currentBillContent = html;
 
@@ -2387,8 +2403,9 @@
             // of wasting it, while still leaving enough room to avoid clipping
             // on printers whose own driver reserves a sliver of its own.
             + '@page { size: 80mm auto; margin: 2mm 3mm; }'
-            + '* { box-sizing: border-box; font-weight: bold !important; }'
-            + 'body { font-family: \'Courier New\', monospace; width: 100%; margin: 0; padding: 0; font-size: 12px; }'
+            + '* { box-sizing: border-box; font-weight: bold !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }'
+            + 'body { font-family: \'Courier New\', monospace; width: 100%; margin: 0; padding: 0; font-size: 12px; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }'
+            + 'img { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }'
             + 'table { width: 100%; border-collapse: collapse; table-layout: fixed; }'
             + 'td, th { word-break: break-word; overflow-wrap: break-word; }'
             + '</style></head><body>' + body + '</body></html>'
@@ -2397,16 +2414,16 @@
         w.focus();
 
         // Printing immediately after document.write() can fire before the logo
-        // <img> has actually loaded, so the printed/PDF output shows a blank
-        // space where the logo should be. Wait for every image in the popup to
-        // finish loading (or fail) first, with a hard timeout so a bad image
-        // URL can never block printing altogether.
+        // <img> has actually loaded or decoded in GPU memory, so PDF output shows a blank
+        // space. Wait for images to finish loading + decoding before calling w.print().
         let printed = false;
         const doPrint = function() {
             if (printed) return;
             printed = true;
-            w.print();
-            setTimeout(function() { w.close(); }, 1200);
+            setTimeout(function() {
+                w.print();
+                setTimeout(function() { w.close(); }, 1200);
+            }, 250);
         };
         const images = w.document.images;
         if (images.length === 0) {
@@ -2418,7 +2435,7 @@
                 if (pending <= 0) doPrint();
             };
             Array.prototype.forEach.call(images, function(img) {
-                if (img.complete) {
+                if (img.complete && img.naturalWidth > 0) {
                     onOneDone();
                 } else {
                     img.addEventListener('load', onOneDone);

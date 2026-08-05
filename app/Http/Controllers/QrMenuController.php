@@ -12,9 +12,16 @@ class QrMenuController extends Controller
 {
     public function generateQr(Request $request)
     {
-        $restaurantUrl = $request->input('url', config('app.url'));
+        if ($request->has('text')) {
+            $text = $request->input('text');
+        } elseif ($request->has('url')) {
+            $url = $request->input('url');
+            $text = str_starts_with($url, 'http') ? $url : $url . '/menu/scan';
+        } else {
+            $text = config('app.url') . '/menu/scan';
+        }
 
-        $qrCode = new QrCode($restaurantUrl . '/menu/scan');
+        $qrCode = new QrCode($text);
         $writer = new PngWriter();
 
         $result = $writer->write($qrCode);

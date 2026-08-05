@@ -391,22 +391,45 @@
                 </div>
 
                 <div style="text-align:center; font-size:11px; margin-top:10px; border-top:1px dashed #000; padding-top:8px; line-height:1.2;">
-                    Thank you for dining with us!<br>
-                    RE-PRINTED AT: ${new Date().toLocaleString()}<br>
-                    Powered By JAAN Network (PVT) Ltd
+                    <div style="font-size:11px; font-weight:bold; margin-bottom:4px;">Please drop a google review,cafe kdj</div>
+                    <img src="${window.location.origin}/qr-code/generate?text=https%3A%2F%2Fwww.google.com%2Fmaps%2Fplace%2F%2Fdata%3D!4m3!3m2!1s0x3ae25b3ace14ea05%3A0x448c982eb6a931a0!12e1%3Fsource%3Dg.page.m.ia._%26utm_source%3Dgbp%26laa%3Dnmx-review-solicitation-ia2" onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https%3A%2F%2Fwww.google.com%2Fmaps%2Fplace%2F%2Fdata%3D!4m3!3m2!1s0x3ae25b3ace14ea05%3A0x448c982eb6a931a0!12e1%3Fsource%3Dg.page.m.ia._%26utm_source%3Dgbp%26laa%3Dnmx-review-solicitation-ia2'" style="width:110px; height:110px; margin:6px auto 4px auto; display:block;" alt="Google Review QR" />
+                    RE-PRINTED AT: ${new Date().toLocaleString()}
                 </div>
             `;
 
-            const w = window.open('', '', 'width=400');
+            const w = window.open('', '', 'width=400,height=700');
             w.document.write(`
                 <!DOCTYPE html><html><head><style>
                 @page { size: 80mm auto; margin: 0; }
-                body { font-family: 'Courier New', monospace; width: 100%; margin: 0; padding: 4mm 5mm; font-size: 14px; font-weight: 900 !important; color: #000; }
-                * { box-sizing: border-box; font-weight: 900 !important; }
+                body { font-family: 'Courier New', monospace; width: 100%; margin: 0; padding: 4mm 5mm; font-size: 14px; font-weight: 900 !important; color: #000; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                * { box-sizing: border-box; font-weight: 900 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                img { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
                 table { border-collapse: collapse; }
-                </style></head><body onload="window.print(); window.close();">${html}</body></html>
+                </style></head><body>${html}</body></html>
             `);
             w.document.close();
+            w.focus();
+            let printed = false;
+            const doPrint = function() {
+                if (printed) return;
+                printed = true;
+                setTimeout(function() {
+                    w.print();
+                    setTimeout(function() { w.close(); }, 1200);
+                }, 250);
+            };
+            const imgs = w.document.images;
+            if (!imgs || imgs.length === 0) {
+                doPrint();
+            } else {
+                let pending = imgs.length;
+                const onOne = function() { pending--; if (pending <= 0) doPrint(); };
+                Array.prototype.forEach.call(imgs, function(img) {
+                    if (img.complete && img.naturalWidth > 0) onOne();
+                    else { img.onload = onOne; img.onerror = onOne; }
+                });
+                setTimeout(doPrint, 1500);
+            }
         }
 
         function resetFilters() {

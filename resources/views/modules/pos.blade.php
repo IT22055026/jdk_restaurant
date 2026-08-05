@@ -30,9 +30,26 @@
         .product-card {
             background: #fff; border: 2px solid #e2e8f0; border-radius: 12px;
             padding: 18px 14px; cursor: pointer; transition: all 0.18s; text-align: center;
+            position: relative;
         }
         .product-card:hover { border-color: #2563eb; box-shadow: 0 4px 16px rgba(37,99,235,0.15); transform: translateY(-2px); }
         .product-card:active { transform: scale(0.97); }
+
+        /* ── Pin Button ── */
+        .pin-btn {
+            position: absolute; top: 10px; right: 10px; z-index: 10;
+            width: 28px; height: 28px; border-radius: 50%;
+            background: #ffffff; border: 1.5px solid #cbd5e1;
+            color: #94a3b8; display: flex; align-items: center; justify-content: center;
+            font-size: 12px; cursor: pointer; transition: all 0.15s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+        }
+        .pin-btn:hover { background: #eff6ff; color: #2563eb; border-color: #2563eb; transform: scale(1.1); }
+        .pin-btn.pinned { background: #2563eb; color: #ffffff; border-color: #2563eb; box-shadow: 0 2px 8px rgba(37,99,235,0.35); }
+        .pin-btn.pinned i { transform: rotate(-45deg); }
+        html.dark-mode .pin-btn { background: #10162a; border-color: #26314d; color: #64748b; }
+        html.dark-mode .pin-btn:hover { background: #141b30; color: #6d94ff; border-color: #2f5bff; }
+        html.dark-mode .pin-btn.pinned { background: #1d4ed8; color: #ffffff; border-color: #1d4ed8; }
 
         /* ── Bill items ── */
         .bill-item {
@@ -631,6 +648,26 @@
     let openDiscountRows      = new Set(); // item IDs whose discount input row is open
     let qtyLock               = {}; // { itemId: true } — prevents overlapping qty updates
     let lastFocusedBeforeModal = null; // element to restore focus to once a modal closes
+
+    // Pinned products (saved in localStorage per cashier terminal)
+    let pinnedProductIds = new Set(JSON.parse(localStorage.getItem('pos_pinned_products') || '[]'));
+
+    function togglePinProduct(productId, event) {
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+        const numericId = Number(productId);
+        if (pinnedProductIds.has(numericId)) {
+            pinnedProductIds.delete(numericId);
+            toast('Product unpinned', 'info');
+        } else {
+            pinnedProductIds.add(numericId);
+            toast('Product pinned to top', 'success');
+        }
+        localStorage.setItem('pos_pinned_products', JSON.stringify(Array.from(pinnedProductIds)));
+        renderProducts();
+    }
 
     // Recipe-tracked products (e.g. two combos that both use the same Paratha Roti)
     // share one pool of ingredient stock. getStock() derives a product's available
@@ -1251,7 +1288,29 @@
             restoreGridFocus(container, captured);
             return;
         }
-        container.innerHTML = allProducts.map(function(p) {
+
+        // Sort products so pinned products appear first at the top of the grid
+        const sortedProducts = [...allProducts].sort((a, b) => {
+            const aPinned = pinnedProductIds.has(Number(a.id));
+            const bPinned = pinnedProductIds.has(Number(b.id));
+            if (aPinned && !bPinned) return -1;
+            if (!aPinned && bPinned) return 1;
+            return 0;
+        });
+
+        container.innerHTML = sortedProducts.map(function(p) {
+            const isPinned = pinnedProductIds.has(Number(p.id));
+            const pinBtnHtml = '<button type="button" class="pin-btn ' + (isPinned ? 'pinned' : '') + '" '
+                + 'onclick="togglePinProduct(' + p.id + ', event)" '
+                + 'title="' + (isPinned ? 'Unpin product' : 'Pin to top') + '" '
+                + 'aria-label="' + (isPinned ? 'Unpin ' : 'Pin ') + escapeHtml(p.name) + '">'
+                + '<i class="fas fa-thumbtack"></i>'
+                + '</button>';
+
+            const pinnedBadge = isPinned
+                ? '<span style="position:absolute; top:8px; left:8px; z-index:4; background:#2563eb; color:#fff; font-size:9px; font-weight:800; padding:2px 6px; border-radius:4px; text-transform:uppercase; letter-spacing:0.04em;"><i class="fas fa-thumbtack" style="margin-right:3px; font-size:8px;"></i>Pinned</span>'
+                : '';
+
             let imageHtml = '';
             if (p.image) {
                 imageHtml = '<img src="/storage/' + p.image + '" alt="' + escapeHtml(p.name) + '" '
@@ -1261,7 +1320,6 @@
             }
 
             const availableQty = p.is_unlimited_stock ? null : getStock(p.id);
-            // const isOutOfStock = !p.is_unlimited_stock && availableQty <= 0;
             let stockBadge;
             if (p.is_unlimited_stock) {
                 stockBadge = '<p style="font-size:15px; color:#16a34a; margin:2px 0 0; font-weight:600;">∞ Unlimited</p>';
@@ -1270,13 +1328,12 @@
                 (availableQty < 0 ? '#ef4444' : '#64748b') +
                 ';">Stock: ' + availableQty + '</p>';
             }
-            // const cardExtra = isOutOfStock
-            //     ? 'tabindex="-1" aria-disabled="true" style="opacity:0.5; cursor:not-allowed; pointer-events:none;"'
-            //     : 'tabindex="-1" role="button" aria-label="Add ' + escapeHtml(p.name) + '" onclick="addProductToOrder(' + p.id + ', \'' + escapeJs(p.name) + '\', ' + p.price + ')"';
             const cardExtra = 'tabindex="-1" role="button" aria-label="Add ' + escapeHtml(p.name) + '" onclick="addProductToOrder(' + p.id + ', \'' + escapeJs(p.name) + '\', ' + p.price + ')"';
 
             return '<div class="product-card" data-product-id="' + p.id + '" ' + cardExtra + '>'
+                + pinBtnHtml
                 + '<div style="height:130px; background:linear-gradient(135deg,#eff6ff,#fee2e2); border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; overflow:hidden; position:relative;">'
+                + pinnedBadge
                 + imageHtml
                 + '</div>'
                 + '<p style="font-size:14px; font-weight:700; color:#0f172a; margin:0 0 5px; line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">' + escapeHtml(p.name) + '</p>'

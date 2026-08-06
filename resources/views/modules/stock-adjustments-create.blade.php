@@ -109,8 +109,8 @@
                 </div>
 
                 <div>
-                    <label for="reason" class="block text-sm font-semibold text-gray-900 mb-2">Reason <span class="text-red-600">*</span></label>
-                    <input type="text" name="reason" id="reason" value="{{ old('reason') }}" required
+                    <label for="reason" class="block text-sm font-semibold text-gray-900 mb-2">Reason <span class="text-gray-400 font-normal">(Optional)</span></label>
+                    <input type="text" name="reason" id="reason" value="{{ old('reason') }}"
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent {{ $errors->has('reason') ? 'border-red-600' : '' }}"
                         placeholder="e.g., New delivery received, Stock count correction">
                     @error('reason')

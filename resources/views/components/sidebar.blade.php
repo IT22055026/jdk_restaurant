@@ -12,6 +12,13 @@
                     if ($prefix === 'inventory') {
                         $isActive = $isActive || request()->routeIs('products.*') || request()->routeIs('wastages.*') || request()->routeIs('stock.adjustments.*') || request()->routeIs('ingredients.*');
                     }
+                    // Special-case: Purchases & Expenses module covers both the Purchases and Expenses tabs
+                    if ($prefix === 'purchases') {
+                        $isActive = $isActive
+                            || request()->routeIs('purchase-categories.*')
+                            || request()->routeIs('expenses.*')
+                            || request()->routeIs('expense-categories.*');
+                    }
                 @endphp
 
                 <a href="{{ route($module->route) }}" class="nav-item px-3 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 transition-colors

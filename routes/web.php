@@ -19,6 +19,10 @@ use App\Http\Controllers\QrMenuController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\OfferController;
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\ExpenseCategoryController;
+use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\PurchaseCategoryController;
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
@@ -76,8 +80,27 @@ Route::middleware(['auth', 'module.access'])->group(function () {
         return app(WastageController::class)->index();
     })->name('wastage.index');
 
-    // Placeholder routes for other modules
+    // Supplier CRUD routes
     Route::resource('suppliers', SupplierController::class)->except(['show']);
+
+    // Purchases CRUD routes (Purchases tab of the Purchases & Expenses module)
+    Route::resource('purchases', PurchaseController::class)->except(['show']);
+
+    // Purchase category (main category / sub-category) management
+    Route::get('/purchase-categories', [PurchaseCategoryController::class, 'index'])->name('purchase-categories.index');
+    Route::post('/purchase-categories', [PurchaseCategoryController::class, 'store'])->name('purchase-categories.store');
+    Route::put('/purchase-categories/{purchaseCategory}', [PurchaseCategoryController::class, 'update'])->name('purchase-categories.update');
+    Route::delete('/purchase-categories/{purchaseCategory}', [PurchaseCategoryController::class, 'destroy'])->name('purchase-categories.destroy');
+
+    // Expense CRUD routes (Expenses tab of the Purchases & Expenses module)
+    Route::get('/expenses/export/walkthrough-pdf', [ExpenseController::class, 'exportWalkthroughPdf'])->name('expenses.export.pdf');
+    Route::resource('expenses', ExpenseController::class)->except(['show']);
+
+    // Expense category (main category / sub-category) management
+    Route::get('/expense-categories', [ExpenseCategoryController::class, 'index'])->name('expense-categories.index');
+    Route::post('/expense-categories', [ExpenseCategoryController::class, 'store'])->name('expense-categories.store');
+    Route::put('/expense-categories/{expenseCategory}', [ExpenseCategoryController::class, 'update'])->name('expense-categories.update');
+    Route::delete('/expense-categories/{expenseCategory}', [ExpenseCategoryController::class, 'destroy'])->name('expense-categories.destroy');
 
     // Shift & Till Management routes
     Route::get('/shifts', [ShiftController::class, 'index'])->name('shifts.index');

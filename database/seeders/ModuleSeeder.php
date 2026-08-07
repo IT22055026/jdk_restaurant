@@ -75,6 +75,15 @@ class ModuleSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
+                'name' => 'Purchases & Expenses',
+                'description' => 'Record supplier purchases and restaurant operating expenses',
+                'icon' => 'basket-shopping',
+                'route' => 'purchases.index',
+                'sort_order' => 8,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
                 'name' => 'Reports',
                 'description' => 'Generate and view reports',
                 'icon' => 'chart-bar',

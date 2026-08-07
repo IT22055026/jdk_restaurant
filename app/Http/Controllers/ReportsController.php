@@ -7,6 +7,8 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\User;
+use App\Models\Expense;
+use App\Models\Purchase;
 use App\Support\BusinessDay;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -148,11 +150,30 @@ class ReportsController extends Controller
                                           DB::raw('SUM(total) as total_revenue'))
                                  ->groupBy('payment_method')->get();
 
+        $totalExpenses = Expense::sum('amount');
+        $monthExpenses = Expense::whereBetween('expense_date', [$monthStart->format('Y-m-d'), $monthEnd->format('Y-m-d')])->sum('amount');
+        $todayExpenses = Expense::whereDate('expense_date', BusinessDay::today()->format('Y-m-d'))->sum('amount');
+
+        // Raw material / supplier purchases live in their own module now, but they're
+        // still real costs against revenue — fold them into the profit figures.
+        $totalPurchases = Purchase::sum('amount');
+        $monthPurchases = Purchase::whereBetween('purchase_date', [$monthStart->format('Y-m-d'), $monthEnd->format('Y-m-d')])->sum('amount');
+        $todayPurchases = Purchase::whereDate('purchase_date', BusinessDay::today()->format('Y-m-d'))->sum('amount');
+
+        $totalOutgoings = $totalExpenses + $totalPurchases;
+        $monthOutgoings = $monthExpenses + $monthPurchases;
+
+        $netProfit = $totalRevenue - $totalOutgoings;
+        $monthNetProfit = $monthRevenue - $monthOutgoings;
+
         return compact(
             'totalRevenue', 'todaySales', 'monthRevenue', 'totalOrders', 'avgOrderValue', 'topProduct',
             'activeOrders', 'inventoryItems', 'activeUsers',
             'chartLabels', 'chartData', 'recentSales', 'topProducts', 'paymentBreakdown',
-            'pendingSales', 'pendingCount', 'pendingTotal'
+            'pendingSales', 'pendingCount', 'pendingTotal',
+            'totalExpenses', 'monthExpenses', 'todayExpenses',
+            'totalPurchases', 'monthPurchases', 'todayPurchases',
+            'totalOutgoings', 'monthOutgoings', 'netProfit', 'monthNetProfit'
         );
     }
 

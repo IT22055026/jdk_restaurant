@@ -94,7 +94,7 @@ class StockAdjustmentController extends Controller
             'ingredient_id' => 'required_if:item_type,ingredient|nullable|exists:ingredients,id',
             'change_type' => 'required|in:increase,decrease',
             'quantity' => 'required|numeric|min:0.001',
-            'reason' => 'required|string|max:255',
+            'reason' => 'nullable|string|max:255',
             'notes' => 'nullable|string|max:500',
         ]);
 

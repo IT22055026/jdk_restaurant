@@ -97,6 +97,74 @@
         </div>
     </div>
 
+    <!-- ── FINANCIAL OVERVIEW & NET PROFIT ── -->
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+        <div class="bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl p-5 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-blue-100 text-xs font-semibold uppercase tracking-wide">Gross Revenue</p>
+                    <p class="text-2xl font-bold mt-1">LKR {{ number_format($totalRevenue, 2) }}</p>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                    <i class="fas fa-chart-line text-white"></i>
+                </div>
+            </div>
+            <p class="text-xs text-blue-100/80 mt-2">Total completed sales revenue</p>
+        </div>
+
+        <div class="bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-2xl p-5 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-amber-100 text-xs font-semibold uppercase tracking-wide">Total Purchases</p>
+                    <p class="text-2xl font-bold mt-1">LKR {{ number_format($totalPurchases, 2) }}</p>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                    <i class="fas fa-basket-shopping text-white"></i>
+                </div>
+            </div>
+            <p class="text-xs text-amber-100/80 mt-2">Supplier / raw material purchases</p>
+        </div>
+
+        <div class="bg-gradient-to-br from-rose-500 to-rose-600 text-white rounded-2xl p-5 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-rose-100 text-xs font-semibold uppercase tracking-wide">Total Expenses</p>
+                    <p class="text-2xl font-bold mt-1">LKR {{ number_format($totalExpenses, 2) }}</p>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                    <i class="fas fa-receipt text-white"></i>
+                </div>
+            </div>
+            <p class="text-xs text-rose-100/80 mt-2">Operating expenses recorded</p>
+        </div>
+
+        <div class="bg-gradient-to-br {{ $netProfit >= 0 ? 'from-emerald-600 to-emerald-700' : 'from-red-600 to-red-700' }} text-white rounded-2xl p-5 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-emerald-100 text-xs font-semibold uppercase tracking-wide">Net Profit</p>
+                    <p class="text-2xl font-bold mt-1">LKR {{ number_format($netProfit, 2) }}</p>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                    <i class="fas fa-coins text-white"></i>
+                </div>
+            </div>
+            <p class="text-xs text-emerald-100/80 mt-2">Revenue minus Purchases & Expenses</p>
+        </div>
+
+        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center justify-between">
+            <div>
+                <p class="text-gray-400 text-xs font-semibold uppercase tracking-wide">This Month Net Profit</p>
+                <p class="text-xl font-bold {{ $monthNetProfit >= 0 ? 'text-emerald-600' : 'text-red-600' }} mt-1">
+                    LKR {{ number_format($monthNetProfit, 2) }}
+                </p>
+                <p class="text-xs text-gray-400 mt-1">Monthly sales - purchases - expenses</p>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-500">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+        </div>
+    </div>
+
     <!-- ── SUMMARY CARDS (7 cards) ── -->
     <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-7 gap-4 mb-8">
 

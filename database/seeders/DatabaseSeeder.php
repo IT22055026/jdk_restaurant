@@ -17,6 +17,8 @@ class DatabaseSeeder extends Seeder
             ModuleSeeder::class,
             UserSeeder::class,
             CategorySeeder::class,
+            ExpenseCategorySeeder::class,
+            PurchaseCategorySeeder::class,
         ]);
     }
 }

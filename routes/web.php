@@ -22,7 +22,6 @@ use App\Http\Controllers\OfferController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\ExpenseCategoryController;
 use App\Http\Controllers\PurchaseController;
-use App\Http\Controllers\PurchaseCategoryController;
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
@@ -85,12 +84,6 @@ Route::middleware(['auth', 'module.access'])->group(function () {
 
     // Purchases CRUD routes (Purchases tab of the Purchases & Expenses module)
     Route::resource('purchases', PurchaseController::class)->except(['show']);
-
-    // Purchase category (main category / sub-category) management
-    Route::get('/purchase-categories', [PurchaseCategoryController::class, 'index'])->name('purchase-categories.index');
-    Route::post('/purchase-categories', [PurchaseCategoryController::class, 'store'])->name('purchase-categories.store');
-    Route::put('/purchase-categories/{purchaseCategory}', [PurchaseCategoryController::class, 'update'])->name('purchase-categories.update');
-    Route::delete('/purchase-categories/{purchaseCategory}', [PurchaseCategoryController::class, 'destroy'])->name('purchase-categories.destroy');
 
     // Expense CRUD routes (Expenses tab of the Purchases & Expenses module)
     Route::get('/expenses/export/walkthrough-pdf', [ExpenseController::class, 'exportWalkthroughPdf'])->name('expenses.export.pdf');

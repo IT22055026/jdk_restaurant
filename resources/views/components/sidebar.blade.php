@@ -15,7 +15,6 @@
                     // Special-case: Purchases & Expenses module covers both the Purchases and Expenses tabs
                     if ($prefix === 'purchases') {
                         $isActive = $isActive
-                            || request()->routeIs('purchase-categories.*')
                             || request()->routeIs('expenses.*')
                             || request()->routeIs('expense-categories.*');
                     }

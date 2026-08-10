@@ -2,14 +2,6 @@
 
 @section('title', 'Purchases')
 
-@php
-    $filteredCategory = request()->filled('category_id')
-        ? $mainCategories->firstWhere('id', (int) request('category_id')) ?? $subcategories->firstWhere('id', (int) request('category_id'))
-        : null;
-    $filterTopId = $filteredCategory ? ($filteredCategory->parent_id ?? $filteredCategory->id) : null;
-    $filterSubId = $filteredCategory && $filteredCategory->parent_id ? $filteredCategory->id : null;
-@endphp
-
 @section('content')
     <div>
         <div class="mb-6 flex items-center justify-between flex-wrap gap-4">
@@ -24,12 +16,9 @@
                     </nav>
                 <h1 class="text-4xl font-bold text-gray-900">Purchases & Expenses</h1>
                 @endsection
-                <p class="text-gray-600 mt-2">Record supplier purchases by category and track monthly totals</p>
+                <p class="text-gray-600 mt-2">Record supplier purchases against your Finished Goods and Included Items catalog</p>
             </div>
             <div class="flex items-center gap-3">
-                <a href="{{ route('purchase-categories.index') }}" class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-5 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2">
-                    <i class="fas fa-sitemap"></i>Manage Categories
-                </a>
                 <a href="{{ route('purchases.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2">
                     <i class="fas fa-plus"></i>Add Purchase
                 </a>
@@ -134,26 +123,6 @@
         <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-6">
             <form method="GET" action="{{ route('purchases.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                 <x-combobox
-                    name="filter_main_category"
-                    id="filter_main_category"
-                    label="Main Category"
-                    placeholder="All categories"
-                    empty-option="All Categories"
-                    :selected="$filterTopId"
-                    :options="$mainCategories->map(fn($c) => ['value' => $c->id, 'label' => $c->name])" />
-
-                <div>
-                    <x-combobox
-                        name="category_id"
-                        id="filter_category_id"
-                        label="Sub-category"
-                        placeholder="All sub-categories"
-                        empty-option="All Sub-categories"
-                        :selected="$filterSubId"
-                        :options="$subcategories->map(fn($c) => ['value' => $c->id, 'label' => $c->name, 'data' => ['parent' => $c->parent_id]])" />
-                </div>
-
-                <x-combobox
                     name="supplier_id"
                     id="filter_supplier_id"
                     label="Supplier"
@@ -161,6 +130,24 @@
                     empty-option="All Suppliers"
                     :selected="request('supplier_id')"
                     :options="$suppliers->map(fn($s) => ['value' => $s->id, 'label' => $s->name])" />
+
+                <x-combobox
+                    name="product_id"
+                    id="filter_product_id"
+                    label="Finished Good"
+                    placeholder="All finished goods"
+                    empty-option="All Finished Goods"
+                    :selected="request('product_id')"
+                    :options="$finishedGoods->map(fn($p) => ['value' => $p->id, 'label' => $p->name, 'data' => ['parent' => $p->supplier_id]])" />
+
+                <x-combobox
+                    name="ingredient_id"
+                    id="filter_ingredient_id"
+                    label="Included Item"
+                    placeholder="All included items"
+                    empty-option="All Included Items"
+                    :selected="request('ingredient_id')"
+                    :options="$includedItems->map(fn($i) => ['value' => $i->id, 'label' => $i->name, 'data' => ['parent' => $i->supplier_id]])" />
 
                 <div>
                     <label class="block text-xs font-medium text-gray-500 mb-1">From Date</label>
@@ -175,7 +162,7 @@
                     <button type="submit" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 text-sm rounded-lg font-semibold transition-colors">
                         <i class="fas fa-filter"></i>
                     </button>
-                    @if(request()->hasAny(['category_id', 'supplier_id', 'from', 'to']))
+                    @if(request()->hasAny(['supplier_id', 'product_id', 'ingredient_id', 'from', 'to']))
                         <a href="{{ route('purchases.index') }}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 text-sm rounded-lg font-semibold transition-colors">
                             Reset
                         </a>
@@ -192,9 +179,10 @@
                         <thead class="bg-gray-50 border-b border-gray-200">
                             <tr>
                                 <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Date</th>
-                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Category</th>
+                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Item</th>
                                 <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Supplier</th>
                                 <th class="px-6 py-3 text-right text-sm font-semibold text-gray-900">Qty</th>
+                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Payment</th>
                                 <th class="px-6 py-3 text-right text-sm font-semibold text-gray-900">Amount (LKR)</th>
                                 <th class="px-6 py-3 text-center text-sm font-semibold text-gray-900">Actions</th>
                             </tr>
@@ -206,9 +194,17 @@
                                         {{ \Carbon\Carbon::parse($purchase->purchase_date)->format('d M Y') }}
                                     </td>
                                     <td class="px-6 py-4 text-sm">
-                                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-100">
-                                            {{ $purchase->category?->parent?->name ? $purchase->category->parent->name . ' › ' : '' }}{{ $purchase->category?->name ?? '—' }}
-                                        </span>
+                                        @if($purchase->category)
+                                            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-100">
+                                                {{ $purchase->category->parent?->name ? $purchase->category->parent->name . ' › ' : '' }}{{ $purchase->category->name }}
+                                            </span>
+                                        @else
+                                            <span @class([
+                                                'px-3 py-1 rounded-full text-xs font-semibold border',
+                                                'bg-blue-50 text-blue-700 border-blue-100' => $purchase->itemType() === \App\Models\Purchase::TYPE_FINISHED_GOOD,
+                                                'bg-emerald-50 text-emerald-700 border-emerald-100' => $purchase->itemType() === \App\Models\Purchase::TYPE_INCLUDED_ITEM,
+                                            ])>{{ $purchase->itemTypeLabel() }}</span>
+                                        @endif
                                         @if($purchase->item_name)
                                             <p class="text-xs text-gray-400 font-normal mt-1">{{ $purchase->item_name }}</p>
                                         @endif
@@ -216,6 +212,11 @@
                                     <td class="px-6 py-4 text-sm text-gray-700">{{ $purchase->supplier?->name ?? '—' }}</td>
                                     <td class="px-6 py-4 text-sm text-gray-700 text-right">
                                         {{ rtrim(rtrim(number_format((float) $purchase->quantity, 3), '0'), '.') }} {{ $purchase->unit }}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200">
+                                            {{ $purchase->paymentMethodLabel() }}
+                                        </span>
                                     </td>
                                     <td class="px-6 py-4 text-sm font-bold text-amber-600 text-right">
                                         LKR {{ number_format($purchase->amount, 2) }}
@@ -260,7 +261,32 @@
 @section('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        Combobox.setupCascade('filter_category_id', 'filter_main_category', 'data-parent');
+        var supplierSelect = document.getElementById('filter_supplier_id');
+
+        // An empty supplier means "show all" here (this is a browsing filter, not the
+        // create form) — but once a supplier is picked, scope the other two down to it.
+        function filterBySupplier(childId) {
+            var child = document.getElementById(childId);
+            if (!child) return;
+
+            function apply() {
+                var supplierVal = supplierSelect.value;
+                Array.from(child.options).forEach(function (opt) {
+                    if (opt.value === '') { opt.disabled = false; return; }
+                    opt.disabled = !!supplierVal && opt.getAttribute('data-parent') !== supplierVal;
+                });
+                if (child.value && child.options[child.selectedIndex] && child.options[child.selectedIndex].disabled) {
+                    child.value = '';
+                }
+                if (child._combobox) child._combobox.refresh();
+            }
+
+            apply();
+            supplierSelect.addEventListener('change', apply);
+        }
+
+        filterBySupplier('filter_product_id');
+        filterBySupplier('filter_ingredient_id');
     });
 </script>
 @endsection

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Ingredient;
 use App\Models\Offer;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -24,10 +25,14 @@ class OfferController extends Controller
     public function create()
     {
         $ingredients = Ingredient::orderBy('name')->get();
+        // Same "products live in POS billing" source the till itself uses, so any
+        // flavour picked here is guaranteed sellable/in-stock-tracked at the counter.
+        $flavourProducts = Product::where('status', 'active')->orderBy('name')->get();
         $modules = $this->currentUser()->role->modules()->get();
 
         return view('modules.offers-create', [
             'ingredients' => $ingredients,
+            'flavourProducts' => $flavourProducts,
             'modules' => $modules,
         ]);
     }
@@ -44,6 +49,8 @@ class OfferController extends Controller
             'ingredient_ids.*' => 'exists:ingredients,id',
             'quantities' => 'nullable|array',
             'quantities.*' => 'nullable|numeric|min:0.001',
+            'flavour_ids' => 'nullable|array',
+            'flavour_ids.*' => 'exists:products,id',
         ]);
     }
 
@@ -73,19 +80,22 @@ class OfferController extends Controller
         ]);
 
         $offer->ingredients()->sync($this->ingredientSyncData($validated));
+        $offer->flavours()->sync($validated['flavour_ids'] ?? []);
 
         return redirect()->route('offers.index')->with('success', 'Offer created successfully');
     }
 
     public function edit(Offer $offer)
     {
-        $offer->load('ingredients');
+        $offer->load(['ingredients', 'flavours']);
         $ingredients = Ingredient::orderBy('name')->get();
+        $flavourProducts = Product::where('status', 'active')->orderBy('name')->get();
         $modules = $this->currentUser()->role->modules()->get();
 
         return view('modules.offers-edit', [
             'offer' => $offer,
             'ingredients' => $ingredients,
+            'flavourProducts' => $flavourProducts,
             'modules' => $modules,
         ]);
     }
@@ -111,6 +121,7 @@ class OfferController extends Controller
         ]);
 
         $offer->ingredients()->sync($this->ingredientSyncData($validated));
+        $offer->flavours()->sync($validated['flavour_ids'] ?? []);
 
         return redirect()->route('offers.index')->with('success', 'Offer updated successfully');
     }

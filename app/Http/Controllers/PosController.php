@@ -483,7 +483,7 @@ class PosController extends Controller
 
     public function getActiveOffers()
     {
-        $offers = Offer::where('is_active', true)->with('ingredients')->get();
+        $offers = Offer::where('is_active', true)->with(['ingredients', 'flavours'])->get();
 
         return response()->json($offers->map(fn($offer) => [
             'id' => $offer->id,
@@ -492,6 +492,10 @@ class PosController extends Controller
             'image' => $offer->image,
             'price' => (float) $offer->price,
             'includes' => $offer->ingredients->pluck('name')->values(),
+            'flavours' => $offer->flavours->map(fn($product) => [
+                'id' => $product->id,
+                'name' => $product->name,
+            ])->values(),
         ]));
     }
 
@@ -500,12 +504,29 @@ class PosController extends Controller
         $validated = $request->validate([
             'offer_id' => 'required|exists:offers,id',
             'quantity' => 'nullable|integer|min:1',
+            'flavour_product_id' => 'nullable|integer|exists:products,id',
         ]);
 
         $quantity = $validated['quantity'] ?? 1;
+        $offer = Offer::with(['ingredients', 'flavours'])->findOrFail($validated['offer_id']);
+
+        // An offer with flavour options (e.g. every Mojito flavour) can't be added
+        // without the cashier picking one — see offer_flavours / Offer::flavours().
+        $flavourProduct = null;
+        if ($offer->flavours->isNotEmpty()) {
+            $flavourProduct = $offer->flavours->firstWhere('id', (int) ($validated['flavour_product_id'] ?? 0));
+            if (!$flavourProduct) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Choose a flavour for "' . $offer->name . '" first',
+                ], 422);
+            }
+        }
+
+        $billingName = $flavourProduct ? "{$offer->name} — {$flavourProduct->name}" : $offer->name;
 
         $billingLine = OrderItem::where('order_id', $order->id)
-            ->where('offer_id', $validated['offer_id'])
+            ->where('offer_id', $offer->id)
             ->where('is_offer_component', false)
             ->first();
 
@@ -514,19 +535,32 @@ class PosController extends Controller
             $billingLine->update([
                 'quantity' => $newQuantity,
                 'subtotal' => $billingLine->unit_price * $newQuantity,
+                'product_name' => $billingName,
             ]);
 
             OrderItem::where('order_id', $order->id)
-                ->where('offer_id', $validated['offer_id'])
+                ->where('offer_id', $offer->id)
                 ->where('is_offer_component', true)
                 ->update(['quantity' => $newQuantity]);
-        } else {
-            $offer = Offer::with('ingredients')->findOrFail($validated['offer_id']);
 
+            // Only one flavour can be "live" per offer per order — re-adding with a
+            // different pick swaps the whole line (including units already queued)
+            // over to the new flavour rather than mixing two flavours on one line.
+            if ($flavourProduct) {
+                OrderItem::where('order_id', $order->id)
+                    ->where('offer_id', $offer->id)
+                    ->where('is_offer_component', true)
+                    ->whereNotNull('product_id')
+                    ->update([
+                        'product_id' => $flavourProduct->id,
+                        'product_name' => $flavourProduct->name,
+                    ]);
+            }
+        } else {
             OrderItem::create([
                 'order_id' => $order->id,
                 'offer_id' => $offer->id,
-                'product_name' => $offer->name,
+                'product_name' => $billingName,
                 'unit_price' => $offer->price,
                 'quantity' => $quantity,
                 'subtotal' => $offer->price * $quantity,
@@ -548,6 +582,25 @@ class PosController extends Controller
                     // Snapshot the offer's per-unit amount now, so later edits to the
                     // offer's recipe don't retroactively change this already-placed order.
                     'offer_component_qty' => $ingredient->pivot->quantity,
+                ]);
+            }
+
+            if ($flavourProduct) {
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'offer_id' => $offer->id,
+                    'product_id' => $flavourProduct->id,
+                    'product_name' => $flavourProduct->name,
+                    'unit_price' => 0,
+                    'quantity' => $quantity,
+                    'subtotal' => 0,
+                    // Unlike the ingredient components above, this one stays visible to
+                    // the kitchen/bar ticket (is_bar_item stays false) so staff know
+                    // exactly which flavour to pour — and it deducts that flavour
+                    // product's own stock via ProductStockService, same as any other
+                    // finished-good product line.
+                    'is_bar_item' => false,
+                    'is_offer_component' => true,
                 ]);
             }
         }

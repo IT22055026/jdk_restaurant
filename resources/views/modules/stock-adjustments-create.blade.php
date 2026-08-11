@@ -109,8 +109,8 @@
                 </div>
 
                 <div>
-                    <label for="reason" class="block text-sm font-semibold text-gray-900 mb-2">Reason <span class="text-gray-400 font-normal">(Optional)</span></label>
-                    <input type="text" name="reason" id="reason" value="{{ old('reason') }}"
+                    <label for="reason" class="block text-sm font-semibold text-gray-900 mb-2">Reason <span class="text-red-600">*</span></label>
+                    <input type="text" name="reason" id="reason" value="{{ old('reason') }}" required
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent {{ $errors->has('reason') ? 'border-red-600' : '' }}"
                         placeholder="e.g., New delivery received, Stock count correction">
                     @error('reason')
@@ -119,11 +119,11 @@
                 </div>
 
                 <div>
-                    <label for="notes" class="block text-sm font-semibold text-gray-900 mb-2">Notes</label>
-                    <textarea name="notes" id="notes" rows="3"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Additional notes">{{ old('notes') }}</textarea>
-                    @error('notes')
+                    <label for="name" class="block text-sm font-semibold text-gray-900 mb-2">Name</label>
+                    <input type="text" name="name" id="name" value="{{ old('name') }}"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent {{ $errors->has('name') ? 'border-red-600' : '' }}"
+                        placeholder="Name of person making the adjustment">
+                    @error('name')
                         <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
                     @enderror
                 </div>

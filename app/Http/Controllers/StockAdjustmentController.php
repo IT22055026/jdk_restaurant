@@ -94,8 +94,8 @@ class StockAdjustmentController extends Controller
             'ingredient_id' => 'required_if:item_type,ingredient|nullable|exists:ingredients,id',
             'change_type' => 'required|in:increase,decrease',
             'quantity' => 'required|numeric|min:0.001',
-            'reason' => 'nullable|string|max:255',
-            'notes' => 'nullable|string|max:500',
+            'reason' => 'required|string|max:255',
+            'name' => 'nullable|string|max:255',
         ]);
 
         return $validated['item_type'] === 'product'
@@ -138,7 +138,7 @@ class StockAdjustmentController extends Controller
             'reference_type' => 'stock_adjustment',
             'reference_id' => null,
             'user_id' => $this->currentUser()->id,
-            'notes' => $validated['notes'] ?? null,
+            'name' => $validated['name'] ?? null,
         ]);
 
         $product->refresh();
@@ -174,7 +174,7 @@ class StockAdjustmentController extends Controller
             'reference_type' => 'ingredient_adjustment',
             'reference_id' => null,
             'user_id' => $this->currentUser()->id,
-            'notes' => $validated['notes'] ?? null,
+            'name' => $validated['name'] ?? null,
         ]);
 
         $ingredient->refresh();

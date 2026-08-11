@@ -73,6 +73,41 @@
         .pay-method-btn:hover { border-color: #3b82f6; color: #3b82f6; }
         .pay-method-btn.active { border-color: #2563eb; background: #eff6ff; color: #2563eb; }
 
+        /* ── Order Type Segmented Control ── */
+        .order-type-segmented {
+            display: flex;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            gap: 4px;
+        }
+        .order-type-btn {
+            flex: 1;
+            padding: 8px 10px;
+            font-size: 12px;
+            font-weight: 700;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
+        .order-type-btn:hover {
+            color: #1e293b;
+        }
+        .order-type-btn.active {
+            background: #ffffff;
+            color: #2563eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+            font-weight: 800;
+        }
+
         /* While Split is selected, the split-amount fields need the room —
            shrink the method icons down to a single compact row each instead
            of stacked icon+label, so the bottom Hold/Pay buttons don't get
@@ -204,6 +239,10 @@
         html.dark-mode .pay-method-btn { background: #10162a; border-color: #26314d; color: #9aa7c2; }
         html.dark-mode .pay-method-btn:hover { border-color: #2f5bff; color: #6d94ff; }
         html.dark-mode .pay-method-btn.active { background: #101f45; border-color: #1d4ed8; color: #6d94ff; }
+        html.dark-mode .order-type-segmented { background: #10162a; border-color: #26314d; }
+        html.dark-mode .order-type-btn { color: #9aa7c2; }
+        html.dark-mode .order-type-btn:hover { color: #f8fafc; }
+        html.dark-mode .order-type-btn.active { background: #1e293b; color: #6d94ff; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
 
         html.dark-mode .modal-box { background: #10162a; color: #e8ecf4; }
         html.dark-mode .btn-secondary { background: #182036; color: #e8ecf4; }
@@ -329,14 +368,6 @@
             <div id="selectedTokenLabel" style="font-size:14px; font-weight:700; color:#64748b;">
                 <i class="fas fa-arrow-left" style="font-size:10px; margin-right:4px;"></i>Tap New Order to begin
             </div>
-            <div id="tokenNumberRow" style="display:none; align-items:center; gap:8px; margin-top:8px;">
-                <label style="font-size:11px; font-weight:800; color:#ea580c; text-transform:uppercase; letter-spacing:0.04em; flex-shrink:0;">
-                    <i class="fas fa-ticket" style="margin-right:3px;"></i>Token #
-                </label>
-                <input type="number" id="tokenNumberInput" placeholder="Enter physical token #" min="1"
-                       style="flex:1; min-width:0; font-size:14px; font-weight:800; border:1.5px solid #fdba74; border-radius:8px; padding:6px 10px; outline:none; background:#fff7ed; color:#9a3412;"
-                       onblur="saveTokenNumber()" onkeydown="if(event.key==='Enter'){this.blur();event.preventDefault();}">
-            </div>
         </div>
 
         <!-- Zone 2: Expandable Customer Info -->
@@ -379,7 +410,7 @@
             </button>
 
             <!-- Totals + Payment summary — single 4-column row -->
-            <div style="display:grid; grid-template-columns: 1fr 1.25fr 1fr 1.1fr; gap:8px; align-items:start;">
+            <div style="display:grid; grid-template-columns: 1fr 1.15fr 0.9fr 1.6fr; gap:8px; align-items:start;">
                 <!-- Subtotal -->
                 <div>
                     <div style="font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:#94a3b8; margin-bottom:3px;">Subtotal</div>
@@ -412,14 +443,32 @@
                         <i class="fas fa-chevron-down" id="paymentChevron" style="font-size:10px; color:#64748b; transition:transform 0.15s;"></i>
                     </span>
                 </button>
-                <!-- Dropdown for dining or tackeaway options -->
-                <div>
-                    <div style="font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:#94a3b8; margin-bottom:3px;">Order Type</div>
-                    <select id="orderType" onchange="updateOrderType()"
-                            style="width:100%; font-size:12px; border:1px solid #e2e8f0; border-radius:6px; padding:5px 6px; background:#f8fafc; outline:none; cursor:pointer;">
-                        <option value="dine_in">Dine In</option>
-                        <option value="takeaway">Takeaway</option>
-                    </select>
+                <!-- Segmented buttons for dining or takeaway options + physical token number -->
+                <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
+                    <div style="flex:1 1 220px; min-width:180px;">
+                        <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:#94a3b8; margin-bottom:4px;">Order Type</div>
+                        <input type="hidden" id="orderType" value="dine_in">
+                        <div class="order-type-segmented">
+                            <button type="button" class="order-type-btn active" data-type="dine_in" onclick="selectOrderType('dine_in')">
+                                <i class="fas fa-utensils" style="font-size:12px; margin-right:5px;"></i>Dine In
+                            </button>
+                            <button type="button" class="order-type-btn" data-type="takeaway" onclick="selectOrderType('takeaway')">
+                                <i class="fas fa-bag-shopping" style="font-size:12px; margin-right:5px;"></i>Take Away
+                            </button>
+                        </div>
+                    </div>
+                    <div id="tokenNumberRow" style="display:none; flex-direction:column; align-items:flex-start; justify-content:center; flex-shrink:0;">
+                        <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:#ea580c; margin-bottom:4px; white-space:nowrap;">
+                            <i class="fas fa-ticket" style="margin-right:4px;"></i>Token #
+                        </div>
+                        <select id="tokenNumberInput" onchange="saveTokenNumber()"
+                                style="width:72px; font-size:14px; font-weight:800; border:1.5px solid #fdba74; border-radius:10px; padding:7px 8px; outline:none; background:#fff7ed; color:#9a3412; cursor:pointer;">
+                            <option value="">—</option>
+                            @for ($i = 1; $i <= 20; $i++)
+                                <option value="{{ $i }}">{{ $i }}</option>
+                            @endfor
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -560,6 +609,24 @@
         <div style="display:flex; gap:8px; margin-top:16px;">
             <button onclick="closeModal('freeItemModal')" class="btn-secondary" style="flex:1;">Cancel</button>
             <button onclick="submitFreeItem()" data-primary="true" style="flex:1; background:#16a34a; color:#fff; border:none; border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer;"><i class="fas fa-gift" style="margin-right:5px;"></i>Add as Free</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     MODAL: Pick a flavour for a flavour-choice offer (e.g. "Mojito Deal")
+══════════════════════════════════════════════════ -->
+<div id="flavourModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 440px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <h2 style="font-size:18px; font-weight:800; color:#0f172a; margin:0;"><i class="fas fa-martini-glass-citrus" style="color:#a21caf; margin-right:6px;"></i>Pick a Flavour</h2>
+            <button onclick="closeModal('flavourModal')" style="background:none; border:none; font-size:22px; cursor:pointer; color:#94a3b8;">&times;</button>
+        </div>
+        <p id="flavourModalOfferName" style="font-size:12px; color:#64748b; margin:0 0 14px; font-weight:600;"></p>
+        <div id="flavourOptions" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;"></div>
+        <div style="display:flex; gap:8px;">
+            <button onclick="closeModal('flavourModal')" class="btn-secondary" style="flex:1;">Cancel</button>
+            <button onclick="confirmFlavourChoice()" data-primary="true" style="flex:1; background:#a21caf; color:#fff; border:none; border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer;"><i class="fas fa-plus" style="margin-right:5px;"></i>Add to Order</button>
         </div>
     </div>
 </div>
@@ -874,9 +941,8 @@
             }
 
             currentOrder = data;
-            // Restore the order type dropdown to match the resumed order
-            const orderTypeEl = document.getElementById('orderType');
-            if (orderTypeEl) orderTypeEl.value = data.order_type || 'dine_in';
+            // Restore the order type toggle to match the resumed order
+            selectOrderType(data.order_type || 'dine_in', true);
             renderOrderHeader();
             renderBill();
             hideLoading();
@@ -1231,6 +1297,7 @@
         }
         container.innerHTML = allOffers.map(function(o) {
             const includes = (o.includes || []).join(', ');
+            const hasFlavours = o.flavours && o.flavours.length > 0;
             const imageHtml = o.image
                 ? '<img src="/storage/' + o.image + '" alt="' + escapeHtml(o.name) + '" style="width:100%; height:100%; object-fit:cover;">'
                 : '<i class="fas fa-gift" style="color:#a21caf; font-size:28px;"></i>';
@@ -1240,7 +1307,9 @@
                 + '</div>'
                 + '<p style="font-size:14px; font-weight:700; color:#0f172a; margin:0 0 5px; line-height:1.3;">' + escapeHtml(o.name) + '</p>'
                 + '<p style="font-size:16px; font-weight:900; color:#a21caf; margin:0;">Rs. ' + o.price.toFixed(2) + '</p>'
-                + (includes ? '<p style="font-size:10px; color:#64748b; margin:4px 0 0; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">Includes: ' + escapeHtml(includes) + '</p>' : '')
+                + (hasFlavours
+                    ? '<p style="font-size:10px; font-weight:700; color:#a21caf; margin:4px 0 0;"><i class="fas fa-martini-glass-citrus" style="margin-right:3px;"></i>' + o.flavours.length + ' flavours — pick one</p>'
+                    : (includes ? '<p style="font-size:10px; color:#64748b; margin:4px 0 0; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">Includes: ' + escapeHtml(includes) + '</p>' : ''))
                 + '</div>';
         }).join('');
         restoreGridFocus(container, captured);
@@ -1253,6 +1322,57 @@
             return;
         }
 
+        // Flavour-choice offers (e.g. "Mojito Deal") need the cashier to pick a
+        // flavour before they can be billed — everything else goes straight in.
+        const offer = allOffers.find(function(o) { return o.id === offerId; });
+        if (offer && offer.flavours && offer.flavours.length) {
+            openFlavourModal(offer);
+            return;
+        }
+
+        await placeOfferOrder(offerId, offerName, null);
+    }
+
+    let flavourModalOfferId = null;
+    let flavourModalOfferName = '';
+    let flavourModalSelectedId = null;
+
+    function openFlavourModal(offer) {
+        flavourModalOfferId = offer.id;
+        flavourModalOfferName = offer.name;
+        document.getElementById('flavourModalOfferName').textContent = 'For "' + offer.name + '" — tap the flavour to add it';
+        renderFlavourOptions(offer.flavours);
+        openModal('flavourModal');
+    }
+
+    function renderFlavourOptions(flavours) {
+        const container = document.getElementById('flavourOptions');
+        container.innerHTML = flavours.map(function(f, idx) {
+            return '<button type="button" class="pay-method-btn' + (idx === 0 ? ' active' : '') + '" data-flavour-id="' + f.id + '" onclick="selectFlavourOption(' + f.id + ')" style="flex:0 0 auto; padding:10px 16px;">' + escapeHtml(f.name) + '</button>';
+        }).join('');
+        flavourModalSelectedId = flavours.length ? flavours[0].id : null;
+    }
+
+    function selectFlavourOption(productId) {
+        flavourModalSelectedId = productId;
+        document.querySelectorAll('#flavourOptions .pay-method-btn').forEach(function(btn) {
+            btn.classList.toggle('active', parseInt(btn.dataset.flavourId, 10) === productId);
+        });
+    }
+
+    async function confirmFlavourChoice() {
+        if (!flavourModalSelectedId) {
+            toast('Pick a flavour first', 'error');
+            return;
+        }
+        const offerId = flavourModalOfferId;
+        const offerName = flavourModalOfferName;
+        const flavourId = flavourModalSelectedId;
+        closeModal('flavourModal');
+        await placeOfferOrder(offerId, offerName, flavourId);
+    }
+
+    async function placeOfferOrder(offerId, offerName, flavourProductId) {
         if (!currentOrder || !currentOrder.id) {
             const created = await createNewOrder();
             if (!created) {
@@ -1262,10 +1382,13 @@
         }
 
         try {
+            const payload = { offer_id: offerId, quantity: 1 };
+            if (flavourProductId) payload.flavour_product_id = flavourProductId;
+
             const res = await fetch('{{ route("pos.offer.add", ":id") }}'.replace(':id', currentOrder.id), {
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ offer_id: offerId, quantity: 1 })
+                body: JSON.stringify(payload)
             });
             const data = await res.json();
             if (data.success) {
@@ -1922,6 +2045,19 @@
     // ORDER TYPE
     // ═══════════════════════════════════════════
 
+    function selectOrderType(type, skipApi = false) {
+        const input = document.getElementById('orderType');
+        if (input) input.value = type;
+
+        document.querySelectorAll('.order-type-btn').forEach(function(btn) {
+            btn.classList.toggle('active', btn.dataset.type === type);
+        });
+
+        if (!skipApi) {
+            updateOrderType();
+        }
+    }
+
     async function updateOrderType() {
         const sel = document.getElementById('orderType');
         if (!sel || !currentOrder || !currentOrder.id) return;
@@ -2431,6 +2567,7 @@
         document.querySelectorAll('.pay-method-btn').forEach(function(b) {
             b.classList.toggle('active', b.dataset.method === 'cash');
         });
+        selectOrderType('dine_in', true);
         document.getElementById('cashSection').style.display = 'flex';
         document.getElementById('paymentBody').classList.remove('split-active');
 

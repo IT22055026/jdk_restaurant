@@ -1207,9 +1207,19 @@
                 ? 'tabindex="-1" aria-disabled="true" style="opacity:0.5; cursor:not-allowed; pointer-events:none;"'
                 : 'tabindex="-1" role="button" aria-label="Add ' + escapeHtml(i.name) + '" onclick="openIncludeItemModal(' + i.id + ', \'' + escapeJs(i.name) + '\', \'' + escapeJs(i.unit) + '\', ' + i.selling_price + ', ' + i.quantity + ')"';
 
+            let imageHtml = '';
+            if (i.image) {
+                const src = (i.image.startsWith('http://') || i.image.startsWith('https://'))
+                    ? i.image
+                    : '/storage/' + i.image;
+                imageHtml = '<img src="' + src + '" alt="' + escapeHtml(i.name) + '" style="width:100%; height:100%; object-fit:cover;">';
+            } else {
+                imageHtml = '<i class="fas fa-flask" style="color:#1d4ed8; font-size:28px;"></i>';
+            }
+
             return '<div class="product-card" data-ingredient-id="' + i.id + '" ' + cardExtra + '>'
-                + '<div style="height:130px; background:linear-gradient(135deg,#eff6ff,#dbeafe); border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:12px;">'
-                + '<i class="fas fa-flask" style="color:#1d4ed8; font-size:28px;"></i>'
+                + '<div style="height:130px; background:linear-gradient(135deg,#eff6ff,#dbeafe); border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; overflow:hidden;">'
+                + imageHtml
                 + '</div>'
                 + '<p style="font-size:14px; font-weight:700; color:#0f172a; margin:0 0 5px; line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">' + escapeHtml(i.name) + '</p>'
                 + '<p style="font-size:14px; font-weight:900; color:#1d4ed8; margin:0;">' + priceLabel + '</p>'

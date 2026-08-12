@@ -96,6 +96,7 @@ class PosController extends Controller
             'unit' => $ingredient->unit,
             'quantity' => (float) $ingredient->quantity,
             'selling_price' => $ingredient->selling_price !== null ? (float) $ingredient->selling_price : null,
+            'image' => $ingredient->image,
         ]));
     }
 

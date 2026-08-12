@@ -51,6 +51,7 @@
                     <div>
                         <label for="quantity" class="block text-sm font-semibold text-gray-900 mb-2">Current Stock <span class="text-red-600">*</span></label>
                         <input type="number" name="quantity" id="quantity" value="{{ old('quantity', 0) }}" step="0.001" min="0" required
+                            onfocus="this.select()"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent {{ $errors->has('quantity') ? 'border-red-600' : '' }}"
                             placeholder="0">
                         @error('quantity')

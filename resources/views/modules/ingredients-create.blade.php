@@ -24,7 +24,7 @@
         </div>
 
         <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-8 w-full">
-            <form action="{{ route('ingredients.store') }}" method="POST" class="space-y-6">
+            <form action="{{ route('ingredients.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
                 @csrf
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -98,14 +98,14 @@
                     </div>
 
                     <div>
-                        <label for="selling_price" class="block text-sm font-semibold text-gray-900 mb-2">Selling Price (per unit)</label>
-                        <input type="number" name="selling_price" id="selling_price" value="{{ old('selling_price') }}" step="0.01" min="0"
+                        <label for="selling_price" class="block text-sm font-semibold text-gray-900 mb-2">Selling Price (per unit) <span class="text-red-600">*</span></label>
+                        <input type="number" name="selling_price" id="selling_price" value="{{ old('selling_price') }}" step="0.01" min="0" required
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent {{ $errors->has('selling_price') ? 'border-red-600' : '' }}"
                             placeholder="0.00">
                         @error('selling_price')
                             <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
                         @enderror
-                        <p class="text-xs text-gray-500 mt-2">What to charge a customer buying this directly in POS (e.g. "extra mayonnaise"). Leave blank to keep it un-sellable on its own — it'll only show as free-item-eligible.</p>
+                        <p class="text-xs text-gray-500 mt-2">What to charge a customer buying this directly in POS (e.g. "extra mayonnaise").</p>
                     </div>
 
                     <div>
@@ -122,6 +122,18 @@
                     </div>
                 </div>
 
+                <div>
+                    <label for="image" class="block text-sm font-semibold text-gray-900 mb-2">Photo</label>
+                    <input type="file" name="image" id="image" accept=".jpg,.jpeg,.png,.webp,.gif"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent {{ $errors->has('image') ? 'border-red-600' : '' }}"
+                        onchange="previewImage(this)">
+                    <p class="text-xs text-gray-500 mt-1">Accepted formats: .png / .jpg (max 2MB)</p>
+                    @error('image')
+                        <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
+                    @enderror
+                    <img id="image-preview" src="#" alt="Preview" class="mt-2 w-28 h-28 object-cover rounded-lg border border-gray-200 hidden">
+                </div>
+
                 <div class="flex gap-4 pt-4">
                     <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
                         <i class="fas fa-save mr-2"></i>Save Included Item
@@ -133,4 +145,20 @@
             </form>
         </div>
     </div>
+@endsection
+
+@section('scripts')
+<script>
+    function previewImage(input) {
+        const preview = document.getElementById('image-preview');
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                preview.src = e.target.result;
+                preview.classList.remove('hidden');
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
 @endsection

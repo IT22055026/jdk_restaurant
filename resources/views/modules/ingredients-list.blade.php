@@ -62,6 +62,7 @@
                     <table class="w-full">
                         <thead class="bg-gray-50 border-b border-gray-200">
                             <tr>
+                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Photo</th>
                                 <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
                                 <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Unit</th>
                                 <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Supplier</th>
@@ -73,6 +74,23 @@
                         <tbody class="divide-y divide-gray-200">
                             @foreach($ingredients as $ingredient)
                                 <tr class="hover:bg-gray-50 transition-colors">
+                                    <td class="px-6 py-4 text-sm">
+                                        @if($ingredient->image)
+                                            <div class="h-12 w-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 group cursor-pointer relative">
+                                                   <img src="{{ Str::startsWith($ingredient->image, ['http://', 'https://']) ? $ingredient->image : asset('storage/' . $ingredient->image) }}"
+                                                       alt="{{ $ingredient->name }}"
+                                                       class="h-full w-full object-cover group-hover:scale-110 transition-transform duration-200"
+                                                       onload="this.parentElement.classList.add('loaded')"
+                                                       onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27200%27 height=%27120%27 viewBox=%270 0 200 120%27%3E%3Crect width=%27100%25%27 height=%27100%25%27 fill=%27%23f3f4f6%27/%3E%3Ctext x=%2750%25%27 y=%2750%25%27 dominant-baseline=%27middle%27 text-anchor=%27middle%27 fill=%27%23888%27 font-size=%2720%27%3ENo image%3C/text%3E%3C/svg%3E'"
+                                                       title="{{ $ingredient->name }}">
+                                                <div class="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity"></div>
+                                            </div>
+                                        @else
+                                            <div class="h-12 w-12 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-400 text-lg flex-shrink-0">
+                                                <i class="fas fa-image"></i>
+                                            </div>
+                                        @endif
+                                    </td>
                                     <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $ingredient->name }}</td>
                                     <td class="px-6 py-4 text-sm text-gray-600">{{ $ingredient->unit }}</td>
                                     <td class="px-6 py-4 text-sm text-gray-600">{{ $ingredient->supplierRecord?->name ?? 'N/A' }}</td>

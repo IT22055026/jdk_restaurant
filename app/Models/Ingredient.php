@@ -14,6 +14,7 @@ class Ingredient extends Model
         'supplier_id',
         'cost_per_unit',
         'selling_price',
+        'image',
         'status',
     ];
 

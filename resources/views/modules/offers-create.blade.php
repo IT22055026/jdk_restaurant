@@ -130,6 +130,42 @@
                     @enderror
                 </div>
 
+                <div>
+                    <label class="block text-sm font-semibold text-gray-900 mb-2">Flavour Choice <span class="text-gray-400 font-normal">— optional</span></label>
+                    <p class="text-sm text-gray-500 mb-3">Check every flavour the customer can pick between (pulled straight from POS billing's menu items). Leave all unchecked if this offer doesn't need a flavour choice — the cashier will be prompted to pick one when adding this offer at POS.</p>
+
+                    <input type="text" id="flavourSearch" onkeyup="filterFlavours()" placeholder="Search menu items… e.g. Mojito"
+                        class="w-full px-4 py-2 mb-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+
+                    <div class="border border-gray-200 rounded-lg overflow-hidden max-h-64 overflow-y-auto">
+                        <table class="w-full">
+                            <tbody id="flavourList" class="divide-y divide-gray-100">
+                                @forelse($flavourProducts as $product)
+                                    <tr data-name="{{ strtolower($product->name) }}">
+                                        <td class="px-4 py-2 w-10">
+                                            <input type="checkbox" name="flavour_ids[]" value="{{ $product->id }}"
+                                                {{ collect(old('flavour_ids'))->contains($product->id) || str_contains(strtolower($product->name), 'mojito') ? 'checked' : '' }}
+                                                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                        </td>
+                                        <td class="px-4 py-2 text-sm text-gray-900">{{ $product->name }}</td>
+                                        <td class="px-4 py-2 text-sm text-gray-500 text-right">Rs. {{ number_format($product->price, 2) }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="3" class="px-4 py-6 text-center text-sm text-gray-500">
+                                            No menu items yet — add some under Inventory → Products first.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                    <p id="flavourEmptyState" class="text-sm text-gray-500 text-center py-3 hidden">No menu items match your search.</p>
+                    @error('flavour_ids')
+                        <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 <div class="flex gap-4 pt-4">
                     <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
                         <i class="fas fa-save mr-2"></i>Save Offer
@@ -157,6 +193,18 @@
         } else {
             preview.classList.add('hidden');
         }
+    }
+
+    function filterFlavours() {
+        const term = document.getElementById('flavourSearch').value.trim().toLowerCase();
+        const rows = document.querySelectorAll('#flavourList tr[data-name]');
+        let visibleCount = 0;
+        rows.forEach(function (row) {
+            const match = row.dataset.name.includes(term);
+            row.style.display = match ? '' : 'none';
+            if (match) visibleCount++;
+        });
+        document.getElementById('flavourEmptyState').classList.toggle('hidden', visibleCount !== 0 || rows.length === 0);
     }
 </script>
 @endsection

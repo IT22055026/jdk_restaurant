@@ -16,6 +16,7 @@ class StockMovement extends Model
         'reference_id',
         'user_id',
         'notes',
+        'name',
     ];
 
     protected $casts = [

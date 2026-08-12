@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Ingredient;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class IngredientController extends Controller
 {
@@ -50,9 +52,14 @@ class IngredientController extends Controller
             'low_stock_threshold' => 'nullable|numeric|min:0',
             'supplier_id' => 'nullable|exists:suppliers,id',
             'cost_per_unit' => 'nullable|numeric|min:0',
-            'selling_price' => 'nullable|numeric|min:0',
+            'selling_price' => 'required|numeric|min:0',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
             'status' => 'required|in:active,inactive',
         ]);
+
+        if ($request->hasFile('image')) {
+            $validated['image'] = $request->file('image')->store('ingredients', 'public');
+        }
 
         Ingredient::create($validated);
 
@@ -80,9 +87,20 @@ class IngredientController extends Controller
             'low_stock_threshold' => 'nullable|numeric|min:0',
             'supplier_id' => 'nullable|exists:suppliers,id',
             'cost_per_unit' => 'nullable|numeric|min:0',
-            'selling_price' => 'nullable|numeric|min:0',
+            'selling_price' => 'required|numeric|min:0',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
             'status' => 'required|in:active,inactive',
         ]);
+
+        if ($request->hasFile('image')) {
+            if ($ingredient->image && ! Str::startsWith($ingredient->image, ['http://', 'https://'])) {
+                Storage::disk('public')->delete($ingredient->image);
+            }
+
+            $validated['image'] = $request->file('image')->store('ingredients', 'public');
+        } else {
+            unset($validated['image']);
+        }
 
         $ingredient->update($validated);
 

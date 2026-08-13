@@ -277,6 +277,270 @@
 
         html.dark-mode ::-webkit-scrollbar-thumb { background: #26314d; }
 
+        /* ── Token Selection Modal ── */
+        .token-modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+        .token-modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .token-modal-card {
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            width: 100%;
+            max-width: 440px;
+            overflow: hidden;
+            transform: scale(0.95);
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1px solid #e2e8f0;
+        }
+        .token-modal-overlay.active .token-modal-card {
+            transform: scale(1);
+        }
+        .token-modal-header {
+            padding: 18px 20px;
+            background: #fff7ed;
+            border-bottom: 1px solid #ffedd5;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .token-modal-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: #9a3412;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+        }
+        .token-modal-close {
+            background: #ffedd5;
+            border: none;
+            color: #ea580c;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.15s ease;
+        }
+        .token-modal-close:hover {
+            background: #ea580c;
+            color: #ffffff;
+        }
+        .token-modal-body {
+            padding: 20px;
+        }
+        .token-display-box {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        .token-display-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .token-display-value {
+            font-size: 24px;
+            font-weight: 900;
+            color: #ea580c;
+            font-family: monospace, monospace;
+            letter-spacing: 0.05em;
+        }
+        .token-quick-header {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .token-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .token-grid-btn {
+            height: 46px;
+            border-radius: 12px;
+            border: 1.5px solid #e2e8f0;
+            background: #f8fafc;
+            color: #1e293b;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+        .token-grid-btn:hover {
+            border-color: #fdba74;
+            background: #fff7ed;
+            color: #ea580c;
+            transform: translateY(-1px);
+        }
+        .token-grid-btn.active {
+            background: #ea580c;
+            border-color: #ea580c;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(234, 88, 12, 0.35);
+        }
+        .token-numpad-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .token-numpad-btn {
+            height: 44px;
+            border-radius: 12px;
+            border: 1.5px solid #e2e8f0;
+            background: #ffffff;
+            color: #0f172a;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.12s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .token-numpad-btn:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+        .token-numpad-btn:active {
+            transform: scale(0.96);
+        }
+        .token-numpad-btn.btn-action-del {
+            background: #fef2f2;
+            color: #ef4444;
+            border-color: #fecaca;
+        }
+        .token-numpad-btn.btn-action-del:hover {
+            background: #fee2e2;
+        }
+        .token-numpad-btn.btn-action-set {
+            background: #ea580c;
+            color: #ffffff;
+            border-color: #ea580c;
+            grid-column: span 2;
+            font-size: 15px;
+            font-weight: 800;
+        }
+        .token-numpad-btn.btn-action-set:hover {
+            background: #c2410c;
+        }
+        .token-modal-footer {
+            padding: 14px 20px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Dark mode overrides for Token Modal */
+        html.dark-mode .token-modal-card {
+            background: #10162a;
+            border-color: #26314d;
+        }
+        html.dark-mode .token-modal-header {
+            background: #1e1b18;
+            border-bottom-color: #382417;
+        }
+        html.dark-mode .token-modal-title {
+            color: #fb923c;
+        }
+        html.dark-mode .token-modal-close {
+            background: #2a1b12;
+            color: #fb923c;
+        }
+        html.dark-mode .token-modal-close:hover {
+            background: #ea580c;
+            color: #ffffff;
+        }
+        html.dark-mode .token-display-box {
+            background: #0b0f19;
+            border-color: #1f2942;
+        }
+        html.dark-mode .token-display-label {
+            color: #64748b;
+        }
+        html.dark-mode .token-display-value {
+            color: #fb923c;
+        }
+        html.dark-mode .token-grid-btn {
+            background: #172036;
+            border-color: #26314d;
+            color: #e2e8f0;
+        }
+        html.dark-mode .token-grid-btn:hover {
+            background: #2a1b12;
+            border-color: #ea580c;
+            color: #fb923c;
+        }
+        html.dark-mode .token-grid-btn.active {
+            background: #ea580c;
+            border-color: #ea580c;
+            color: #ffffff;
+        }
+        html.dark-mode .token-numpad-btn {
+            background: #172036;
+            border-color: #26314d;
+            color: #f1f5f9;
+        }
+        html.dark-mode .token-numpad-btn:hover {
+            background: #1e2942;
+        }
+        html.dark-mode .token-numpad-btn.btn-action-del {
+            background: #2d1517;
+            border-color: #7f1d1d;
+            color: #f87171;
+        }
+        html.dark-mode .token-modal-footer {
+            background: #0b0f19;
+            border-top-color: #1f2942;
+        }
+        html.dark-mode #tokenBtnTrigger {
+            background: #2a1b12 !important;
+            border-color: #ea580c !important;
+            color: #ffedd5 !important;
+        }
+
     </style>
     @include('layouts.dark-mode')
 </head>
@@ -461,13 +725,12 @@
                         <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:#ea580c; margin-bottom:4px; white-space:nowrap;">
                             <i class="fas fa-ticket" style="margin-right:4px;"></i>Token #
                         </div>
-                        <select id="tokenNumberInput" onchange="saveTokenNumber()"
-                                style="width:72px; font-size:14px; font-weight:800; border:1.5px solid #fdba74; border-radius:10px; padding:7px 8px; outline:none; background:#fff7ed; color:#9a3412; cursor:pointer;">
-                            <option value="">—</option>
-                            @for ($i = 1; $i <= 20; $i++)
-                                <option value="{{ $i }}">{{ $i }}</option>
-                            @endfor
-                        </select>
+                        <button type="button" id="tokenBtnTrigger" onclick="openTokenModal()"
+                                style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:800; border:1.5px solid #fdba74; border-radius:10px; padding:7px 12px; outline:none; background:#fff7ed; color:#c2410c; cursor:pointer; transition:all 0.15s ease; box-shadow:0 1px 3px rgba(234,88,12,0.1); white-space:nowrap;">
+                            <span id="tokenBtnDisplay">Select Token</span>
+                            <i class="fas fa-th" style="font-size:11px; opacity:0.8;"></i>
+                        </button>
+                        <input type="hidden" id="tokenNumberInput" value="">
                     </div>
                 </div>
             </div>
@@ -1782,17 +2045,100 @@
 
         document.getElementById('tokenNumberRow').style.display = 'flex';
         document.getElementById('tokenNumberInput').value = currentOrder.token_number || '';
+        updateTokenBtnDisplay();
 
         ensureRovingDefault(document.getElementById('orderHeaderPanel'), null, false);
         ensureRovingDefault(document.getElementById('customerPanel'), null, false);
     }
 
-    async function saveTokenNumber() {
+    let currentModalTokenStr = '';
+
+    function updateTokenBtnDisplay() {
+        const input = document.getElementById('tokenNumberInput');
+        const display = document.getElementById('tokenBtnDisplay');
+        const val = input ? parseInt(input.value) : null;
+        if (display) {
+            if (val && val > 0) {
+                display.innerHTML = 'Token <strong>#' + String(val).padStart(2, '0') + '</strong>';
+            } else {
+                display.textContent = 'Select Token';
+            }
+        }
+    }
+
+    function openTokenModal() {
+        const modal = document.getElementById('tokenModal');
+        if (!modal) return;
+        const currentVal = currentOrder && currentOrder.token_number ? currentOrder.token_number : '';
+        currentModalTokenStr = currentVal ? String(currentVal) : '';
+        refreshModalTokenState();
+        modal.classList.add('active');
+    }
+
+    function closeTokenModal() {
+        const modal = document.getElementById('tokenModal');
+        if (modal) modal.classList.remove('active');
+    }
+
+    function refreshModalTokenState() {
+        const displayEl = document.getElementById('tokenModalDisplay');
+        if (displayEl) {
+            displayEl.textContent = currentModalTokenStr ? '#' + String(currentModalTokenStr).padStart(2, '0') : '# —';
+        }
+        const activeNum = parseInt(currentModalTokenStr) || 0;
+        document.querySelectorAll('.token-grid-btn').forEach(btn => {
+            const tokenNum = parseInt(btn.dataset.token);
+            if (tokenNum === activeNum) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+
+    function selectQuickToken(num) {
+        currentModalTokenStr = String(num);
+        refreshModalTokenState();
+        saveTokenNumber(num);
+    }
+
+    function appendTokenDigit(digit) {
+        if (currentModalTokenStr.length >= 4) return;
+        if (currentModalTokenStr === '' && digit === '0') return;
+        currentModalTokenStr += digit;
+        refreshModalTokenState();
+    }
+
+    function backspaceTokenDigit() {
+        if (currentModalTokenStr.length > 0) {
+            currentModalTokenStr = currentModalTokenStr.slice(0, -1);
+            refreshModalTokenState();
+        }
+    }
+
+    function clearTokenInput() {
+        currentModalTokenStr = '';
+        refreshModalTokenState();
+    }
+
+    function confirmTokenNumpad() {
+        const val = parseInt(currentModalTokenStr);
+        if (!val || val < 1) {
+            toast('Please select or enter a valid token number', 'warning');
+            return;
+        }
+        saveTokenNumber(val);
+    }
+
+    async function saveTokenNumber(numOverride) {
         if (!currentOrder || !currentOrder.id) return;
         const input = document.getElementById('tokenNumberInput');
-        const value = parseInt(input.value);
+        const value = numOverride !== undefined ? parseInt(numOverride) : (input ? parseInt(input.value) : 0);
         if (!value || value < 1) return;
-        if (value === currentOrder.token_number) return;
+        if (value === currentOrder.token_number) {
+            closeTokenModal();
+            return;
+        }
 
         try {
             const res = await fetch('{{ route("pos.order.token_number", ":id") }}'.replace(':id', currentOrder.id), {
@@ -1803,10 +2149,13 @@
             const data = await res.json();
             if (data.success) {
                 currentOrder.token_number = data.token_number;
+                if (input) input.value = data.token_number;
                 renderOrderHeader();
                 toast('Token #' + String(data.token_number).padStart(2, '0') + ' set', 'success');
+                closeTokenModal();
             } else {
-                input.value = currentOrder.token_number || '';
+                if (input) input.value = currentOrder.token_number || '';
+                updateTokenBtnDisplay();
                 toast(data.message || 'Failed to set token number', 'error');
             }
         } catch (e) {
@@ -2152,7 +2501,7 @@
 
         if (!currentOrder.token_number && !tokenExempt) {
             toast('Enter the token number before completing the bill', 'error');
-            document.getElementById('tokenNumberInput').focus();
+            openTokenModal();
             return;
         }
 
@@ -2558,6 +2907,7 @@
         document.getElementById('activeOrderBanner').style.display      = 'none';
         document.getElementById('tokenNumberRow').style.display         = 'none';
         document.getElementById('tokenNumberInput').value               = '';
+        updateTokenBtnDisplay();
         document.getElementById('paymentToggle').style.display          = 'none';
         document.getElementById('paymentSection').style.display         = 'none';
         document.getElementById('waiterPayRow').style.display           = 'none';
@@ -2880,10 +3230,33 @@
         });
 
         // Close modal on backdrop click
-        document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+        document.querySelectorAll('.modal-overlay, .token-modal-overlay').forEach(function(overlay) {
             overlay.addEventListener('click', function(e) {
-                if (e.target === overlay) closeModal(overlay.id);
+                if (e.target === overlay) {
+                    if (overlay.id === 'tokenModal') closeTokenModal();
+                    else if (typeof closeModal === 'function') closeModal(overlay.id);
+                }
             });
+        });
+
+        // Keypad keyboard shortcuts when token modal is open
+        document.addEventListener('keydown', function(e) {
+            const tokenModal = document.getElementById('tokenModal');
+            if (tokenModal && tokenModal.classList.contains('active')) {
+                if (e.key >= '0' && e.key <= '9') {
+                    e.preventDefault();
+                    appendTokenDigit(e.key);
+                } else if (e.key === 'Backspace') {
+                    e.preventDefault();
+                    backspaceTokenDigit();
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    confirmTokenNumpad();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    closeTokenModal();
+                }
+            }
         });
     }
 
@@ -2904,5 +3277,78 @@
         });
     });
 </script>
+
+<!-- Token Selection Modal -->
+<div id="tokenModal" class="token-modal-overlay">
+    <div class="token-modal-card">
+        <div class="token-modal-header">
+            <h3 class="token-modal-title">
+                <i class="fas fa-ticket" style="font-size:18px;"></i>
+                Select Token Number
+            </h3>
+            <button type="button" class="token-modal-close" onclick="closeTokenModal()" title="Close">
+                <i class="fas fa-xmark"></i>
+            </button>
+        </div>
+        <div class="token-modal-body">
+            <!-- Active Display & Input -->
+            <div class="token-display-box">
+                <div style="display:flex; flex-direction:column;">
+                    <span class="token-display-label">Current Token</span>
+                    <span id="tokenModalDisplay" class="token-display-value"># —</span>
+                </div>
+                <button type="button" onclick="clearTokenInput()" 
+                        style="font-size:12px; font-weight:700; color:#ef4444; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:6px 12px; cursor:pointer;">
+                    <i class="fas fa-trash-alt" style="margin-right:4px;"></i>Clear
+                </button>
+            </div>
+
+            <!-- Quick Select (1-20) -->
+            <div class="token-quick-header">
+                <span>Quick Select (Tokens 1 – 20)</span>
+            </div>
+            <div class="token-grid" id="tokenQuickGrid">
+                @for ($i = 1; $i <= 20; $i++)
+                    <button type="button" class="token-grid-btn" data-token="{{ $i }}" onclick="selectQuickToken({{ $i }})">
+                        {{ $i }}
+                    </button>
+                @endfor
+            </div>
+
+            <!-- Custom Numpad Option Toggle / Direct Keypad -->
+            <div style="margin-top:16px; border-top:1px dashed #cbd5e1; padding-top:12px;">
+                <div class="token-quick-header" style="margin-bottom:8px;">
+                    <span>Keypad / Custom Token</span>
+                </div>
+                <div class="token-numpad-grid">
+                    <button type="button" class="token-numpad-btn" onclick="appendTokenDigit('1')">1</button>
+                    <button type="button" class="token-numpad-btn" onclick="appendTokenDigit('2')">2</button>
+                    <button type="button" class="token-numpad-btn" onclick="appendTokenDigit('3')">3</button>
+                    <button type="button" class="token-numpad-btn" onclick="appendTokenDigit('4')">4</button>
+                    <button type="button" class="token-numpad-btn" onclick="appendTokenDigit('5')">5</button>
+                    <button type="button" class="token-numpad-btn" onclick="appendTokenDigit('6')">6</button>
+                    <button type="button" class="token-numpad-btn" onclick="appendTokenDigit('7')">7</button>
+                    <button type="button" class="token-numpad-btn" onclick="appendTokenDigit('8')">8</button>
+                    <button type="button" class="token-numpad-btn" onclick="appendTokenDigit('9')">9</button>
+                    <button type="button" class="token-numpad-btn btn-action-del" onclick="backspaceTokenDigit()">⌫</button>
+                    <button type="button" class="token-numpad-btn" onclick="appendTokenDigit('0')">0</button>
+                    <button type="button" class="token-numpad-btn btn-action-set" onclick="confirmTokenNumpad()">
+                        <i class="fas fa-check" style="margin-right:6px;"></i>Set Token
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="token-modal-footer">
+            <button type="button" onclick="closeTokenModal()" 
+                    style="flex:1; padding:10px; font-size:13px; font-weight:700; border:1px solid #cbd5e1; border-radius:10px; background:#ffffff; color:#64748b; cursor:pointer;">
+                Cancel
+            </button>
+            <button type="button" onclick="confirmTokenNumpad()" 
+                    style="flex:1.5; padding:10px; font-size:13px; font-weight:800; border:none; border-radius:10px; background:#ea580c; color:#ffffff; cursor:pointer; box-shadow:0 2px 8px rgba(234,88,12,0.3);">
+                Confirm Token
+            </button>
+        </div>
+    </div>
+</div>
 </body>
 </html>

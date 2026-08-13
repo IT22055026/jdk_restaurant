@@ -541,6 +541,80 @@
             color: #ffedd5 !important;
         }
 
+        /* ── Cash Denomination Notes ── */
+        .cash-note-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 6px;
+        }
+        .cash-note-btn {
+            flex: 1 1 70px;
+            min-width: 62px;
+            padding: 6px 4px;
+            border-radius: 8px;
+            border: 1.5px solid #cbd5e1;
+            background: #ffffff;
+            color: #0f172a;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.12s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+            white-space: nowrap;
+        }
+        .cash-note-btn:hover {
+            border-color: #2563eb;
+            background: #eff6ff;
+            color: #1d4ed8;
+            transform: translateY(-1px);
+        }
+        .cash-note-btn:active {
+            transform: scale(0.96);
+        }
+        .cash-note-btn.btn-exact {
+            background: #f0fdf4;
+            border-color: #86efac;
+            color: #15803d;
+        }
+        .cash-note-btn.btn-exact:hover {
+            background: #dcfce7;
+            border-color: #16a34a;
+            color: #15803d;
+        }
+        .cash-note-btn.btn-clear {
+            background: #fef2f2;
+            border-color: #fca5a5;
+            color: #b91c1c;
+        }
+        .cash-note-btn.btn-clear:hover {
+            background: #fee2e2;
+            border-color: #ef4444;
+            color: #b91c1c;
+        }
+
+        html.dark-mode .cash-note-btn {
+            background: #172036;
+            border-color: #26314d;
+            color: #e2e8f0;
+        }
+        html.dark-mode .cash-note-btn:hover {
+            background: #101f45;
+            border-color: #2f5bff;
+            color: #6d94ff;
+        }
+        html.dark-mode .cash-note-btn.btn-exact {
+            background: #0d2818;
+            border-color: #15803d;
+            color: #4ade80;
+        }
+        html.dark-mode .cash-note-btn.btn-clear {
+            background: #2d1517;
+            border-color: #7f1d1d;
+            color: #f87171;
+        }
+
     </style>
     @include('layouts.dark-mode')
 </head>
@@ -760,17 +834,36 @@
                         <i class="fas fa-code-branch" style="display:block; font-size:16px; margin-bottom:3px;"></i>Split
                     </button>
                 </div>
-                <!-- Cash amount input -->
-                <div id="cashSection" style="display:flex; gap:6px;">
-                    <div style="flex:1;">
-                        <label style="font-size:10px; font-weight:600; color:#64748b; display:block; margin-bottom:3px;">Paid</label>
-                        <input type="number" id="amountPaid" placeholder="0.00" min="0" oninput="updateChange()"
-                               style="width:100%; font-size:14px; font-weight:700; border:1px solid #e2e8f0; border-radius:6px; padding:8px 10px; outline:none;"
-                               onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+                <!-- Cash amount input & Denomination Notes -->
+                <div id="cashSection" style="display:flex; flex-direction:column; gap:8px;">
+                    <div style="display:flex; gap:6px;">
+                        <div style="flex:1;">
+                            <label style="font-size:10px; font-weight:600; color:#64748b; display:block; margin-bottom:3px;">Paid (Rs.)</label>
+                            <input type="number" id="amountPaid" placeholder="0.00" min="0" oninput="updateChange()"
+                                   style="width:100%; font-size:14px; font-weight:700; border:1px solid #e2e8f0; border-radius:6px; padding:8px 10px; outline:none;"
+                                   onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+                        </div>
+                        <div style="flex:1;">
+                            <label id="changeLabel" style="font-size:10px; font-weight:600; color:#64748b; display:block; margin-bottom:3px;">Change</label>
+                            <div id="changeDisplay" style="font-size:14px; font-weight:700; color:#16a34a; padding:8px 10px; background:#f0fdf4; border-radius:6px; border:1px solid #bbf7d0; text-align:center;">Rs. 0.00</div>
+                        </div>
                     </div>
-                    <div style="flex:1;">
-                        <label style="font-size:10px; font-weight:600; color:#64748b; display:block; margin-bottom:3px;">Change</label>
-                        <div id="changeDisplay" style="font-size:14px; font-weight:700; color:#16a34a; padding:8px 10px; background:#f0fdf4; border-radius:6px; border:1px solid #bbf7d0; text-align:center;">Rs. 0.00</div>
+                    <!-- Quick Cash Banknotes (Rs. 5000, 2000, 1000, 500, 100, 50, 20 + Exact & Clear) -->
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                        <div style="font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:#94a3b8; display:flex; justify-content:space-between; align-items:center;">
+                            <span><i class="fas fa-money-bill-wave" style="margin-right:4px; color:#16a34a;"></i>Cash Notes</span>
+                        </div>
+                        <div class="cash-note-grid">
+                            <button type="button" class="cash-note-btn" onclick="addCashNote(5000)">Rs. 5,000</button>
+                            <button type="button" class="cash-note-btn" onclick="addCashNote(2000)">Rs. 2,000</button>
+                            <button type="button" class="cash-note-btn" onclick="addCashNote(1000)">Rs. 1,000</button>
+                            <button type="button" class="cash-note-btn" onclick="addCashNote(500)">Rs. 500</button>
+                            <button type="button" class="cash-note-btn" onclick="addCashNote(100)">Rs. 100</button>
+                            <button type="button" class="cash-note-btn" onclick="addCashNote(50)">Rs. 50</button>
+                            <button type="button" class="cash-note-btn" onclick="addCashNote(20)">Rs. 20</button>
+                            <button type="button" class="cash-note-btn btn-exact" onclick="setExactCash()">Exact</button>
+                            <button type="button" class="cash-note-btn btn-clear" onclick="clearCashPaid()">Clear</button>
+                        </div>
                     </div>
                 </div>
 
@@ -2478,16 +2571,63 @@
         updateChange();
     }
 
+    function addCashNote(noteVal) {
+        const input = document.getElementById('amountPaid');
+        if (!input) return;
+        const currentVal = parseFloat(input.value) || 0;
+        const newVal = currentVal > 0 ? currentVal + noteVal : noteVal;
+        input.value = newVal;
+        updateChange();
+    }
+
+    function setExactCash() {
+        const input = document.getElementById('amountPaid');
+        if (!input) return;
+        const subtotal = currentOrder ? (currentOrder.subtotal || 0) : 0;
+        const discount = typeof calcDiscount === 'function' ? calcDiscount(subtotal) : 0;
+        const total    = Math.max(0, subtotal - discount);
+        input.value = Math.ceil(total);
+        updateChange();
+    }
+
+    function clearCashPaid() {
+        const input = document.getElementById('amountPaid');
+        if (input) input.value = '';
+        updateChange();
+    }
+
     function updateChange() {
         if (selectedPaymentMethod !== 'cash') return;
         const subtotal = currentOrder ? (currentOrder.subtotal || 0) : 0;
-        const discount = calcDiscount(subtotal);
+        const discount = typeof calcDiscount === 'function' ? calcDiscount(subtotal) : 0;
         const total    = Math.max(0, subtotal - discount);
         const paid     = parseFloat(document.getElementById('amountPaid').value) || 0;
-        const change   = Math.max(0, paid - total);
+        const diff     = paid - total;
+
         const el       = document.getElementById('changeDisplay');
-        el.textContent = 'Rs. ' + change.toFixed(2);
-        el.style.color = change > 0 ? '#16a34a' : '#94a3b8';
+        const labelEl  = document.getElementById('changeLabel');
+        const isDark   = document.documentElement.classList.contains('dark-mode');
+
+        if (paid <= 0) {
+            if (labelEl) labelEl.textContent = 'Change';
+            el.textContent = 'Rs. 0.00';
+            el.style.color = isDark ? '#64748b' : '#94a3b8';
+            el.style.background = isDark ? '#101627' : '#f8fafc';
+            el.style.borderColor = isDark ? '#26314d' : '#e2e8f0';
+        } else if (diff >= 0) {
+            if (labelEl) labelEl.textContent = 'Change to Return';
+            el.textContent = 'Rs. ' + diff.toFixed(2);
+            el.style.color = isDark ? '#4ade80' : '#16a34a';
+            el.style.background = isDark ? '#062d19' : '#f0fdf4';
+            el.style.borderColor = isDark ? '#14532d' : '#bbf7d0';
+        } else {
+            const due = Math.abs(diff);
+            if (labelEl) labelEl.textContent = 'Balance Due';
+            el.textContent = 'Rs. ' + due.toFixed(2);
+            el.style.color = isDark ? '#f87171' : '#dc2626';
+            el.style.background = isDark ? '#361215' : '#fef2f2';
+            el.style.borderColor = isDark ? '#7f1d1d' : '#fecaca';
+        }
     }
 
     async function initiatePayment() {

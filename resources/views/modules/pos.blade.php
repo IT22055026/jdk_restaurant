@@ -781,12 +781,13 @@
                         <i class="fas fa-chevron-down" id="paymentChevron" style="font-size:10px; color:#64748b; transition:transform 0.15s;"></i>
                     </span>
                 </button>
-                <!-- Segmented buttons for dining or takeaway options + physical token number -->
-                <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
-                    <div style="flex:1 1 220px; min-width:180px;">
-                        <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:#94a3b8; margin-bottom:4px;">Order Type</div>
+                <!-- Segmented buttons for dining or takeaway options + physical token number (Single-line layout) -->
+                <div style="grid-column: 1 / -1; display:flex; align-items:center; justify-content:space-between; gap:12px; padding-top:6px; margin-top:4px; border-top:1px solid #f1f5f9; flex-wrap:nowrap;">
+                    <!-- Order Type Option -->
+                    <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:0;">
+                        <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:#94a3b8; white-space:nowrap;">Order Type:</div>
                         <input type="hidden" id="orderType" value="dine_in">
-                        <div class="order-type-segmented">
+                        <div class="order-type-segmented" style="flex:1; max-width:240px;">
                             <button type="button" class="order-type-btn active" data-type="dine_in" onclick="selectOrderType('dine_in')">
                                 <i class="fas fa-utensils" style="font-size:12px; margin-right:5px;"></i>Dine In
                             </button>
@@ -795,12 +796,14 @@
                             </button>
                         </div>
                     </div>
-                    <div id="tokenNumberRow" style="display:none; flex-direction:column; align-items:flex-start; justify-content:center; flex-shrink:0;">
-                        <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:#ea580c; margin-bottom:4px; white-space:nowrap;">
-                            <i class="fas fa-ticket" style="margin-right:4px;"></i>Token #
+
+                    <!-- Token Number Option (On the same line as Order Type) -->
+                    <div id="tokenNumberRow" style="display:none; align-items:center; gap:8px; flex-shrink:0;">
+                        <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:#ea580c; white-space:nowrap;">
+                            <i class="fas fa-ticket" style="margin-right:4px;"></i>Token #:
                         </div>
                         <button type="button" id="tokenBtnTrigger" onclick="openTokenModal()"
-                                style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:800; border:1.5px solid #fdba74; border-radius:10px; padding:7px 12px; outline:none; background:#fff7ed; color:#c2410c; cursor:pointer; transition:all 0.15s ease; box-shadow:0 1px 3px rgba(234,88,12,0.1); white-space:nowrap;">
+                                style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:800; border:1.5px solid #fdba74; border-radius:10px; padding:6px 12px; outline:none; background:#fff7ed; color:#c2410c; cursor:pointer; transition:all 0.15s ease; box-shadow:0 1px 3px rgba(234,88,12,0.1); white-space:nowrap; height:34px;">
                             <span id="tokenBtnDisplay">Select Token</span>
                             <i class="fas fa-th" style="font-size:11px; opacity:0.8;"></i>
                         </button>
@@ -2246,6 +2249,7 @@
                 renderOrderHeader();
                 toast('Token #' + String(data.token_number).padStart(2, '0') + ' set', 'success');
                 closeTokenModal();
+                checkAutoExpandPayment();
             } else {
                 if (input) input.value = currentOrder.token_number || '';
                 updateTokenBtnDisplay();
@@ -2439,7 +2443,11 @@
         document.getElementById('paymentSection').style.display     = hasItems ? 'block' : 'none';
         document.getElementById('waiterPayRow').style.display       = hasItems ? 'flex' : 'none';
         document.getElementById('freeItemToggle').style.display     = (currentOrder && currentOrder.id) ? 'block' : 'none';
-        if (!hasItems) setPaymentExpanded(false);
+        if (!hasItems) {
+            setPaymentExpanded(false);
+        } else {
+            checkAutoExpandPayment();
+        }
         ensureRovingDefault(document.getElementById('bottomControlsPanel'), null, false);
     }
 
@@ -2450,6 +2458,16 @@
         body.style.display = expanded ? 'block' : 'none';
         if (chevron) chevron.style.transform = expanded ? 'rotate(180deg)' : 'rotate(0deg)';
         ensureRovingDefault(document.getElementById('bottomControlsPanel'), null, false);
+    }
+
+    function checkAutoExpandPayment() {
+        if (!currentOrder || !currentOrder.items || currentOrder.items.length === 0) return;
+        const tokenExempt = selectedPaymentMethod === 'pickme' || selectedPaymentMethod === 'uber';
+        const hasToken = currentOrder.token_number && currentOrder.token_number > 0;
+        const hasOrderType = !!document.getElementById('orderType').value;
+        if (hasOrderType && (hasToken || tokenExempt)) {
+            setPaymentExpanded(true);
+        }
     }
 
     function togglePaymentSection() {
@@ -2508,6 +2526,7 @@
         if (!skipApi) {
             updateOrderType();
         }
+        checkAutoExpandPayment();
     }
 
     async function updateOrderType() {

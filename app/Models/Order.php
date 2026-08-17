@@ -58,6 +58,13 @@ class Order extends Model
         'updated_at' => 'datetime',
     ];
 
+    protected static function booted()
+    {
+        static::deleting(function ($order) {
+            $order->items()->delete();
+        });
+    }
+
     public function customer()
     {
         return $this->belongsTo(Customer::class);

@@ -102,10 +102,8 @@
                             <select id="statusFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <option value="">All statuses</option>
                                 <option value="completed">Completed</option>
-                                <option value="cancelled">Discarded / Revoked</option>
                                 <option value="hold">On Hold</option>
-                                <option value="pending">Pending</option>
-                                <option value="confirmed">Confirmed</option>
+                                <option value="cancelled">Discarded / Revoked</option>
                             </select>
                         </div>
                         <div>
@@ -306,7 +304,7 @@
         let revokeTargetId = null;
         let revokeMode = 'revoke'; // 'revoke' (completed bill, reverses payment) or 'discard' (open bill, never paid)
 
-        const OPEN_STATUSES = ['pending', 'confirmed', 'hold'];
+        const OPEN_STATUSES = ['hold'];
 
         function statusBadgeFor(bill) {
             if (bill.status === 'cancelled') {

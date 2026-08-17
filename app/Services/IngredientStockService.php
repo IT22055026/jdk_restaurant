@@ -65,27 +65,8 @@ class IngredientStockService
             ->get()
             ->keyBy('id');
 
-        $shortfalls = [];
-        foreach ($required as $ingredientId => $qtyNeeded) {
-            $ingredient = $lockedIngredients->get($ingredientId);
-            $available = $ingredient ? (float) $ingredient->quantity : 0;
-            if ($available < $qtyNeeded) {
-                $name = $ingredient ? $ingredient->name : "ingredient #{$ingredientId}";
-                $unit = $ingredient ? $ingredient->unit : '';
-                $shortfalls[] = sprintf(
-                    '"%s" needs %s %s, only %s %s available',
-                    $name,
-                    rtrim(rtrim(number_format($qtyNeeded, 3), '0'), '.'),
-                    $unit,
-                    rtrim(rtrim(number_format($available, 3), '0'), '.'),
-                    $unit
-                );
-            }
-        }
-
-        // if (!empty($shortfalls)) {
-        //     throw new InsufficientStockException('Not enough stock to print token: ' . implode('; ', $shortfalls));
-        // }
+        // Allow negative stock deduction: ingredient shortfalls do not block token print/payment
+        // $lockedIngredients will decrement directly into negative stock if needed.
 
         $applied = [];
         foreach ($itemDeltas as $entry) {

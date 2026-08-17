@@ -1122,7 +1122,7 @@
                 }
             });
         } else if (stockCache.hasOwnProperty(productId)) {
-            stockCache[productId] = Math.max(0, stockCache[productId] - deltaUnits);
+            stockCache[productId] -= deltaUnits;
         }
     }
 
@@ -1875,13 +1875,17 @@
         const existing = currentOrder.items.find(function(i) {
             return i.product_id === productId && (!i.kot_printed);
         });
+        const prod = allProducts.find(function(p) { return p.id === productId; });
+        const img = prod ? prod.image : null;
         if (existing) {
             existing.quantity++;
             existing.subtotal = existing.unit_price * existing.quantity;
+            if (!existing.image && img) existing.image = img;
         } else {
             currentOrder.items.push({
                 id: null, product_id: productId, product_name: productName,
-                unit_price: price, quantity: 1, subtotal: price, kitchen_notes: null, kot_printed: false
+                unit_price: price, quantity: 1, subtotal: price, kitchen_notes: null, kot_printed: false,
+                image: img
             });
         }
         // Deduct from stock cache
@@ -1955,12 +1959,6 @@
         const item = currentOrder.items.find(function(i) { return i.id === itemId; });
         if (!item) return;
 
-        const availForIncrease = getStock(item.product_id);
-        if (availForIncrease !== null && availForIncrease <= 0) {
-            toast('No more stock available for this item', 'error');
-            return;
-        }
-
         qtyLock[itemId] = true;
         adjustStock(item.product_id, 1);
         item.quantity++;
@@ -2009,20 +2007,6 @@
         // in-flight focus transition to whatever's next.
         if (newQty === item.quantity) return;
         const diff = newQty - item.quantity;
-
-        // Enforce stock cap when increasing
-        const availForSet = getStock(item.product_id);
-        if (diff > 0 && availForSet !== null) {
-            if (availForSet < diff) {
-                newQty = item.quantity + Math.max(0, availForSet);
-                if (newQty === item.quantity) {
-                    toast('No more stock available for this item', 'error');
-                    renderBill();
-                    return;
-                }
-                toast('Quantity limited to available stock', 'error');
-            }
-        }
 
         qtyLock[itemId] = true;
         adjustStock(item.product_id, newQty - item.quantity);
@@ -2296,7 +2280,6 @@
                 const isFreeItem    = discPercent >= 100;
                 const discRowOpen   = item.id && openDiscountRows.has(item.id);
                 const itemAvailStock = getStock(item.product_id);
-                const atStockLimit  = itemAvailStock !== null && itemAvailStock <= 0;
 
                 // Discount badge next to product name — a full (100%) discount is
                 // shown as a distinct "FREE gift" rather than a plain "-100%" line
@@ -2321,11 +2304,11 @@
                     ? '<button type="button" class="qty-btn" data-role="dec" onclick="decreaseQty(' + item.id + ')">−</button>'
                     : '<button type="button" class="qty-btn" style="opacity:0.4;" disabled>−</button>';
                 const incBtn = item.id
-                    ? '<button type="button" class="qty-btn" data-role="inc" onclick="increaseQty(' + item.id + ')"' + (atStockLimit ? ' disabled title="No more stock" style="opacity:0.4; cursor:not-allowed;"' : '') + '>+</button>'
+                    ? '<button type="button" class="qty-btn" data-role="inc" onclick="increaseQty(' + item.id + ')">+</button>'
                     : '<button type="button" class="qty-btn" style="opacity:0.4;" disabled>+</button>';
 
                 const stockLeft = itemAvailStock !== null
-                    ? '<div style="font-size:9px; color:#94a3b8; text-align:center; margin-top:2px;">' + itemAvailStock + ' left</div>'
+                    ? '<div style="font-size:9px; color:' + (itemAvailStock < 0 ? '#ef4444' : '#94a3b8') + '; text-align:center; margin-top:2px;">' + itemAvailStock + ' left</div>'
                     : '';
 
                 const noteHtml = item.kitchen_notes
@@ -2363,16 +2346,46 @@
                       + '</div>'
                     : '';
 
+                let itemImage = item.image;
+                if (!itemImage) {
+                    if (item.product_id) {
+                        const p = allProducts.find(function(x) { return x.id === item.product_id; });
+                        if (p && p.image) {
+                            itemImage = p.image;
+                            item.image = p.image;
+                        }
+                    } else if (item.ingredient_id) {
+                        const ing = allIngredients.find(function(x) { return x.id === item.ingredient_id; });
+                        if (ing && ing.image) {
+                            itemImage = ing.image;
+                            item.image = ing.image;
+                        }
+                    } else if (item.offer_id) {
+                        const off = allOffers.find(function(x) { return x.id === item.offer_id; });
+                        if (off && off.image) {
+                            itemImage = off.image;
+                            item.image = off.image;
+                        }
+                    }
+                }
+
                 let thumbHtml = '';
-                if (item.image) {
-                    thumbHtml = '<div style="width:44px; height:44px; border-radius:9px; overflow:hidden; flex-shrink:0; background:#f1f5f9;">'
-                        + '<img src="/storage/' + item.image + '" alt="' + escapeHtml(item.product_name) + '" style="width:100%; height:100%; object-fit:cover;">'
+                if (itemImage) {
+                    const src = (itemImage.startsWith('http://') || itemImage.startsWith('https://') || itemImage.startsWith('/'))
+                        ? itemImage
+                        : '/storage/' + itemImage;
+                    thumbHtml = '<div style="width:42px; height:42px; border-radius:8px; overflow:hidden; flex-shrink:0; background:#f1f5f9; display:flex; align-items:center; justify-content:center;">'
+                        + '<img src="' + src + '" alt="' + escapeHtml(item.product_name) + '" style="width:100%; height:100%; object-fit:cover;" onerror="this.parentElement.innerHTML=\'<i class=\\\'fas fa-utensils\\\' style=\\\'font-size:13px;color:#94a3b8;\\\'></i>\';">'
+                        + '</div>';
+                } else {
+                    thumbHtml = '<div style="width:42px; height:42px; border-radius:8px; flex-shrink:0; background:#f1f5f9; display:flex; align-items:center; justify-content:center;">'
+                        + '<i class="fas fa-utensils" style="font-size:13px; color:#94a3b8;"></i>'
                         + '</div>';
                 }
 
                 return '<div class="bill-item-card" data-item-id="' + (item.id || ('tmp-' + idx)) + '" style="background:#fff; border:1px solid #eef2f7; border-radius:10px; padding:8px;">'
                     // Header: thumb + name
-                    + '<div style="display:flex; align-items:center; gap:6px;">'
+                    + '<div style="display:flex; align-items:center; gap:8px;">'
                     + thumbHtml
                     + '<div style="flex:1; min-width:0;">'
                     + '<div style="display:flex; align-items:center; gap:4px; overflow:hidden;">'

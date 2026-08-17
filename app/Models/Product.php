@@ -71,6 +71,13 @@ class Product extends Model
             ->withTimestamps();
     }
 
+    public function offers()
+    {
+        return $this->belongsToMany(Offer::class, 'offer_products')
+            ->withPivot('quantity')
+            ->withTimestamps();
+    }
+
     public function hasRecipe(): bool
     {
         return $this->relationLoaded('ingredients')
@@ -91,7 +98,7 @@ class Product extends Model
         }
 
         if ($this->is_finished_good) {
-            return max(0, (int) $this->quantity);
+            return (int) $this->quantity;
         }
 
         $recipe = $this->relationLoaded('ingredients') ? $this->ingredients : $this->ingredients()->get();
@@ -105,7 +112,7 @@ class Product extends Model
             return $perUnit > 0 ? ((float) $ingredient->quantity / $perUnit) : INF;
         });
 
-        return max(0, (int) floor($unitsPossible));
+        return (int) floor($unitsPossible);
     }
 
     /**

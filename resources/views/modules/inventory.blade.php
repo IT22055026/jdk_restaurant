@@ -140,13 +140,13 @@
                                 </td>
                                 <td class="px-6 py-4 text-gray-600">{{ $product->category->name ?? '—' }}</td>
                                 <td class="px-6 py-4 text-center">
-                                        <span class="font-bold {{ $product->quantity == 0 ? 'text-red-600' : 'text-amber-600' }} text-base">
+                                        <span class="font-bold {{ $product->quantity <= 0 ? 'text-red-600' : 'text-amber-600' }} text-base">
                                             {{ $product->quantity }}
                                         </span>
                                 </td>
                                 <td class="px-6 py-4 text-center text-gray-500">{{ $product->low_stock_threshold }}</td>
                                 <td class="px-6 py-4 text-center">
-                                    @if($product->quantity == 0)
+                                    @if($product->quantity <= 0)
                                         <span class="inline-flex items-center gap-1 bg-red-100 text-red-700 text-xs font-semibold px-2.5 py-1 rounded-full">
                                             <i class="fas fa-circle text-[6px]"></i> Out of Stock
                                         </span>
@@ -238,7 +238,7 @@
                                         <span class="px-3 py-1 rounded-lg bg-blue-100 text-blue-800">BOM</span>
                                     @endif
                                 @else
-                                    <span class="font-semibold {{ $product->quantity == 0 ? 'text-red-600' : ($product->isLowStock() ? 'text-amber-600' : 'text-gray-800') }}">
+                                    <span class="font-semibold {{ $product->quantity <= 0 ? 'text-red-600' : ($product->isLowStock() ? 'text-amber-600' : 'text-gray-800') }}">
                                         {{ $product->quantity }}
                                     </span>
                                 @endif

@@ -37,6 +37,7 @@ class LowStockTest extends TestCase
 
         $product = Product::create([
             'name' => 'Update Bottle',
+            'price' => 10,
             'selling_price' => 10,
             'quantity' => 100,
             'low_stock_threshold' => 5,

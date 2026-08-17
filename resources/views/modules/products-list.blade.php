@@ -125,8 +125,8 @@
                                                     <span class="px-3 py-1 rounded-lg bg-blue-100 text-blue-800">BOM</span>
                                                 @endif
                                         @else
-                                            @if($product->quantity == 0)
-                                                <span class="px-3 py-1 rounded-lg bg-red-100 text-red-800 font-semibold">0</span>
+                                            @if($product->quantity <= 0)
+                                                <span class="px-3 py-1 rounded-lg bg-red-100 text-red-800 font-semibold">{{ $product->quantity }}</span>
                                             @elseif($product->isLowStock())
                                                 <span class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-amber-100 text-amber-800 font-semibold">
                                                     {{ $product->quantity }}

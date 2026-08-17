@@ -40,17 +40,17 @@
     <!-- Navbar -->
     @include('layouts.navbar')
 
-    <div class="flex" style="padding-top:67px;">
+    <div class="flex" style="padding-top:64px;">
         <!-- Sidebar -->
         <x-sidebar :modules="$modules ?? []" />
 
         <!-- Main Content -->
         <div class="flex-1 main-content px-6 py-8 w-full lg:w-auto">
             @if(session('low_stock_warning'))
-                <div class="mb-6 bg-amber-50 border border-amber-300 text-amber-800 rounded-lg px-5 py-3 flex items-center gap-3">
+                <div class="mb-5 bg-amber-50 border border-amber-300 text-amber-800 rounded-xl px-4 py-3 flex items-center gap-3 text-sm">
                     <i class="fas fa-triangle-exclamation text-amber-500 flex-shrink-0"></i>
-                    <span class="text-sm font-medium">{{ session('low_stock_warning') }}</span>
-                    <a href="{{ route('inventory.index') }}" class="ml-auto text-amber-700 hover:text-amber-900 text-sm font-semibold underline whitespace-nowrap">View Inventory</a>
+                    <span class="font-medium">{{ session('low_stock_warning') }}</span>
+                    <a href="{{ route('inventory.index') }}" class="ml-auto text-amber-700 hover:text-amber-900 font-semibold underline whitespace-nowrap">View Inventory</a>
                 </div>
             @endif
             {{-- Breadcrumb slot: pages can define a `breadcrumb` section to render here. --}}

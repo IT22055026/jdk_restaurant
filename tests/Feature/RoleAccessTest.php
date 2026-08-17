@@ -31,15 +31,51 @@ class RoleAccessTest extends TestCase
         $this->actingAs($cashier)->get(route('shifts.index'))->assertOk();
     }
 
+    public function test_cashier_can_open_sales_report()
+    {
+        $cashier = $this->userWithRole('Cashier');
+
+        $this->actingAs($cashier)->get(route('sales-report.index'))->assertOk();
+        $this->actingAs($cashier)->get(route('api.sales-report'))->assertOk();
+    }
+
+    // Cashier has no Dashboard access, so the navbar logo (normally a link
+    // to the dashboard) should point at Sales Report instead — the closest
+    // thing they have to a "home" page — rather than a dead link.
+    public function test_cashier_navbar_logo_links_to_sales_report()
+    {
+        $cashier = $this->userWithRole('Cashier');
+
+        $response = $this->actingAs($cashier)->get(route('pos.index'));
+
+        $response->assertOk();
+        $response->assertSee('href="' . route('sales-report.index') . '"', false);
+        $response->assertDontSee('href="' . route('dashboard') . '"', false);
+    }
+
+    public function test_admin_navbar_logo_links_to_dashboard()
+    {
+        $admin = $this->userWithRole('Admin');
+
+        $response = $this->actingAs($admin)->get(route('pos.index'));
+
+        $response->assertOk();
+        $response->assertSee('href="' . route('dashboard') . '"', false);
+    }
+
     public function test_cashier_is_blocked_from_every_other_module()
     {
         $cashier = $this->userWithRole('Cashier');
 
         $this->actingAs($cashier)->get(route('reports.index'))->assertForbidden();
         $this->actingAs($cashier)->get(route('customers.index'))->assertForbidden();
+        $this->actingAs($cashier)->get(route('categories.index'))->assertForbidden();
+        $this->actingAs($cashier)->get(route('employees.index'))->assertForbidden();
         $this->actingAs($cashier)->get(route('inventory.index'))->assertForbidden();
+        $this->actingAs($cashier)->get(route('suppliers.index'))->assertForbidden();
+        $this->actingAs($cashier)->get(route('wastage.index'))->assertForbidden();
+        $this->actingAs($cashier)->get(route('ingredients.index'))->assertForbidden();
         $this->actingAs($cashier)->get(route('offers.index'))->assertForbidden();
-        $this->actingAs($cashier)->get(route('sales-report.index'))->assertForbidden();
         $this->actingAs($cashier)->get(route('settings.index'))->assertForbidden();
     }
 

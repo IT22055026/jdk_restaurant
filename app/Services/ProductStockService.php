@@ -48,19 +48,8 @@ class ProductStockService
             ->get()
             ->keyBy('id');
 
-        $shortfalls = [];
-        foreach ($required as $productId => $qtyNeeded) {
-            $product = $lockedProducts->get($productId);
-            $available = $product ? (int) $product->quantity : 0;
-            if ($available < $qtyNeeded) {
-                $name = $product ? $product->name : "product #{$productId}";
-                $shortfalls[] = "\"{$name}\" needs {$qtyNeeded}, only {$available} available";
-            }
-        }
-
-        // if (!empty($shortfalls)) {
-        //     throw new InsufficientStockException('Not enough stock to print token: ' . implode('; ', $shortfalls));
-        // }
+        // Allow negative stock deduction: shortfalls do not block token print/payment
+        // $lockedProducts will decrement directly into negative stock if needed.
 
         $applied = [];
         foreach ($itemDeltas as $entry) {

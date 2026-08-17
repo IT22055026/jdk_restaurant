@@ -110,26 +110,47 @@ class PosController extends Controller
             'order_type' => 'nullable|in:dine_in,takeaway',
         ]);
 
-        // ORD-{business date}-{sequence, resets to 0001 each business day}.
-        // The trading day runs 06:00-05:59 the next calendar day (see
-        // BusinessDay), so an order placed at 1am still numbers under
-        // yesterday's date/sequence, matching the token numbering it sits
-        // alongside.
         $businessDate = BusinessDay::today()->toDateString();
+        $userId = $this->currentUser()->id;
+
+        // If the current cashier already has an active un-held pending draft order,
+        // reuse it and reset its items so page reloads or starting a new order doesn't
+        // create orphan pending orders or skip order sequence numbers.
+        $existingDraft = Order::where('user_id', $userId)
+            ->where('status', 'pending')
+            ->whereDate('business_date', $businessDate)
+            ->first();
+
+        if ($existingDraft) {
+            $existingDraft->items()->delete();
+            $existingDraft->update([
+                'token_number' => null,
+                'customer_id' => $validated['customer_id'] ?? null,
+                'customer_name' => $validated['customer_name'] ?? null,
+                'customer_phone' => $validated['customer_phone'] ?? null,
+                'waiter_name' => $validated['waiter_name'] ?? $this->currentUser()->name,
+                'order_type' => $validated['order_type'] ?? 'dine_in',
+                'subtotal' => 0,
+                'discount_amount' => 0,
+                'tax_amount' => 0,
+                'total' => 0,
+                'created_at' => now(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'order_id' => $existingDraft->id,
+                'order_number' => $existingDraft->order_number,
+                'token_number' => $existingDraft->token_number,
+                'order_type' => $existingDraft->order_type,
+            ]);
+        }
+
         $order = null;
 
-        // lockForUpdate() alone can't stop two simultaneous "first order of
-        // the day" requests from both computing sequence 1 (there's no row
-        // yet to lock), so the real guarantee is the (business_date,
-        // daily_sequence) unique constraint — retry with the next number on
-        // conflict rather than fail the request.
         for ($attempt = 1; $attempt <= 5; $attempt++) {
             try {
-                $order = DB::transaction(function () use ($validated, $businessDate) {
-                    // whereDate(), not where() — the 'date' cast serializes
-                    // business_date with a full datetime format when saving
-                    // (e.g. "2026-07-30 00:00:00"), so a plain equality check
-                    // against the bare date string would never match.
+                $order = DB::transaction(function () use ($validated, $businessDate, $userId) {
                     $nextSequence = (Order::whereDate('business_date', $businessDate)->lockForUpdate()->max('daily_sequence') ?? 0) + 1;
 
                     return Order::create([
@@ -139,17 +160,13 @@ class PosController extends Controller
                         'customer_id' => $validated['customer_id'] ?? null,
                         'customer_name' => $validated['customer_name'] ?? null,
                         'customer_phone' => $validated['customer_phone'] ?? null,
-                        'user_id' => $this->currentUser()->id,
+                        'user_id' => $userId,
                         'waiter_name' => $validated['waiter_name'] ?? $this->currentUser()->name,
                         'order_type' => $validated['order_type'] ?? 'dine_in',
                     ]);
                 });
                 break;
             } catch (\PDOException $e) {
-                // Illuminate\Database\QueryException extends PDOException, but
-                // at least on SQLite a bare PDOException can propagate from
-                // inside the transaction too — catch the parent class so both
-                // are retried instead of only Laravel's wrapped form.
                 if ($attempt === 5) {
                     throw $e;
                 }
@@ -848,7 +865,11 @@ class PosController extends Controller
 
     public function getSalesReport(Request $request)
     {
+        // Clean up stale abandoned pending draft orders from past days so database stays clean
+        Order::where('status', 'pending')->whereDate('business_date', '<', BusinessDay::today()->toDateString())->delete();
+
         $query = Order::with('discardedBy', 'items')
+            ->where('status', '!=', 'pending')
             ->orderBy('created_at', 'desc');
 
         if ($request->filled('search')) {
@@ -859,7 +880,7 @@ class PosController extends Controller
             });
         }
 
-        if ($request->filled('status')) {
+        if ($request->filled('status') && $request->input('status') !== 'pending') {
             $query->where('status', $request->input('status'));
         }
 

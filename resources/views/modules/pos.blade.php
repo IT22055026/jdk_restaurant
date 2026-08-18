@@ -1187,7 +1187,7 @@
                 }
             });
         } else if (stockCache.hasOwnProperty(productId)) {
-            stockCache[productId] = Math.max(0, stockCache[productId] - deltaUnits);
+            stockCache[productId] -= deltaUnits;
         }
     }
 
@@ -1940,19 +1940,17 @@
         const existing = currentOrder.items.find(function(i) {
             return i.product_id === productId && (!i.kot_printed);
         });
+        const prod = allProducts.find(function(p) { return p.id === productId; });
+        const img = prod ? prod.image : null;
         if (existing) {
             existing.quantity++;
             existing.subtotal = existing.unit_price * existing.quantity;
-            if (!existing.image) {
-                const prod = allProducts.find(function(p) { return p.id === productId; });
-                if (prod && prod.image) existing.image = prod.image;
-            }
+            if (!existing.image && img) existing.image = img;
         } else {
-            const prod = allProducts.find(function(p) { return p.id === productId; });
             currentOrder.items.push({
                 id: null, product_id: productId, product_name: productName,
                 unit_price: price, quantity: 1, subtotal: price, kitchen_notes: null, kot_printed: false,
-                image: prod ? prod.image : null
+                image: img
             });
         }
         // Deduct from stock cache
@@ -2026,12 +2024,6 @@
         const item = currentOrder.items.find(function(i) { return i.id === itemId; });
         if (!item) return;
 
-        const availForIncrease = getStock(item.product_id);
-        if (availForIncrease !== null && availForIncrease <= 0) {
-            toast('No more stock available for this item', 'error');
-            return;
-        }
-
         qtyLock[itemId] = true;
         adjustStock(item.product_id, 1);
         item.quantity++;
@@ -2080,20 +2072,6 @@
         // in-flight focus transition to whatever's next.
         if (newQty === item.quantity) return;
         const diff = newQty - item.quantity;
-
-        // Enforce stock cap when increasing
-        const availForSet = getStock(item.product_id);
-        if (diff > 0 && availForSet !== null) {
-            if (availForSet < diff) {
-                newQty = item.quantity + Math.max(0, availForSet);
-                if (newQty === item.quantity) {
-                    toast('No more stock available for this item', 'error');
-                    renderBill();
-                    return;
-                }
-                toast('Quantity limited to available stock', 'error');
-            }
-        }
 
         qtyLock[itemId] = true;
         adjustStock(item.product_id, newQty - item.quantity);
@@ -2366,7 +2344,6 @@
                 const isFreeItem    = discPercent >= 100;
                 const discRowOpen   = item.id && openDiscountRows.has(item.id);
                 const itemAvailStock = getStock(item.product_id);
-                const atStockLimit  = itemAvailStock !== null && itemAvailStock <= 0;
 
                 // Discount badge next to product name — a full (100%) discount is
                 // shown as a distinct "FREE gift" rather than a plain "-100%" line
@@ -2391,11 +2368,11 @@
                     ? '<button type="button" class="qty-btn" data-role="dec" onclick="decreaseQty(' + item.id + ')">−</button>'
                     : '<button type="button" class="qty-btn" style="opacity:0.4;" disabled>−</button>';
                 const incBtn = item.id
-                    ? '<button type="button" class="qty-btn" data-role="inc" onclick="increaseQty(' + item.id + ')"' + (atStockLimit ? ' disabled title="No more stock" style="opacity:0.4; cursor:not-allowed;"' : '') + '>+</button>'
+                    ? '<button type="button" class="qty-btn" data-role="inc" onclick="increaseQty(' + item.id + ')">+</button>'
                     : '<button type="button" class="qty-btn" style="opacity:0.4;" disabled>+</button>';
 
                 const stockLeft = itemAvailStock !== null
-                    ? '<span style="font-size:10px; color:#94a3b8; margin-left:4px;">(' + itemAvailStock + ' left)</span>'
+                    ? '<span style="font-size:10px; color:' + (itemAvailStock < 0 ? '#ef4444' : '#94a3b8') + '; margin-left:4px;">(' + itemAvailStock + ' left)</span>'
                     : '';
 
                 const noteHtml = item.kitchen_notes
@@ -2433,11 +2410,24 @@
                       + '</div>'
                     : '';
 
-                // Resolve product thumbnail image or contextual fallback icon
+                // Resolve product/ingredient/offer thumbnail image or contextual fallback icon
                 const prodObj = item.product_id ? allProducts.find(function(p) { return p.id === item.product_id; }) : null;
                 const catObj = prodObj && prodObj.category_id ? allCategories.find(function(c) { return c.id === prodObj.category_id; }) : null;
                 const categoryName = catObj ? catObj.name : '';
-                const rawImg = item.image || (prodObj ? prodObj.image : null);
+
+                let rawImg = item.image;
+                if (!rawImg) {
+                    if (prodObj && prodObj.image) {
+                        rawImg = prodObj.image;
+                    } else if (item.ingredient_id) {
+                        const ing = allIngredients.find(function(x) { return x.id === item.ingredient_id; });
+                        if (ing && ing.image) rawImg = ing.image;
+                    } else if (item.offer_id) {
+                        const off = allOffers.find(function(x) { return x.id === item.offer_id; });
+                        if (off && off.image) rawImg = off.image;
+                    }
+                    if (rawImg) item.image = rawImg;
+                }
 
                 let thumbHtml = '';
                 if (rawImg) {

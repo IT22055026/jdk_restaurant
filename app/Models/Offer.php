@@ -12,11 +12,13 @@ class Offer extends Model
         'image',
         'price',
         'is_active',
+        'flavour_qty',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
         'is_active' => 'boolean',
+        'flavour_qty' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -26,6 +28,24 @@ class Offer extends Model
         return $this->belongsToMany(Ingredient::class, 'offer_ingredients')
             ->withPivot('quantity')
             ->withTimestamps();
+    }
+
+    /**
+     * Fixed finished-good / menu products bundled directly into this offer.
+     */
+    public function products()
+    {
+        return $this->belongsToMany(Product::class, 'offer_products')
+            ->withPivot('quantity')
+            ->withTimestamps();
+    }
+
+    /**
+     * Customer choice groups (e.g. 2 Drinks from Category Drinks, 1 Dessert from Category Desserts).
+     */
+    public function choiceGroups()
+    {
+        return $this->hasMany(OfferChoiceGroup::class)->orderBy('sort_order');
     }
 
     /**

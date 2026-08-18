@@ -110,26 +110,47 @@ class PosController extends Controller
             'order_type' => 'nullable|in:dine_in,takeaway',
         ]);
 
-        // ORD-{business date}-{sequence, resets to 0001 each business day}.
-        // The trading day runs 06:00-05:59 the next calendar day (see
-        // BusinessDay), so an order placed at 1am still numbers under
-        // yesterday's date/sequence, matching the token numbering it sits
-        // alongside.
         $businessDate = BusinessDay::today()->toDateString();
+        $userId = $this->currentUser()->id;
+
+        // If the current cashier already has an active un-held pending draft order,
+        // reuse it and reset its items so page reloads or starting a new order doesn't
+        // create orphan pending orders or skip order sequence numbers.
+        $existingDraft = Order::where('user_id', $userId)
+            ->where('status', 'pending')
+            ->whereDate('business_date', $businessDate)
+            ->first();
+
+        if ($existingDraft) {
+            $existingDraft->items()->delete();
+            $existingDraft->update([
+                'token_number' => null,
+                'customer_id' => $validated['customer_id'] ?? null,
+                'customer_name' => $validated['customer_name'] ?? null,
+                'customer_phone' => $validated['customer_phone'] ?? null,
+                'waiter_name' => $validated['waiter_name'] ?? $this->currentUser()->name,
+                'order_type' => $validated['order_type'] ?? 'dine_in',
+                'subtotal' => 0,
+                'discount_amount' => 0,
+                'tax_amount' => 0,
+                'total' => 0,
+                'created_at' => now(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'order_id' => $existingDraft->id,
+                'order_number' => $existingDraft->order_number,
+                'token_number' => $existingDraft->token_number,
+                'order_type' => $existingDraft->order_type,
+            ]);
+        }
+
         $order = null;
 
-        // lockForUpdate() alone can't stop two simultaneous "first order of
-        // the day" requests from both computing sequence 1 (there's no row
-        // yet to lock), so the real guarantee is the (business_date,
-        // daily_sequence) unique constraint — retry with the next number on
-        // conflict rather than fail the request.
         for ($attempt = 1; $attempt <= 5; $attempt++) {
             try {
-                $order = DB::transaction(function () use ($validated, $businessDate) {
-                    // whereDate(), not where() — the 'date' cast serializes
-                    // business_date with a full datetime format when saving
-                    // (e.g. "2026-07-30 00:00:00"), so a plain equality check
-                    // against the bare date string would never match.
+                $order = DB::transaction(function () use ($validated, $businessDate, $userId) {
                     $nextSequence = (Order::whereDate('business_date', $businessDate)->lockForUpdate()->max('daily_sequence') ?? 0) + 1;
 
                     return Order::create([
@@ -139,17 +160,13 @@ class PosController extends Controller
                         'customer_id' => $validated['customer_id'] ?? null,
                         'customer_name' => $validated['customer_name'] ?? null,
                         'customer_phone' => $validated['customer_phone'] ?? null,
-                        'user_id' => $this->currentUser()->id,
+                        'user_id' => $userId,
                         'waiter_name' => $validated['waiter_name'] ?? $this->currentUser()->name,
                         'order_type' => $validated['order_type'] ?? 'dine_in',
                     ]);
                 });
                 break;
             } catch (\PDOException $e) {
-                // Illuminate\Database\QueryException extends PDOException, but
-                // at least on SQLite a bare PDOException can propagate from
-                // inside the transaction too — catch the parent class so both
-                // are retried instead of only Laravel's wrapped form.
                 if ($attempt === 5) {
                     throw $e;
                 }
@@ -207,16 +224,18 @@ class PosController extends Controller
 
     public function getOrder(Order $order)
     {
-        $order->load('items.product', 'customer');
+        $order->load('items.product', 'items.offer.flavours', 'items.ingredient', 'customer');
 
         // Component lines (the individual products/ingredients an offer bundles)
         // are hidden here — the cashier only needs to see the one offer billing
         // line. They still exist for printToken()/stock deduction purposes.
         $itemsData = $order->items->where('is_offer_component', false)->values()->map(function ($item) {
+            $image = $item->product?->image ?? $item->offer?->image ?? $item->ingredient?->image;
             return [
                 'id' => $item->id,
                 'product_id' => $item->product_id,
                 'offer_id' => $item->offer_id,
+                'ingredient_id' => $item->ingredient_id,
                 'product_name' => $item->product_name,
                 'unit_price' => (float) $item->unit_price,
                 'quantity' => $item->quantity,
@@ -225,7 +244,13 @@ class PosController extends Controller
                 'kitchen_notes' => $item->kitchen_notes,
                 'is_bar_item' => (bool) $item->is_bar_item,
                 'kot_printed' => (bool) $item->kot_printed,
-                'image' => $item->product?->image,
+                'image' => $image,
+                // Offers with choice groups or flavour picks can hold a mixed, non-uniform pick
+                // (e.g. 3 Mojito + 1 Lime Soda) once more than one has been
+                // added — the plain +/- stepper can't safely rescale that, so
+                // the client hides it and routes qty changes through the offer's
+                // picker instead (see updateItem() / addOffer()).
+                'offer_flavour_locked' => (bool) ($item->offer && ($item->offer->choiceGroups->isNotEmpty() || $item->offer->flavours->isNotEmpty())),
             ];
         });
 
@@ -415,11 +440,19 @@ class PosController extends Controller
         ]);
 
         if ($item->offer_id && !$item->is_offer_component) {
-            // Keep every hidden component line (one unit per linked product/ingredient
-            // per offer) in lockstep with the billing line's quantity.
+            // Keep every hidden ingredient component line (a fixed amount per
+            // offer sold) in lockstep with the billing line's quantity. Flavour
+            // pick components are deliberately left alone here — when an offer
+            // needs more than one flavour pick, its picks can be a mixed,
+            // non-uniform distribution (e.g. 3 Mojito + 1 Lime Soda across
+            // several offers bought), so there's no single correct way to
+            // rescale them from a plain quantity bump. The cashier adds more
+            // via the offer's flavour picker instead, which keeps each
+            // product's own count correct — see addOffer().
             OrderItem::where('order_id', $order->id)
                 ->where('offer_id', $item->offer_id)
                 ->where('is_offer_component', true)
+                ->whereNotNull('ingredient_id')
                 ->update(['quantity' => $validated['quantity'], 'subtotal' => 0]);
         }
 
@@ -484,20 +517,73 @@ class PosController extends Controller
 
     public function getActiveOffers()
     {
-        $offers = Offer::where('is_active', true)->with(['ingredients', 'flavours'])->get();
+        $offers = Offer::where('is_active', true)
+            ->with(['ingredients', 'products', 'choiceGroups.products', 'choiceGroups.category', 'flavours'])
+            ->get();
 
-        return response()->json($offers->map(fn($offer) => [
-            'id' => $offer->id,
-            'name' => $offer->name,
-            'description' => $offer->description,
-            'image' => $offer->image,
-            'price' => (float) $offer->price,
-            'includes' => $offer->ingredients->pluck('name')->values(),
-            'flavours' => $offer->flavours->map(fn($product) => [
-                'id' => $product->id,
-                'name' => $product->name,
-            ])->values(),
-        ]));
+        return response()->json($offers->map(function ($offer) {
+            // Build choice groups list
+            $choiceGroups = $offer->choiceGroups->map(function ($group) {
+                $products = $group->getEligibleProducts();
+                return [
+                    'id' => $group->id,
+                    'name' => $group->name,
+                    'choice_qty' => max(1, (int) $group->choice_qty),
+                    'category_id' => $group->category_id,
+                    'products' => $products->map(fn($p) => [
+                        'id' => $p->id,
+                        'name' => $p->name,
+                        'price' => (float) ($p->selling_price ?? $p->price),
+                        'image' => $p->image,
+                    ])->values(),
+                ];
+            })->values();
+
+            // If legacy flavours exist and no choice groups, provide virtual group
+            if ($choiceGroups->isEmpty() && $offer->flavours->isNotEmpty()) {
+                $choiceGroups = collect([[
+                    'id' => 0,
+                    'name' => 'Flavours',
+                    'choice_qty' => max(1, (int) $offer->flavour_qty),
+                    'category_id' => null,
+                    'products' => $offer->flavours->map(fn($p) => [
+                        'id' => $p->id,
+                        'name' => $p->name,
+                        'price' => (float) ($p->selling_price ?? $p->price),
+                        'image' => $p->image,
+                    ])->values(),
+                ]]);
+            }
+
+            return [
+                'id' => $offer->id,
+                'name' => $offer->name,
+                'description' => $offer->description,
+                'image' => $offer->image,
+                'price' => (float) $offer->price,
+                'fixed_ingredients' => $offer->ingredients->map(fn($i) => [
+                    'id' => $i->id,
+                    'name' => $i->name,
+                    'quantity' => (float) $i->pivot->quantity,
+                    'unit' => $i->unit,
+                ])->values(),
+                'fixed_products' => $offer->products->map(fn($p) => [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'quantity' => (float) $p->pivot->quantity,
+                ])->values(),
+                'includes' => $offer->ingredients->pluck('name')
+                    ->concat($offer->products->pluck('name'))
+                    ->values(),
+                'choice_groups' => $choiceGroups,
+                'has_choices' => $choiceGroups->isNotEmpty(),
+                'flavours' => $offer->flavours->map(fn($product) => [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                ])->values(),
+                'flavour_qty' => max(1, (int) $offer->flavour_qty),
+            ];
+        }));
     }
 
     public function addOffer(Request $request, Order $order)
@@ -505,110 +591,270 @@ class PosController extends Controller
         $validated = $request->validate([
             'offer_id' => 'required|exists:offers,id',
             'quantity' => 'nullable|integer|min:1',
-            'flavour_product_id' => 'nullable|integer|exists:products,id',
+            'flavour_product_ids' => 'nullable|array',
+            'flavour_product_ids.*' => 'integer|exists:products,id',
+            'choice_product_ids' => 'nullable|array',
+            'choice_product_ids.*' => 'integer|exists:products,id',
+            'choice_picks' => 'nullable',
         ]);
 
         $quantity = $validated['quantity'] ?? 1;
-        $offer = Offer::with(['ingredients', 'flavours'])->findOrFail($validated['offer_id']);
+        $offer = Offer::with(['ingredients', 'products', 'choiceGroups.products', 'choiceGroups.category', 'flavours'])
+            ->findOrFail($validated['offer_id']);
 
-        // An offer with flavour options (e.g. every Mojito flavour) can't be added
-        // without the cashier picking one — see offer_flavours / Offer::flavours().
-        $flavourProduct = null;
-        if ($offer->flavours->isNotEmpty()) {
-            $flavourProduct = $offer->flavours->firstWhere('id', (int) ($validated['flavour_product_id'] ?? 0));
-            if (!$flavourProduct) {
+        $choicePickCounts = collect(); // product_id => count
+
+        if ($offer->choiceGroups->isNotEmpty()) {
+            $rawPicks = $request->input('choice_picks');
+            
+            // Check if choice_picks is structured by group:
+            // e.g. [{group_id: 1, product_ids: [10, 11]}, ...] or {"1": [10, 11]}
+            if (is_array($rawPicks) && (isset($rawPicks[0]['group_id']) || !empty(array_filter(array_keys($rawPicks), 'is_string')))) {
+                $picksByGroup = [];
+                if (isset($rawPicks[0]['group_id'])) {
+                    foreach ($rawPicks as $entry) {
+                        $gId = (int) ($entry['group_id'] ?? 0);
+                        $pIds = (array) ($entry['product_ids'] ?? []);
+                        $picksByGroup[$gId] = array_merge($picksByGroup[$gId] ?? [], $pIds);
+                    }
+                } else {
+                    $picksByGroup = $rawPicks;
+                }
+
+                foreach ($offer->choiceGroups as $group) {
+                    $requiredPicks = max(1, (int) $group->choice_qty) * $quantity;
+                    $pickedIds = collect($picksByGroup[$group->id] ?? []);
+                    $eligibleIds = $group->getEligibleProducts()->pluck('id');
+                    $allEligible = $pickedIds->every(fn($id) => $eligibleIds->contains($id));
+
+                    if ($pickedIds->count() !== $requiredPicks || !$allEligible) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Pick {$requiredPicks} item(s) for \"{$group->name}\" in \"{$offer->name}\"",
+                        ], 422);
+                    }
+
+                    foreach ($pickedIds->countBy() as $pId => $cnt) {
+                        $choicePickCounts[$pId] = ($choicePickCounts[$pId] ?? 0) + $cnt;
+                    }
+                }
+            } else {
+                // Flat array of product IDs across all groups
+                $flatPickedIds = collect($request->input('choice_picks') ?? $request->input('choice_product_ids') ?? $request->input('flavour_product_ids') ?? []);
+                $totalRequired = $offer->choiceGroups->sum('choice_qty') * $quantity;
+
+                // Collect all eligible product IDs across all choice groups
+                $allEligibleIds = $offer->choiceGroups->flatMap(fn($g) => $g->getEligibleProducts()->pluck('id'))->unique();
+                $allEligible = $flatPickedIds->every(fn($id) => $allEligibleIds->contains($id));
+
+                if ($flatPickedIds->count() !== $totalRequired || !$allEligible) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Pick {$totalRequired} item(s) for \"{$offer->name}\"",
+                    ], 422);
+                }
+
+                $choicePickCounts = $flatPickedIds->countBy();
+            }
+        } elseif ($offer->flavours->isNotEmpty()) {
+            $requiredPicks = max(1, (int) $offer->flavour_qty) * $quantity;
+            $pickedIds = collect($request->input('choice_picks') ?? $request->input('flavour_product_ids') ?? []);
+            $eligibleIds = $offer->flavours->pluck('id');
+            $allEligible = $pickedIds->every(fn($id) => $eligibleIds->contains($id));
+
+            if ($pickedIds->count() !== $requiredPicks || !$allEligible) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Choose a flavour for "' . $offer->name . '" first',
+                    'message' => "Pick {$requiredPicks} item(s) for \"{$offer->name}\" first",
                 ], 422);
             }
-        }
 
-        $billingName = $flavourProduct ? "{$offer->name} — {$flavourProduct->name}" : $offer->name;
+            $choicePickCounts = $pickedIds->countBy();
+        }
 
         $billingLine = OrderItem::where('order_id', $order->id)
             ->where('offer_id', $offer->id)
             ->where('is_offer_component', false)
             ->first();
 
+        $newQuantity = $billingLine ? ($billingLine->quantity + $quantity) : $quantity;
+
         if ($billingLine) {
-            $newQuantity = $billingLine->quantity + $quantity;
             $billingLine->update([
                 'quantity' => $newQuantity,
                 'subtotal' => $billingLine->unit_price * $newQuantity,
-                'product_name' => $billingName,
             ]);
-
-            OrderItem::where('order_id', $order->id)
-                ->where('offer_id', $offer->id)
-                ->where('is_offer_component', true)
-                ->update(['quantity' => $newQuantity]);
-
-            // Only one flavour can be "live" per offer per order — re-adding with a
-            // different pick swaps the whole line (including units already queued)
-            // over to the new flavour rather than mixing two flavours on one line.
-            if ($flavourProduct) {
-                OrderItem::where('order_id', $order->id)
-                    ->where('offer_id', $offer->id)
-                    ->where('is_offer_component', true)
-                    ->whereNotNull('product_id')
-                    ->update([
-                        'product_id' => $flavourProduct->id,
-                        'product_name' => $flavourProduct->name,
-                    ]);
-            }
         } else {
-            OrderItem::create([
+            $billingLine = OrderItem::create([
                 'order_id' => $order->id,
                 'offer_id' => $offer->id,
-                'product_name' => $billingName,
+                'product_name' => $offer->name,
                 'unit_price' => $offer->price,
                 'quantity' => $quantity,
                 'subtotal' => $offer->price * $quantity,
-                'is_bar_item' => true, // keeps the billing line off the kitchen ticket
+                'is_bar_item' => true, // keeps the billing summary off the kitchen ticket
                 'is_offer_component' => false,
             ]);
+        }
 
-            foreach ($offer->ingredients as $ingredient) {
+        // 1. Fixed Ingredient Components
+        foreach ($offer->ingredients as $ingredient) {
+            $existing = OrderItem::where('order_id', $order->id)
+                ->where('offer_id', $offer->id)
+                ->where('is_offer_component', true)
+                ->where('ingredient_id', $ingredient->id)
+                ->first();
+
+            if ($existing) {
+                $existing->update(['quantity' => $newQuantity, 'subtotal' => 0]);
+            } else {
                 OrderItem::create([
                     'order_id' => $order->id,
                     'offer_id' => $offer->id,
                     'ingredient_id' => $ingredient->id,
                     'product_name' => $ingredient->name,
                     'unit_price' => 0,
-                    'quantity' => $quantity,
+                    'quantity' => $newQuantity,
                     'subtotal' => 0,
                     'is_bar_item' => false,
                     'is_offer_component' => true,
-                    // Snapshot the offer's per-unit amount now, so later edits to the
-                    // offer's recipe don't retroactively change this already-placed order.
-                    'offer_component_qty' => $ingredient->pivot->quantity,
-                ]);
-            }
-
-            if ($flavourProduct) {
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'offer_id' => $offer->id,
-                    'product_id' => $flavourProduct->id,
-                    'product_name' => $flavourProduct->name,
-                    'unit_price' => 0,
-                    'quantity' => $quantity,
-                    'subtotal' => 0,
-                    // Unlike the ingredient components above, this one stays visible to
-                    // the kitchen/bar ticket (is_bar_item stays false) so staff know
-                    // exactly which flavour to pour — and it deducts that flavour
-                    // product's own stock via ProductStockService, same as any other
-                    // finished-good product line.
-                    'is_bar_item' => false,
-                    'is_offer_component' => true,
+                    'offer_component_qty' => (float) $ingredient->pivot->quantity,
                 ]);
             }
         }
 
+        // 2. Fixed Product Components (Finished Goods / Dishes)
+        foreach ($offer->products as $fixedProduct) {
+            $existing = OrderItem::where('order_id', $order->id)
+                ->where('offer_id', $offer->id)
+                ->where('is_offer_component', true)
+                ->where('product_id', $fixedProduct->id)
+                ->whereNull('ingredient_id')
+                ->where('offer_component_qty', '>', 0)
+                ->first();
+
+            $fixedQtyPerOffer = (float) $fixedProduct->pivot->quantity;
+            if ($existing) {
+                $existing->update(['quantity' => $fixedQtyPerOffer * $newQuantity, 'subtotal' => 0]);
+            } else {
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'offer_id' => $offer->id,
+                    'product_id' => $fixedProduct->id,
+                    'product_name' => $fixedProduct->name,
+                    'unit_price' => 0,
+                    'quantity' => $fixedQtyPerOffer * $newQuantity,
+                    'subtotal' => 0,
+                    'is_bar_item' => false,
+                    'is_offer_component' => true,
+                    'offer_component_qty' => $fixedQtyPerOffer,
+                ]);
+            }
+        }
+
+        // 3. Customer Choice Pick Components
+        foreach ($choicePickCounts as $productId => $count) {
+            $existingPick = OrderItem::where('order_id', $order->id)
+                ->where('offer_id', $offer->id)
+                ->where('is_offer_component', true)
+                ->where('product_id', $productId)
+                ->whereNull('offer_component_qty')
+                ->first();
+
+            if ($existingPick) {
+                $existingPick->increment('quantity', $count);
+            } else {
+                $product = Product::find($productId);
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'offer_id' => $offer->id,
+                    'product_id' => $productId,
+                    'product_name' => $product ? $product->name : "Product #{$productId}",
+                    'unit_price' => 0,
+                    'quantity' => $count,
+                    'subtotal' => 0,
+                    'is_bar_item' => false,
+                    'is_offer_component' => true,
+                    'offer_component_qty' => null,
+                ]);
+            }
+        }
+
+        // Update billing line name with customer choices
+        $billingLine->update(['product_name' => $this->offerBillingName($order, $offer)]);
+
         $this->updateOrderTotals($order);
 
         return response()->json(['success' => true, 'message' => 'Offer added to order']);
+    }
+
+    /**
+     * Billing-line label for an offer with customer choices, e.g.
+     * "Family Combo — 2x Passion Mojito, 1x Chocolate Cake"
+     */
+    private function offerBillingName(Order $order, Offer $offer): string
+    {
+        $picks = OrderItem::where('order_id', $order->id)
+            ->where('offer_id', $offer->id)
+            ->where('is_offer_component', true)
+            ->whereNotNull('product_id')
+            ->whereNull('offer_component_qty') // customer picks only
+            ->get();
+
+        if ($picks->isEmpty()) {
+            return $offer->name;
+        }
+
+        $labels = $picks->map(fn($item) => $item->quantity > 1
+            ? "{$item->product_name} x{$item->quantity}"
+            : $item->product_name);
+
+        return $offer->name . ' — ' . $labels->implode(', ');
+    }
+
+    /**
+     * Product name of the first offer billing line on the order whose customer
+     * picks fall short of what its offer requires, or null if every offer line
+     * is fully picked (or needs no flavour choice at all).
+     */
+    private function firstIncompleteOfferLine(Order $order): ?string
+    {
+        $billingLines = OrderItem::where('order_id', $order->id)
+            ->where('is_offer_component', false)
+            ->whereNotNull('offer_id')
+            ->with(['offer.choiceGroups', 'offer.flavours'])
+            ->get();
+
+        foreach ($billingLines as $line) {
+            $offer = $line->offer;
+            if (!$offer) {
+                continue;
+            }
+
+            $requiredTotal = 0;
+            if ($offer->choiceGroups->isNotEmpty()) {
+                $requiredTotal = $offer->choiceGroups->sum('choice_qty') * $line->quantity;
+            } elseif ($offer->flavours->isNotEmpty()) {
+                $requiredTotal = max(1, (int) $offer->flavour_qty) * $line->quantity;
+            }
+
+            if ($requiredTotal <= 0) {
+                continue;
+            }
+
+            $pickedTotal = OrderItem::where('order_id', $order->id)
+                ->where('offer_id', $offer->id)
+                ->where('is_offer_component', true)
+                ->whereNotNull('product_id')
+                ->whereNull('offer_component_qty')
+                ->sum('quantity');
+
+            if ($pickedTotal < $requiredTotal) {
+                return $line->product_name;
+            }
+        }
+
+        return null;
     }
 
     public function salesReport()
@@ -619,7 +865,11 @@ class PosController extends Controller
 
     public function getSalesReport(Request $request)
     {
+        // Clean up stale abandoned pending draft orders from past days so database stays clean
+        Order::where('status', 'pending')->whereDate('business_date', '<', BusinessDay::today()->toDateString())->delete();
+
         $query = Order::with('discardedBy', 'items')
+            ->where('status', '!=', 'pending')
             ->orderBy('created_at', 'desc');
 
         if ($request->filled('search')) {
@@ -630,7 +880,7 @@ class PosController extends Controller
             });
         }
 
-        if ($request->filled('status')) {
+        if ($request->filled('status') && $request->input('status') !== 'pending') {
             $query->where('status', $request->input('status'));
         }
 
@@ -897,6 +1147,18 @@ class PosController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Enter the token number before completing the bill',
+            ], 422);
+        }
+
+        // Safety net: an offer's flavour picks are supposed to be complete the
+        // moment it's added to the bill (see addOffer()), so this should never
+        // actually trip — but block payment rather than silently selling a
+        // combo short a drink if a line is ever found incomplete.
+        $incompleteOffer = $this->firstIncompleteOfferLine($order);
+        if ($incompleteOffer) {
+            return response()->json([
+                'success' => false,
+                'message' => "Pick the required item(s) for \"{$incompleteOffer}\" before completing the bill",
             ], 422);
         }
 

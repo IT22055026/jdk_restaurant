@@ -1403,6 +1403,7 @@ class PosController extends Controller
             'success' => true,
             'order_number' => $order->order_number,
             'token_number' => $order->token_number,
+            'order_type' => $order->order_type ?? 'dine_in',
             'customer_name' => $order->customer_name,
             'date_time' => now()->format('M d, Y H:i'),
             'is_reprint' => true,

@@ -126,7 +126,7 @@
            A viewport-relative cap (rather than a fixed px guess) keeps this
            safe on short windows without being unnecessarily cramped on tall
            ones. */
-        #paymentBody { max-height: 26vh; overflow-y: auto; }
+        #paymentBody { max-height: 42vh; overflow-y: auto; }
 
         /* ── Modals ── */
         .modal-overlay {
@@ -545,13 +545,13 @@
         .cash-note-grid {
             display: flex;
             flex-wrap: wrap;
-            gap: 5px;
-            margin-top: 6px;
+            gap: 4px;
+            margin-top: 2px;
         }
         .cash-note-btn {
-            flex: 1 1 70px;
-            min-width: 62px;
-            padding: 6px 4px;
+            flex: 1 1 65px;
+            min-width: 56px;
+            padding: 5px 3px;
             border-radius: 8px;
             border: 1.5px solid #cbd5e1;
             background: #ffffff;
@@ -693,19 +693,12 @@
     ════════════════════════════════════════ -->
     <div class="bill-panel">
 
-        <!-- Zone 1: Header with Table Info -->
-        <div id="orderHeaderPanel" style="padding:12px 16px; border-bottom:1px solid #e2e8f0; flex-shrink:0; background:#fff;">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
-                <h3 style="font-size:17px; font-weight:800; color:#0f172a; margin:0;">
-                    <i class="fas fa-receipt" style="color:#2563eb; margin-right:6px;"></i>Order
-                </h3>
-                <button onclick="createNewOrder()" class="btn-primary" style="padding:9px 16px; font-size:12px; font-weight:700;">
-                    <i class="fas fa-plus" style="margin-right:6px;"></i>New Order
-                </button>
-            </div>
-            <div id="selectedTokenLabel" style="font-size:14px; font-weight:700; color:#64748b;">
-                <i class="fas fa-arrow-left" style="font-size:10px; margin-right:4px;"></i>Tap New Order to begin
-            </div>
+        <!-- Zone 1: Top Bar with New Order button (Order & Token title removed from UI) -->
+        <div id="orderHeaderPanel" style="padding:8px 16px; border-bottom:1px solid #e2e8f0; flex-shrink:0; background:#fff; display:flex; justify-content:flex-end; align-items:center;">
+            <button onclick="createNewOrder()" class="btn-primary" style="padding:8px 16px; font-size:12px; font-weight:700;">
+                <i class="fas fa-plus" style="margin-right:6px;"></i>New Order
+            </button>
+            <div id="selectedTokenLabel" style="display:none;"></div>
         </div>
 
         <!-- Zone 2: Expandable Customer Info -->
@@ -815,44 +808,44 @@
             <!-- Payment details (collapsible, hidden until items exist) -->
             <div id="paymentSection" style="display:none;">
                 <div id="paymentBody" style="display:none; padding-top:8px; margin-top:2px; border-top:1px solid #e2e8f0;">
-                <div style="display:flex; gap:5px; margin-bottom:5px;">
-                    <button class="pay-method-btn active" data-method="cash" onclick="selectPaymentMethod('cash')" style="flex:1; padding:10px 6px; font-size:12px;">
-                        <i class="fas fa-money-bill-wave" style="display:block; font-size:16px; margin-bottom:3px;"></i>Cash
+                <div style="display:flex; gap:4px; margin-bottom:4px;">
+                    <button class="pay-method-btn active" data-method="cash" onclick="selectPaymentMethod('cash')" style="flex:1; padding:6px 4px; font-size:11px;">
+                        <i class="fas fa-money-bill-wave" style="display:block; font-size:13px; margin-bottom:2px;"></i>Cash
                     </button>
-                    <button class="pay-method-btn" data-method="card" onclick="selectPaymentMethod('card')" style="flex:1; padding:10px 6px; font-size:12px;">
-                        <i class="fas fa-credit-card" style="display:block; font-size:16px; margin-bottom:3px;"></i>Card
+                    <button class="pay-method-btn" data-method="card" onclick="selectPaymentMethod('card')" style="flex:1; padding:6px 4px; font-size:11px;">
+                        <i class="fas fa-credit-card" style="display:block; font-size:13px; margin-bottom:2px;"></i>Card
                     </button>
-                    <button class="pay-method-btn" data-method="bank_transfer" onclick="selectPaymentMethod('bank_transfer')" style="flex:1; padding:10px 6px; font-size:12px;">
-                        <i class="fas fa-university" style="display:block; font-size:16px; margin-bottom:3px;"></i>Bank
+                    <button class="pay-method-btn" data-method="bank_transfer" onclick="selectPaymentMethod('bank_transfer')" style="flex:1; padding:6px 4px; font-size:11px;">
+                        <i class="fas fa-university" style="display:block; font-size:13px; margin-bottom:2px;"></i>Bank
                     </button>
                 </div>
-                <div style="display:flex; gap:5px; margin-bottom:8px;">
-                    <button class="pay-method-btn" data-method="pickme" onclick="selectPaymentMethod('pickme')" style="flex:1; padding:10px 6px; font-size:12px;">
-                        <i class="fas fa-taxi" style="display:block; font-size:16px; margin-bottom:3px;"></i>PickMe
+                <div style="display:flex; gap:4px; margin-bottom:6px;">
+                    <button class="pay-method-btn" data-method="pickme" onclick="selectPaymentMethod('pickme')" style="flex:1; padding:6px 4px; font-size:11px;">
+                        <i class="fas fa-taxi" style="display:block; font-size:13px; margin-bottom:2px;"></i>PickMe
                     </button>
-                    <button class="pay-method-btn" data-method="uber" onclick="selectPaymentMethod('uber')" style="flex:1; padding:10px 6px; font-size:12px;">
-                        <i class="fab fa-uber" style="display:block; font-size:16px; margin-bottom:3px;"></i>Uber
+                    <button class="pay-method-btn" data-method="uber" onclick="selectPaymentMethod('uber')" style="flex:1; padding:6px 4px; font-size:11px;">
+                        <i class="fab fa-uber" style="display:block; font-size:13px; margin-bottom:2px;"></i>Uber
                     </button>
-                    <button class="pay-method-btn" data-method="split" onclick="selectPaymentMethod('split')" style="flex:1; padding:10px 6px; font-size:12px;">
-                        <i class="fas fa-code-branch" style="display:block; font-size:16px; margin-bottom:3px;"></i>Split
+                    <button class="pay-method-btn" data-method="split" onclick="selectPaymentMethod('split')" style="flex:1; padding:6px 4px; font-size:11px;">
+                        <i class="fas fa-code-branch" style="display:block; font-size:13px; margin-bottom:2px;"></i>Split
                     </button>
                 </div>
                 <!-- Cash amount input & Denomination Notes -->
-                <div id="cashSection" style="display:flex; flex-direction:column; gap:8px;">
+                <div id="cashSection" style="display:flex; flex-direction:column; gap:5px;">
                     <div style="display:flex; gap:6px;">
                         <div style="flex:1;">
-                            <label style="font-size:10px; font-weight:600; color:#64748b; display:block; margin-bottom:3px;">Paid (Rs.)</label>
+                            <label style="font-size:10px; font-weight:600; color:#64748b; display:block; margin-bottom:2px;">Paid (Rs.)</label>
                             <input type="number" id="amountPaid" placeholder="0.00" min="0" oninput="updateChange()"
-                                   style="width:100%; font-size:14px; font-weight:700; border:1px solid #e2e8f0; border-radius:6px; padding:8px 10px; outline:none;"
+                                   style="width:100%; font-size:13px; font-weight:700; border:1px solid #e2e8f0; border-radius:6px; padding:6px 8px; outline:none;"
                                    onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
                         </div>
                         <div style="flex:1;">
-                            <label id="changeLabel" style="font-size:10px; font-weight:600; color:#64748b; display:block; margin-bottom:3px;">Change</label>
-                            <div id="changeDisplay" style="font-size:14px; font-weight:700; color:#16a34a; padding:8px 10px; background:#f0fdf4; border-radius:6px; border:1px solid #bbf7d0; text-align:center;">Rs. 0.00</div>
+                            <label id="changeLabel" style="font-size:10px; font-weight:600; color:#64748b; display:block; margin-bottom:2px;">Change</label>
+                            <div id="changeDisplay" style="font-size:13px; font-weight:700; color:#16a34a; padding:6px 8px; background:#f0fdf4; border-radius:6px; border:1px solid #bbf7d0; text-align:center;">Rs. 0.00</div>
                         </div>
                     </div>
                     <!-- Quick Cash Banknotes (Rs. 5000, 2000, 1000, 500, 100, 50, 20 + Exact & Clear) -->
-                    <div style="display:flex; flex-direction:column; gap:4px;">
+                    <div style="display:flex; flex-direction:column; gap:2px;">
                         <div style="font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:#94a3b8; display:flex; justify-content:space-between; align-items:center;">
                             <span><i class="fas fa-money-bill-wave" style="margin-right:4px; color:#16a34a;"></i>Cash Notes</span>
                         </div>
@@ -1093,6 +1086,78 @@
         }
         localStorage.setItem('pos_pinned_products', JSON.stringify(Array.from(pinnedProductIds)));
         renderProducts();
+    }
+
+    function handleProductImgError(imgEl, name, catName) {
+        if (!imgEl || !imgEl.parentNode) return;
+        const parent = imgEl.parentNode;
+        parent.style.background = getProductDefaultIconBg(name, catName);
+        parent.style.borderColor = getProductDefaultIconBorder(name, catName);
+        parent.innerHTML = getProductDefaultIconInnerHtml(name, catName);
+    }
+
+    function getProductDefaultIconBg(name, categoryName) {
+        const str = ((name || '') + ' ' + (categoryName || '')).toLowerCase();
+        if (str.match(/\b(coffee|tea|latte|cappuccino|espresso|hot chocolate|mocha)\b/)) return '#fff7ed';
+        if (str.match(/\b(coca|coke|pepsi|sprite|fanta|drink|beverage|juice|water|soda|shake|smoothie|mojito|cocktail|beer|wine|7up|mirinda|red bull|breeze)\b/)) return '#e0f2fe';
+        if (str.match(/\b(burger|cheeseburger|slider|sandwich)\b/)) return '#fef3c7';
+        if (str.match(/\b(pizza|slice)\b/)) return '#ffedd5';
+        if (str.match(/\b(chicken|bbq|meat|beef|pork|lamb|steak|wings|grill)\b/)) return '#ffedd5';
+        if (str.match(/\b(rice|biryani|noodle|pasta|ramen|spaghetti|kottu|curry|parata|roti|naan|bread)\b/)) return '#fefce8';
+        if (str.match(/\b(ice cream|cake|dessert|pudding|pastry|sweet|waffle|donut|pie)\b/)) return '#fce7f3';
+        if (str.match(/\b(salad|mayo|mayonnaise|sauce|extra|side|veg|vegetable)\b/)) return '#f0fdf4';
+        return '#eff6ff';
+    }
+
+    function getProductDefaultIconBorder(name, categoryName) {
+        const str = ((name || '') + ' ' + (categoryName || '')).toLowerCase();
+        if (str.match(/\b(coffee|tea|latte|cappuccino|espresso|hot chocolate|mocha)\b/)) return '#fed7aa';
+        if (str.match(/\b(coca|coke|pepsi|sprite|fanta|drink|beverage|juice|water|soda|shake|smoothie|mojito|cocktail|beer|wine|7up|mirinda|red bull|breeze)\b/)) return '#bae6fd';
+        if (str.match(/\b(burger|cheeseburger|slider|sandwich)\b/)) return '#fde68a';
+        if (str.match(/\b(pizza|slice)\b/)) return '#fed7aa';
+        if (str.match(/\b(chicken|bbq|meat|beef|pork|lamb|steak|wings|grill)\b/)) return '#fdba74';
+        if (str.match(/\b(rice|biryani|noodle|pasta|ramen|spaghetti|kottu|curry|parata|roti|naan|bread)\b/)) return '#fef08a';
+        if (str.match(/\b(ice cream|cake|dessert|pudding|pastry|sweet|waffle|donut|pie)\b/)) return '#fbcfe8';
+        if (str.match(/\b(salad|mayo|mayonnaise|sauce|extra|side|veg|vegetable)\b/)) return '#bbf7d0';
+        return '#bfdbfe';
+    }
+
+    function getProductDefaultIconInnerHtml(name, categoryName) {
+        const str = ((name || '') + ' ' + (categoryName || '')).toLowerCase();
+        if (str.match(/\b(coffee|tea|latte|cappuccino|espresso|hot chocolate|mocha)\b/)) {
+            return '<i class="fas fa-mug-hot" style="font-size:18px; color:#c2410c;"></i>';
+        }
+        if (str.match(/\b(coca|coke|pepsi|sprite|fanta|drink|beverage|juice|water|soda|shake|smoothie|mojito|cocktail|beer|wine|7up|mirinda|red bull|breeze)\b/)) {
+            return '<i class="fas fa-glass-water" style="font-size:18px; color:#0284c7;"></i>';
+        }
+        if (str.match(/\b(burger|cheeseburger|slider|sandwich)\b/)) {
+            return '<i class="fas fa-burger" style="font-size:18px; color:#d97706;"></i>';
+        }
+        if (str.match(/\b(pizza|slice)\b/)) {
+            return '<i class="fas fa-pizza-slice" style="font-size:18px; color:#ea580c;"></i>';
+        }
+        if (str.match(/\b(chicken|bbq|meat|beef|pork|lamb|steak|wings|grill)\b/)) {
+            return '<i class="fas fa-drumstick-bite" style="font-size:18px; color:#c2410c;"></i>';
+        }
+        if (str.match(/\b(rice|biryani|noodle|pasta|ramen|spaghetti|kottu|curry|parata|roti|naan|bread)\b/)) {
+            return '<i class="fas fa-bowl-rice" style="font-size:18px; color:#ca8a04;"></i>';
+        }
+        if (str.match(/\b(ice cream|cake|dessert|pudding|pastry|sweet|waffle|donut|pie)\b/)) {
+            return '<i class="fas fa-ice-cream" style="font-size:18px; color:#db2777;"></i>';
+        }
+        if (str.match(/\b(salad|mayo|mayonnaise|sauce|extra|side|veg|vegetable)\b/)) {
+            return '<i class="fas fa-leaf" style="font-size:18px; color:#16a34a;"></i>';
+        }
+        return '<i class="fas fa-utensils" style="font-size:18px; color:#2563eb;"></i>';
+    }
+
+    function getProductDefaultIconHtml(name, categoryName) {
+        const bg = getProductDefaultIconBg(name, categoryName);
+        const border = getProductDefaultIconBorder(name, categoryName);
+        const inner = getProductDefaultIconInnerHtml(name, categoryName);
+        return '<div style="width:42px; height:42px; border-radius:8px; overflow:hidden; flex-shrink:0; background:' + bg + '; border:1px solid ' + border + '; display:flex; align-items:center; justify-content:center;">'
+            + inner
+            + '</div>';
     }
 
     // Recipe-tracked products (e.g. two combos that both use the same Paratha Roti)
@@ -2271,10 +2336,9 @@
             billEl.innerHTML =
                 '<p style="text-align:center; color:#94a3b8; font-size:13px; padding:32px 0;"><i class="fas fa-plus-circle" style="display:block; font-size:24px; margin-bottom:8px;"></i>No items yet — tap a product</p>';
         } else {
-            billEl.style.display = 'grid';
-            billEl.style.gridTemplateColumns = 'repeat(2, 1fr)';
+            billEl.style.display = 'flex';
+            billEl.style.flexDirection = 'column';
             billEl.style.gap = '8px';
-            billEl.style.alignItems = 'start';
             billEl.innerHTML = currentOrder.items.map(function(item, idx) {
                 const discPercent   = item.discount_percent || 0;
                 const isFreeItem    = discPercent >= 100;
@@ -2308,7 +2372,7 @@
                     : '<button type="button" class="qty-btn" style="opacity:0.4;" disabled>+</button>';
 
                 const stockLeft = itemAvailStock !== null
-                    ? '<div style="font-size:9px; color:' + (itemAvailStock < 0 ? '#ef4444' : '#94a3b8') + '; text-align:center; margin-top:2px;">' + itemAvailStock + ' left</div>'
+                    ? '<span style="font-size:10px; color:' + (itemAvailStock < 0 ? '#ef4444' : '#94a3b8') + '; margin-left:4px;">(' + itemAvailStock + ' left)</span>'
                     : '';
 
                 const noteHtml = item.kitchen_notes
@@ -2316,7 +2380,7 @@
                     : '';
 
                 const removeBtn = item.id
-                    ? '<button type="button" data-role="remove" onclick="removeItem(' + item.id + ')" title="Remove" style="font-size:11px; color:#ef4444; background:none; border:none; cursor:pointer; padding:2px 3px; line-height:1;"><i class="fas fa-trash"></i></button>'
+                    ? '<button type="button" data-role="remove" onclick="removeItem(' + item.id + ')" title="Remove" style="font-size:12px; color:#ef4444; background:none; border:none; cursor:pointer; padding:3px 5px; line-height:1;"><i class="fas fa-trash"></i></button>'
                     : '';
 
                 // Discount toggle button (green when free, amber when partially discounted, grey when not)
@@ -2327,7 +2391,7 @@
                         : 'background:#f1f5f9; color:#64748b; border:1px solid #e2e8f0;');
                 const discBtn = item.id
                     ? '<button type="button" data-role="disc" onclick="toggleDiscountRow(' + item.id + ')" title="Discount" '
-                      + 'style="font-size:9px; ' + discBtnStyle + ' border-radius:5px; padding:2px 6px; cursor:pointer; font-weight:700; line-height:1.3;">% off</button>'
+                      + 'style="font-size:10px; ' + discBtnStyle + ' border-radius:5px; padding:3px 7px; cursor:pointer; font-weight:700; line-height:1.3;">% off</button>'
                     : '';
 
                 // Inline discount input row (only when open)
@@ -2346,68 +2410,65 @@
                       + '</div>'
                     : '';
 
-                let itemImage = item.image;
-                if (!itemImage) {
-                    if (item.product_id) {
-                        const p = allProducts.find(function(x) { return x.id === item.product_id; });
-                        if (p && p.image) {
-                            itemImage = p.image;
-                            item.image = p.image;
-                        }
+                // Resolve product/ingredient/offer thumbnail image or contextual fallback icon
+                const prodObj = item.product_id ? allProducts.find(function(p) { return p.id === item.product_id; }) : null;
+                const catObj = prodObj && prodObj.category_id ? allCategories.find(function(c) { return c.id === prodObj.category_id; }) : null;
+                const categoryName = catObj ? catObj.name : '';
+
+                let rawImg = item.image;
+                if (!rawImg) {
+                    if (prodObj && prodObj.image) {
+                        rawImg = prodObj.image;
                     } else if (item.ingredient_id) {
                         const ing = allIngredients.find(function(x) { return x.id === item.ingredient_id; });
-                        if (ing && ing.image) {
-                            itemImage = ing.image;
-                            item.image = ing.image;
-                        }
+                        if (ing && ing.image) rawImg = ing.image;
                     } else if (item.offer_id) {
                         const off = allOffers.find(function(x) { return x.id === item.offer_id; });
-                        if (off && off.image) {
-                            itemImage = off.image;
-                            item.image = off.image;
-                        }
+                        if (off && off.image) rawImg = off.image;
                     }
+                    if (rawImg) item.image = rawImg;
                 }
 
                 let thumbHtml = '';
-                if (itemImage) {
-                    const src = (itemImage.startsWith('http://') || itemImage.startsWith('https://') || itemImage.startsWith('/'))
-                        ? itemImage
-                        : '/storage/' + itemImage;
-                    thumbHtml = '<div style="width:42px; height:42px; border-radius:8px; overflow:hidden; flex-shrink:0; background:#f1f5f9; display:flex; align-items:center; justify-content:center;">'
-                        + '<img src="' + src + '" alt="' + escapeHtml(item.product_name) + '" style="width:100%; height:100%; object-fit:cover;" onerror="this.parentElement.innerHTML=\'<i class=\\\'fas fa-utensils\\\' style=\\\'font-size:13px;color:#94a3b8;\\\'></i>\';">'
+                if (rawImg) {
+                    let fullSrc = rawImg;
+                    if (!fullSrc.startsWith('http://') && !fullSrc.startsWith('https://') && !fullSrc.startsWith('data:') && !fullSrc.startsWith('/')) {
+                        fullSrc = '/storage/' + fullSrc;
+                    }
+                    thumbHtml = '<div style="width:42px; height:42px; border-radius:8px; overflow:hidden; flex-shrink:0; background:#f1f5f9; border:1px solid #e2e8f0; display:flex; align-items:center; justify-content:center;">'
+                        + '<img src="' + fullSrc + '" alt="' + escapeHtml(item.product_name) + '" style="width:100%; height:100%; object-fit:cover;" onerror="handleProductImgError(this, \'' + escapeJs(item.product_name) + '\', \'' + escapeJs(categoryName) + '\')">'
                         + '</div>';
                 } else {
-                    thumbHtml = '<div style="width:42px; height:42px; border-radius:8px; flex-shrink:0; background:#f1f5f9; display:flex; align-items:center; justify-content:center;">'
-                        + '<i class="fas fa-utensils" style="font-size:13px; color:#94a3b8;"></i>'
-                        + '</div>';
+                    thumbHtml = getProductDefaultIconHtml(item.product_name, categoryName);
                 }
 
-                return '<div class="bill-item-card" data-item-id="' + (item.id || ('tmp-' + idx)) + '" style="background:#fff; border:1px solid #eef2f7; border-radius:10px; padding:8px;">'
-                    // Header: thumb + name
-                    + '<div style="display:flex; align-items:center; gap:8px;">'
+                return '<div class="bill-item-card" data-item-id="' + (item.id || ('tmp-' + idx)) + '" style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; transition:all 0.15s ease;">'
+                    // Top row: Product info + price
+                    + '<div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">'
+                    + '<div style="display:flex; align-items:center; gap:8px; flex:1; min-width:0;">'
                     + thumbHtml
                     + '<div style="flex:1; min-width:0;">'
-                    + '<div style="display:flex; align-items:center; gap:4px; overflow:hidden;">'
+                    + '<div style="display:flex; align-items:center; gap:6px; overflow:hidden;">'
                     + '<p style="font-size:15px; font-weight:700; color:#0f172a; margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(item.product_name) + '</p>'
                     + discBadge
                     + '</div>'
                     + noteHtml
                     + '</div>'
                     + '</div>'
-                    // Bottom: qty controls + price/actions
-                    + '<div style="display:flex; align-items:flex-end; justify-content:space-between; gap:6px; margin-top:7px;">'
-                    + '<div style="display:flex; flex-direction:column; align-items:flex-start; flex-shrink:0;">'
-                    + '<div style="display:flex; align-items:center; gap:4px;">'
-                    + decBtn + qtyControl + incBtn
-                    + '</div>'
-                    + stockLeft
-                    + '</div>'
-                    + '<div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; min-width:0;">'
+                    + '<div style="text-align:right; flex-shrink:0;">'
                     + (isFreeItem
                         ? '<p style="font-size:15px; font-weight:800; margin:0; white-space:nowrap;"><span style="text-decoration:line-through; color:#94a3b8; font-size:11px; font-weight:600; margin-right:4px;">Rs. ' + (item.unit_price * item.quantity).toFixed(2) + '</span><span style="color:#16a34a;">FREE</span></p>'
                         : '<p style="font-size:15px; font-weight:800; color:#0f172a; margin:0; white-space:nowrap;">Rs. ' + item.subtotal.toFixed(2) + '</p>')
-                    + '<div style="display:flex; align-items:center; gap:6px;">' + discBtn + removeBtn + '</div>'
+                    + '</div>'
+                    + '</div>'
+                    // Bottom row: Quantity controls (left) + Action buttons (right)
+                    + '<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:8px; padding-top:6px; border-top:1px dashed #f1f5f9;">'
+                    + '<div style="display:flex; align-items:center; gap:6px;">'
+                    + decBtn + qtyControl + incBtn
+                    + stockLeft
+                    + '</div>'
+                    + '<div style="display:flex; align-items:center; gap:8px;">'
+                    + discBtn + removeBtn
                     + '</div>'
                     + '</div>'
                     // Discount input row (toggleable)
@@ -2864,6 +2925,7 @@
                 token_number: d.token_number,
                 order_number: d.order_number,
                 payment_method: d.payment_method,
+                order_type: d.order_type || (currentOrder ? currentOrder.order_type : 'dine_in'),
                 items: d.kot_items,
             }));
         }
@@ -2880,15 +2942,13 @@
     function buildTokenHtml(data) {
         const deliveryLabels = { pickme: 'PICKME DELIVERY', uber: 'UBER DELIVERY' };
         const specialLabel = !data.token_number ? (deliveryLabels[data.payment_method] || 'NO TOKEN') : null;
+        const orderTypeStr = (data.order_type === 'takeaway') ? 'TAKEAWAY' : 'DINE IN';
 
         return '<div style="text-align:center;">'
-            // + '<img src="/images/KDJ_logo.png" style="max-width:70px; max-height:70px; margin-bottom:4px; display:inline-block;" />'
             + '</div>'
-            // Show special label (delivery/no-token) at top only when there is no token number
-            // + (specialLabel ? '<div style="text-align:center; font-weight:900; font-size:20px; border-bottom:2px solid #000; padding-bottom:8px; margin-bottom:10px; color:#000;">' + specialLabel + '</div>' : '')
             + '<div style="font-size:13px; font-weight:800; color:#000;">Order: ' + data.order_number + '</div>'
             + '<div style="font-size:10px; color:#000; margin-bottom:6px;">' + new Date().toLocaleString() + '</div>'
-            + (data.order_type ? '<div style="font-size:11px; font-weight:700; color:#000; letter-spacing:1px; margin-bottom:10px; border:1px solid #000; display:inline-block; padding:2px 8px; border-radius:4px;">' + (data.order_type === 'takeaway' ? 'TAKEAWAY' : 'DINE IN') + '</div>' : '')
+            + '<div style="text-align:center; margin-bottom:10px;"><span style="font-size:14px; font-weight:900; color:#000; letter-spacing:1.5px; border:2px solid #000; display:inline-block; padding:3px 12px; border-radius:6px; text-transform:uppercase;">' + orderTypeStr + '</span></div>'
             + '<div style="border-top:1px solid #000; padding-top:10px;">'
             + data.items.map(function(i) {
                 return '<div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700; margin:8px 0; border-bottom:1px dashed #000; padding-bottom:6px; color:#000;">'

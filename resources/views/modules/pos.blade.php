@@ -287,8 +287,9 @@
             z-index: 99999;
             display: flex;
             align-items: center;
-            justify-content: center;
-            padding: 16px;
+            /* Pop up on the right side of the screen instead of dead-center */
+            justify-content: flex-end;
+            padding: 16px 24px;
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.2s ease, visibility 0.2s ease;
@@ -303,13 +304,14 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
             width: 100%;
             max-width: 440px;
-            overflow: hidden;
-            transform: scale(0.95);
+            max-height: calc(100vh - 32px);
+            overflow-y: auto;
+            transform: translateX(24px) scale(0.97);
             transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
             border: 1px solid #e2e8f0;
         }
         .token-modal-overlay.active .token-modal-card {
-            transform: scale(1);
+            transform: translateX(0) scale(1);
         }
         .token-modal-header {
             padding: 18px 20px;
@@ -775,12 +777,12 @@
                     </span>
                 </button>
                 <!-- Segmented buttons for dining or takeaway options + physical token number (Single-line layout) -->
-                <div style="grid-column: 1 / -1; display:flex; align-items:center; justify-content:space-between; gap:12px; padding-top:6px; margin-top:4px; border-top:1px solid #f1f5f9; flex-wrap:nowrap;">
+                <div style="grid-column: 1 / -1; display:flex; align-items:center; justify-content:flex-start; gap:20px; padding-top:6px; margin-top:4px; border-top:1px solid #f1f5f9; flex-wrap:nowrap;">
                     <!-- Order Type Option -->
-                    <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:0;">
+                    <div style="display:flex; align-items:center; gap:8px; flex:0 0 auto;">
                         <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:#94a3b8; white-space:nowrap;">Order Type:</div>
                         <input type="hidden" id="orderType" value="dine_in">
-                        <div class="order-type-segmented" style="flex:1; max-width:240px;">
+                        <div class="order-type-segmented" style="max-width:240px;">
                             <button type="button" class="order-type-btn active" data-type="dine_in" onclick="selectOrderType('dine_in')">
                                 <i class="fas fa-utensils" style="font-size:12px; margin-right:5px;"></i>Dine In
                             </button>
@@ -790,7 +792,7 @@
                         </div>
                     </div>
 
-                    <!-- Token Number Option (On the same line as Order Type) -->
+                    <!-- Token Number Option (Right next to Order Type, on the same line) -->
                     <div id="tokenNumberRow" style="display:none; align-items:center; gap:8px; flex-shrink:0;">
                         <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:#ea580c; white-space:nowrap;">
                             <i class="fas fa-ticket" style="margin-right:4px;"></i>Token #:
@@ -884,7 +886,7 @@
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:10px;">
                         <div>
                             <label for="splitMethod2" style="font-size:12px; font-weight:600; color:#64748b; display:block; margin-bottom:4px;">Method 2</label>
-                            <select id="splitMethod2" onchange="updateSplitTotal()" style="width:100%; font-size:14px; border:1.5px solid #e2e8f0; border-radius:8px; padding:9px 10px; outline:none;">
+                            <select id="splitMethod2" onchange="onSplitMethod2Change()" style="width:100%; font-size:14px; border:1.5px solid #e2e8f0; border-radius:8px; padding:9px 10px; outline:none;">
                                 <option value="">-- Select --</option>
                                 <option value="cash">Cash</option>
                                 <option value="card">Card</option>
@@ -2639,6 +2641,22 @@
         const _paySummary = document.getElementById('paymentMethodSummary');
         if (_paySummary) _paySummary.textContent = (_payLabels[method] || method);
         ensureRovingDefault(document.getElementById('bottomControlsPanel'), null, false);
+
+        // Auto-focus amount field when selecting a payment method requiring an amount
+        let targetInput = null;
+        if (method === 'cash') {
+            targetInput = document.getElementById('amountPaid');
+        } else if (method === 'split') {
+            targetInput = document.getElementById('splitAmount1');
+        }
+        if (targetInput) {
+            setTimeout(function() {
+                targetInput.focus();
+                if (typeof targetInput.select === 'function') {
+                    targetInput.select();
+                }
+            }, 0);
+        }
     }
 
     function updateSplitTotal() {
@@ -2646,6 +2664,20 @@
         const amount2 = parseFloat(document.getElementById('splitAmount2').value) || 0;
         const total = amount1 + amount2;
         document.getElementById('splitTotalDisplay').textContent = 'Rs. ' + total.toFixed(2);
+    }
+
+    function onSplitMethod2Change() {
+        updateSplitTotal();
+        const sel = document.getElementById('splitMethod2');
+        if (sel && sel.value) {
+            const input2 = document.getElementById('splitAmount2');
+            if (input2) {
+                setTimeout(function() {
+                    input2.focus();
+                    if (typeof input2.select === 'function') input2.select();
+                }, 0);
+            }
+        }
     }
 
     function calcDiscount(subtotal) {

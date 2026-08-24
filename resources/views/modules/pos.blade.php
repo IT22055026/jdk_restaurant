@@ -754,13 +754,13 @@
                     <div style="font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:#94a3b8; margin-bottom:3px;">Discount</div>
                     <div style="display:flex; gap:4px;">
                         <select id="discountType" onchange="recalcTotal()"
-                                style="flex:1; min-width:0; font-size:12px; border:1px solid #e2e8f0; border-radius:6px; padding:5px 6px; background:#f8fafc; outline:none; cursor:pointer;">
+                                style="flex:0 0 52px; min-width:0; font-size:12px; border:1px solid #e2e8f0; border-radius:6px; padding:5px 4px; background:#f8fafc; outline:none; cursor:pointer;">
                             <option value="">None</option>
                             <option value="percentage">%</option>
-                            <option value="fixed">Rs</option>
+                            <option value="fixed" selected>Rs</option>
                         </select>
                         <input type="number" id="discountValue" placeholder="0" min="0" oninput="recalcTotal()"
-                               style="width:48px; font-size:12px; border:1px solid #e2e8f0; border-radius:6px; padding:5px 6px; outline:none; background:#f8fafc;">
+                               style="flex:1; min-width:0; font-size:12px; border:1px solid #e2e8f0; border-radius:6px; padding:5px 6px; outline:none; background:#f8fafc;">
                     </div>
                 </div>
                 <!-- Total -->
@@ -823,10 +823,10 @@
                 </div>
                 <div style="display:flex; gap:4px; margin-bottom:6px;">
                     <button class="pay-method-btn" data-method="pickme" onclick="selectPaymentMethod('pickme')" style="flex:1; padding:6px 4px; font-size:11px;">
-                        <i class="fas fa-taxi" style="display:block; font-size:13px; margin-bottom:2px;"></i>PickMe
+                        <img src="/images/pickme.jpg" alt="PickMe" style="display:block; width:16px; height:16px; margin:0 auto 2px; border-radius:3px; object-fit:cover;">PickMe
                     </button>
                     <button class="pay-method-btn" data-method="uber" onclick="selectPaymentMethod('uber')" style="flex:1; padding:6px 4px; font-size:11px;">
-                        <i class="fab fa-uber" style="display:block; font-size:13px; margin-bottom:2px;"></i>Uber
+                        <img src="/images/uber.png" alt="Uber" style="display:block; width:16px; height:16px; margin:0 auto 2px; border-radius:3px; object-fit:cover;">Uber
                     </button>
                     <button class="pay-method-btn" data-method="split" onclick="selectPaymentMethod('split')" style="flex:1; padding:6px 4px; font-size:11px;">
                         <i class="fas fa-code-branch" style="display:block; font-size:13px; margin-bottom:2px;"></i>Split
@@ -934,7 +934,7 @@
             <h2 style="font-size:16px; font-weight:800; color:#0f172a; margin:0;"><i class="fas fa-receipt" style="color:#16a34a; margin-right:6px;"></i>Final Bill</h2>
             <button onclick="closeModal('finalBillModal')" style="background:none; border:none; font-size:22px; cursor:pointer; color:#94a3b8; line-height:1;">&times;</button>
         </div>
-        <div id="billContent" style="font-family:'Courier New',monospace; background:#fafafa; border-radius:8px; padding:16px; font-size:12px; border:1px solid #e2e8f0;"></div>
+        <div id="billContent" style="font-family:Arial,Helvetica,sans-serif; background:#fafafa; border-radius:8px; padding:16px; font-size:12px; border:1px solid #e2e8f0;"></div>
         <div style="display:flex; gap:10px; margin-top:16px;">
             <button onclick="closeModal('finalBillModal')" class="btn-secondary" style="flex:1;">Cancel</button>
             <button onclick="printBillContent()" data-primary="true" class="btn-primary" style="flex:1;"><i class="fas fa-print" style="margin-right:4px;"></i>Print</button>
@@ -2869,7 +2869,7 @@
         // ── Update these values to match your restaurant ──
         const rest = {
             name: "Cafe' Kdj - BBQ",
-            address: "Fusion Food Court\n#9, Galle Road, Dehiwala",
+            address: "Fusion Food Court, #9, Galle Road, Dehiwala",
             phone: "07777-04555"
         };
 
@@ -2896,7 +2896,7 @@
             // ── METADATA (two simple lines) ──
             + '<div style="font-size:11px; color:#000; margin-top:6px;">'
             + '<div>Order: ' + d.order_number + '</div>'
-            + '<div>Date: ' + dateStr + '</div>'
+            + '<div>' + dateStr + '</div>'
             + '</div>'
 
             // ── ITEMS TABLE ──
@@ -2933,25 +2933,26 @@
             + (d.token_number
                 ? '<div style="text-align:center; border-top:2px dashed #000; border-bottom:2px dashed #000; padding:8px 0; margin-top:8px;">'
                     + '<div style="font-size:11px; letter-spacing:3px; color:#000;">TOKEN NUMBER</div>'
-                    + '<div style="font-size:48px; font-weight:900; color:#000; line-height:1.2;">#' + String(d.token_number).padStart(2, '0') + '</div>'
+                    + '<div style="font-size:36px; font-weight:900; color:#000; line-height:1.2;">#' + String(d.token_number).padStart(2, '0') + '</div>'
                     + '</div>'
                 : '')
 
             // ── FOOTER ──
-            + '<div style="text-align:center; font-size:11px; margin-top:8px; color:#000; border-top:1px dashed #000; padding-top:6px;">'
+            + '<div style="text-align:center; font-size:11px; margin-top:8px; color:#000;">'
             + '<div style="font-size:11px; font-weight:bold; margin-bottom:4px;">Please drop a google review,cafe kdj</div>'
             + '<img src="' + qrImageSrc + '" onerror="this.src=\'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https%3A%2F%2Fwww.google.com%2Fmaps%2Fplace%2F%2Fdata%3D!4m3!3m2!1s0x3ae25b3ace14ea05%3A0x448c982eb6a931a0!12e1%3Fsource%3Dg.page.m.ia._%26utm_source%3Dgbp%26laa%3Dnmx-review-solicitation-ia2\'" style="width:110px; height:110px; margin:6px auto 4px auto; display:block;" alt="Google Review QR" />'
             + '</div>';
 
         currentBillContent = html;
 
-        // One "Pay" action produces two printouts: the KOT for the kitchen
-        // (only if there are actual kitchen items on this bill) and the bill
-        // for the customer. Both go through a single print job (one dialog,
-        // one click) with a page-break between them so the printer cuts
-        // between the two instead of stapling them into one receipt — see
-        // printReceipt() for how the page break is inserted.
-        const printJobs = [];
+        // One "Pay" action produces two printouts: the bill for the customer
+        // and the KOT for the kitchen (only if there are actual kitchen items
+        // on this bill) — the bill prints first, then the KOT. Both go through
+        // a single print job (one dialog, one click) with a page-break between
+        // them so the printer cuts between the two instead of stapling them
+        // into one receipt — see printReceipt() for how the page break is
+        // inserted.
+        const printJobs = [html];
         if (Array.isArray(d.kot_items) && d.kot_items.length > 0) {
             printJobs.push(buildTokenHtml({
                 token_number: d.token_number,
@@ -2961,7 +2962,6 @@
                 items: d.kot_items,
             }));
         }
-        printJobs.push(html);
         printReceipt(printJobs);
         resetOrder();
     }
@@ -2976,7 +2976,8 @@
         const specialLabel = !data.token_number ? (deliveryLabels[data.payment_method] || 'NO TOKEN') : null;
         const orderTypeStr = (data.order_type === 'takeaway') ? 'TAKEAWAY' : 'DINE IN';
 
-        return '<div style="text-align:center;">'
+        return '<div style="padding-top:2.2in;"></div>' // blank feed so the KOT has room to clear the bill above it and a kitchen clip can grip it without covering the order number
+            + '<div style="text-align:center;">'
             + '</div>'
             + '<div style="font-size:13px; font-weight:800; color:#000;">Order: ' + data.order_number + '</div>'
             + '<div style="font-size:10px; color:#000; margin-bottom:6px;">' + new Date().toLocaleString() + '</div>'
@@ -3182,7 +3183,7 @@
         if (_confirmLiveBtn) _confirmLiveBtn.style.display = 'none';
         document.getElementById('customerName').value   = '';
         document.getElementById('customerPhone').value  = '';
-        document.getElementById('discountType').value   = '';
+        document.getElementById('discountType').value   = 'fixed';
         document.getElementById('discountValue').value  = '';
         document.getElementById('amountPaid').value     = '';
         document.getElementById('changeDisplay').textContent  = 'Rs. 0.00';
@@ -3222,7 +3223,7 @@
             // on printers whose own driver reserves a sliver of its own.
             + '@page { size: 80mm auto; margin: 2mm 3mm; }'
             + '* { box-sizing: border-box; font-weight: bold !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }'
-            + 'body { font-family: \'Courier New\', monospace; width: 100%; margin: 0; padding: 0; font-size: 12px; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }'
+            + 'body { font-family: Arial, Helvetica, sans-serif; width: 100%; margin: 0; padding: 0; font-size: 12px; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }'
             + 'img { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }'
             + 'table { width: 100%; border-collapse: collapse; table-layout: fixed; }'
             + 'td, th { word-break: break-word; overflow-wrap: break-word; }'

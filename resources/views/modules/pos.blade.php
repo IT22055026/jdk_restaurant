@@ -43,6 +43,7 @@
             color: #94a3b8; display: flex; align-items: center; justify-content: center;
             font-size: 12px; cursor: pointer; transition: all 0.15s;
             box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+            pointer-events: auto; /* stay clickable even on a disabled (out-of-stock) card */
         }
         .pin-btn:hover { background: #eff6ff; color: #2563eb; border-color: #2563eb; transform: scale(1.1); }
         .pin-btn.pinned { background: #2563eb; color: #ffffff; border-color: #2563eb; box-shadow: 0 2px 8px rgba(37,99,235,0.35); }
@@ -754,13 +755,13 @@
                     <div style="font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:#94a3b8; margin-bottom:3px;">Discount</div>
                     <div style="display:flex; gap:4px;">
                         <select id="discountType" onchange="recalcTotal()"
-                                style="flex:1; min-width:0; font-size:12px; border:1px solid #e2e8f0; border-radius:6px; padding:5px 6px; background:#f8fafc; outline:none; cursor:pointer;">
+                                style="flex:0 0 52px; min-width:0; font-size:12px; border:1px solid #e2e8f0; border-radius:6px; padding:5px 4px; background:#f8fafc; outline:none; cursor:pointer;">
                             <option value="">None</option>
                             <option value="percentage">%</option>
-                            <option value="fixed">Rs</option>
+                            <option value="fixed" selected>Rs</option>
                         </select>
                         <input type="number" id="discountValue" placeholder="0" min="0" oninput="recalcTotal()"
-                               style="width:48px; font-size:12px; border:1px solid #e2e8f0; border-radius:6px; padding:5px 6px; outline:none; background:#f8fafc;">
+                               style="flex:1; min-width:0; font-size:12px; border:1px solid #e2e8f0; border-radius:6px; padding:5px 6px; outline:none; background:#f8fafc;">
                     </div>
                 </div>
                 <!-- Total -->
@@ -823,10 +824,10 @@
                 </div>
                 <div style="display:flex; gap:4px; margin-bottom:6px;">
                     <button class="pay-method-btn" data-method="pickme" onclick="selectPaymentMethod('pickme')" style="flex:1; padding:6px 4px; font-size:11px;">
-                        <i class="fas fa-taxi" style="display:block; font-size:13px; margin-bottom:2px;"></i>PickMe
+                        <img src="/images/pickme.jpg" alt="PickMe" style="display:block; width:16px; height:16px; margin:0 auto 2px; border-radius:3px; object-fit:cover;">PickMe
                     </button>
                     <button class="pay-method-btn" data-method="uber" onclick="selectPaymentMethod('uber')" style="flex:1; padding:6px 4px; font-size:11px;">
-                        <i class="fab fa-uber" style="display:block; font-size:13px; margin-bottom:2px;"></i>Uber
+                        <img src="/images/uber.png" alt="Uber" style="display:block; width:16px; height:16px; margin:0 auto 2px; border-radius:3px; object-fit:cover;">Uber
                     </button>
                     <button class="pay-method-btn" data-method="split" onclick="selectPaymentMethod('split')" style="flex:1; padding:6px 4px; font-size:11px;">
                         <i class="fas fa-code-branch" style="display:block; font-size:13px; margin-bottom:2px;"></i>Split
@@ -934,7 +935,7 @@
             <h2 style="font-size:16px; font-weight:800; color:#0f172a; margin:0;"><i class="fas fa-receipt" style="color:#16a34a; margin-right:6px;"></i>Final Bill</h2>
             <button onclick="closeModal('finalBillModal')" style="background:none; border:none; font-size:22px; cursor:pointer; color:#94a3b8; line-height:1;">&times;</button>
         </div>
-        <div id="billContent" style="font-family:'Courier New',monospace; background:#fafafa; border-radius:8px; padding:16px; font-size:12px; border:1px solid #e2e8f0;"></div>
+        <div id="billContent" style="font-family:Arial,Helvetica,sans-serif; background:#fafafa; border-radius:8px; padding:16px; font-size:12px; border:1px solid #e2e8f0;"></div>
         <div style="display:flex; gap:10px; margin-top:16px;">
             <button onclick="closeModal('finalBillModal')" class="btn-secondary" style="flex:1;">Cancel</button>
             <button onclick="printBillContent()" data-primary="true" class="btn-primary" style="flex:1;"><i class="fas fa-print" style="margin-right:4px;"></i>Print</button>
@@ -1088,6 +1089,27 @@
         }
         localStorage.setItem('pos_pinned_products', JSON.stringify(Array.from(pinnedProductIds)));
         renderProducts();
+    }
+
+    // Pinned "Include Items" (raw/included ingredients), saved separately
+    // from pinned products so the two lists don't collide.
+    let pinnedIngredientIds = new Set(JSON.parse(localStorage.getItem('pos_pinned_ingredients') || '[]'));
+
+    function togglePinIngredient(ingredientId, event) {
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+        const numericId = Number(ingredientId);
+        if (pinnedIngredientIds.has(numericId)) {
+            pinnedIngredientIds.delete(numericId);
+            toast('Item unpinned', 'info');
+        } else {
+            pinnedIngredientIds.add(numericId);
+            toast('Item pinned to top', 'success');
+        }
+        localStorage.setItem('pos_pinned_ingredients', JSON.stringify(Array.from(pinnedIngredientIds)));
+        renderIncludeItems();
     }
 
     function handleProductImgError(imgEl, name, catName) {
@@ -1619,7 +1641,16 @@
             restoreGridFocus(container, captured);
             return;
         }
-        container.innerHTML = allIngredients.map(function(i) {
+        // Sort included items so pinned ones appear first at the top of the grid
+        const sortedIngredients = [...allIngredients].sort((a, b) => {
+            const aPinned = pinnedIngredientIds.has(Number(a.id));
+            const bPinned = pinnedIngredientIds.has(Number(b.id));
+            if (aPinned && !bPinned) return -1;
+            if (!aPinned && bPinned) return 1;
+            return 0;
+        });
+
+        container.innerHTML = sortedIngredients.map(function(i) {
             const hasPrice = i.selling_price !== null && i.selling_price > 0;
             const outOfStock = i.quantity <= 0;
             const disabled = !hasPrice || outOfStock;
@@ -1630,8 +1661,20 @@
                 ? '<p style="font-size:10px; color:#ef4444; margin:2px 0 0; font-weight:700;">Out of Stock</p>'
                 : '<p style="font-size:10px; color:#64748b; margin:2px 0 0;">' + i.quantity.toFixed(2) + ' ' + escapeHtml(i.unit) + ' left</p>';
             const cardExtra = disabled
-                ? 'tabindex="-1" aria-disabled="true" style="opacity:0.5; cursor:not-allowed; pointer-events:none;"'
+                ? 'tabindex="-1" aria-disabled="true" style="opacity:0.5; cursor:not-allowed;"'
                 : 'tabindex="-1" role="button" aria-label="Add ' + escapeHtml(i.name) + '" onclick="openIncludeItemModal(' + i.id + ', \'' + escapeJs(i.name) + '\', \'' + escapeJs(i.unit) + '\', ' + i.selling_price + ', ' + i.quantity + ')"';
+
+            const isPinned = pinnedIngredientIds.has(Number(i.id));
+            const pinBtnHtml = '<button type="button" class="pin-btn ' + (isPinned ? 'pinned' : '') + '" '
+                + 'onclick="togglePinIngredient(' + i.id + ', event)" '
+                + 'title="' + (isPinned ? 'Unpin item' : 'Pin to top') + '" '
+                + 'aria-label="' + (isPinned ? 'Unpin ' : 'Pin ') + escapeHtml(i.name) + '">'
+                + '<i class="fas fa-thumbtack"></i>'
+                + '</button>';
+
+            const pinnedBadge = isPinned
+                ? '<span style="position:absolute; top:8px; left:8px; z-index:4; background:#2563eb; color:#fff; font-size:9px; font-weight:800; padding:2px 6px; border-radius:4px; text-transform:uppercase; letter-spacing:0.04em;"><i class="fas fa-thumbtack" style="margin-right:3px; font-size:8px;"></i>Pinned</span>'
+                : '';
 
             let imageHtml = '';
             if (i.image) {
@@ -1644,7 +1687,9 @@
             }
 
             return '<div class="product-card" data-ingredient-id="' + i.id + '" ' + cardExtra + '>'
-                + '<div style="height:130px; background:linear-gradient(135deg,#eff6ff,#dbeafe); border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; overflow:hidden;">'
+                + pinBtnHtml
+                + '<div style="height:130px; background:linear-gradient(135deg,#eff6ff,#dbeafe); border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; overflow:hidden; position:relative;">'
+                + pinnedBadge
                 + imageHtml
                 + '</div>'
                 + '<p style="font-size:14px; font-weight:700; color:#0f172a; margin:0 0 5px; line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">' + escapeHtml(i.name) + '</p>'
@@ -2869,7 +2914,7 @@
         // ── Update these values to match your restaurant ──
         const rest = {
             name: "Cafe' Kdj - BBQ",
-            address: "Fusion Food Court\n#9, Galle Road, Dehiwala",
+            address: "Fusion Food Court, #9, Galle Road, Dehiwala",
             phone: "07777-04555"
         };
 
@@ -2896,7 +2941,7 @@
             // ── METADATA (two simple lines) ──
             + '<div style="font-size:11px; color:#000; margin-top:6px;">'
             + '<div>Order: ' + d.order_number + '</div>'
-            + '<div>Date: ' + dateStr + '</div>'
+            + '<div>' + dateStr + '</div>'
             + '</div>'
 
             // ── ITEMS TABLE ──
@@ -2933,25 +2978,26 @@
             + (d.token_number
                 ? '<div style="text-align:center; border-top:2px dashed #000; border-bottom:2px dashed #000; padding:8px 0; margin-top:8px;">'
                     + '<div style="font-size:11px; letter-spacing:3px; color:#000;">TOKEN NUMBER</div>'
-                    + '<div style="font-size:48px; font-weight:900; color:#000; line-height:1.2;">#' + String(d.token_number).padStart(2, '0') + '</div>'
+                    + '<div style="font-size:36px; font-weight:900; color:#000; line-height:1.2;">#' + String(d.token_number).padStart(2, '0') + '</div>'
                     + '</div>'
                 : '')
 
             // ── FOOTER ──
-            + '<div style="text-align:center; font-size:11px; margin-top:8px; color:#000; border-top:1px dashed #000; padding-top:6px;">'
+            + '<div style="text-align:center; font-size:11px; margin-top:8px; color:#000;">'
             + '<div style="font-size:11px; font-weight:bold; margin-bottom:4px;">Please drop a google review,cafe kdj</div>'
             + '<img src="' + qrImageSrc + '" onerror="this.src=\'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https%3A%2F%2Fwww.google.com%2Fmaps%2Fplace%2F%2Fdata%3D!4m3!3m2!1s0x3ae25b3ace14ea05%3A0x448c982eb6a931a0!12e1%3Fsource%3Dg.page.m.ia._%26utm_source%3Dgbp%26laa%3Dnmx-review-solicitation-ia2\'" style="width:110px; height:110px; margin:6px auto 4px auto; display:block;" alt="Google Review QR" />'
             + '</div>';
 
         currentBillContent = html;
 
-        // One "Pay" action produces two printouts: the KOT for the kitchen
-        // (only if there are actual kitchen items on this bill) and the bill
-        // for the customer. Both go through a single print job (one dialog,
-        // one click) with a page-break between them so the printer cuts
-        // between the two instead of stapling them into one receipt — see
-        // printReceipt() for how the page break is inserted.
-        const printJobs = [];
+        // One "Pay" action produces two printouts: the bill for the customer
+        // and the KOT for the kitchen (only if there are actual kitchen items
+        // on this bill) — the bill prints first, then the KOT. Both go through
+        // a single print job (one dialog, one click) with a page-break between
+        // them so the printer cuts between the two instead of stapling them
+        // into one receipt — see printReceipt() for how the page break is
+        // inserted.
+        const printJobs = [html];
         if (Array.isArray(d.kot_items) && d.kot_items.length > 0) {
             printJobs.push(buildTokenHtml({
                 token_number: d.token_number,
@@ -2961,7 +3007,6 @@
                 items: d.kot_items,
             }));
         }
-        printJobs.push(html);
         printReceipt(printJobs);
         resetOrder();
     }
@@ -2976,7 +3021,8 @@
         const specialLabel = !data.token_number ? (deliveryLabels[data.payment_method] || 'NO TOKEN') : null;
         const orderTypeStr = (data.order_type === 'takeaway') ? 'TAKEAWAY' : 'DINE IN';
 
-        return '<div style="text-align:center;">'
+        return '<div style="padding-top:2.2in;"></div>' // blank feed so the KOT has room to clear the bill above it and a kitchen clip can grip it without covering the order number
+            + '<div style="text-align:center;">'
             + '</div>'
             + '<div style="font-size:13px; font-weight:800; color:#000;">Order: ' + data.order_number + '</div>'
             + '<div style="font-size:10px; color:#000; margin-bottom:6px;">' + new Date().toLocaleString() + '</div>'
@@ -3182,7 +3228,7 @@
         if (_confirmLiveBtn) _confirmLiveBtn.style.display = 'none';
         document.getElementById('customerName').value   = '';
         document.getElementById('customerPhone').value  = '';
-        document.getElementById('discountType').value   = '';
+        document.getElementById('discountType').value   = 'fixed';
         document.getElementById('discountValue').value  = '';
         document.getElementById('amountPaid').value     = '';
         document.getElementById('changeDisplay').textContent  = 'Rs. 0.00';
@@ -3222,7 +3268,7 @@
             // on printers whose own driver reserves a sliver of its own.
             + '@page { size: 80mm auto; margin: 2mm 3mm; }'
             + '* { box-sizing: border-box; font-weight: bold !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }'
-            + 'body { font-family: \'Courier New\', monospace; width: 100%; margin: 0; padding: 0; font-size: 12px; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }'
+            + 'body { font-family: Arial, Helvetica, sans-serif; width: 100%; margin: 0; padding: 0; font-size: 12px; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }'
             + 'img { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }'
             + 'table { width: 100%; border-collapse: collapse; table-layout: fixed; }'
             + 'td, th { word-break: break-word; overflow-wrap: break-word; }'

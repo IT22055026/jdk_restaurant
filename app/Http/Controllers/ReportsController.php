@@ -9,28 +9,120 @@ use App\Models\Product;
 use App\Models\User;
 use App\Models\Expense;
 use App\Models\Purchase;
+use App\Models\StockMovement;
+use App\Models\IngredientStockMovement;
+use App\Models\Wastage;
 use App\Support\BusinessDay;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportsController extends Controller
 {
+    // ─────────────────────────────────────────────────────────────
+    //  Shared helper — resolves filter bounds from ANY combination
+    //  of ?preset=, ?from=, ?to=, or ?date= query params.
+    //  Returns an array:
+    //    [ 'isFiltered', 'filterFrom', 'filterTo', 'filterLabel',
+    //      'boundsStart', 'boundsEnd', 'preset' ]
+    // ─────────────────────────────────────────────────────────────
+    private function resolveFilter(Request $request): array
+    {
+        $today     = BusinessDay::today();
+        $preset    = $request->input('preset');
+        $fromParam = $request->input('from');
+        $toParam   = $request->input('to');
+        $dateParam = $request->input('date'); // single-day legacy param
+
+        $isFiltered  = false;
+        $filterFrom  = null;
+        $filterTo    = null;
+        $filterLabel = 'All Time';
+        $boundsStart = null;
+        $boundsEnd   = null;
+
+        if ($preset === 'today') {
+            $isFiltered  = true;
+            $filterFrom  = $today->format('Y-m-d');
+            $filterTo    = $today->format('Y-m-d');
+            $filterLabel = 'Today (' . $today->format('d M Y') . ')';
+
+        } elseif ($preset === 'yesterday') {
+            $yesterday   = $today->copy()->subDay();
+            $isFiltered  = true;
+            $filterFrom  = $yesterday->format('Y-m-d');
+            $filterTo    = $yesterday->format('Y-m-d');
+            $filterLabel = 'Yesterday (' . $yesterday->format('d M Y') . ')';
+
+        } elseif ($preset === 'week') {
+            $weekStart   = $today->copy()->subDays(6);
+            $isFiltered  = true;
+            $filterFrom  = $weekStart->format('Y-m-d');
+            $filterTo    = $today->format('Y-m-d');
+            $filterLabel = 'Last 7 Days (' . $weekStart->format('d M') . ' — ' . $today->format('d M Y') . ')';
+
+        } elseif ($preset === 'month') {
+            [$mStart, $mEnd] = BusinessDay::monthBoundsFor($today);
+            $isFiltered  = true;
+            $filterFrom  = $mStart->format('Y-m-d');
+            $filterTo    = $mEnd->format('Y-m-d');
+            $filterLabel = 'This Month (' . $today->format('F Y') . ')';
+
+        } elseif ($fromParam && $toParam) {
+            // Explicit from/to (custom date range picker)
+            $isFiltered  = true;
+            $filterFrom  = $fromParam;
+            $filterTo    = $toParam;
+            $filterLabel = $filterFrom === $filterTo
+                ? Carbon::parse($filterFrom)->format('d M Y')
+                : Carbon::parse($filterFrom)->format('d M Y') . ' — ' . Carbon::parse($filterTo)->format('d M Y');
+
+        } elseif ($fromParam) {
+            // Single date via ?from= (Flatpickr single-day selection)
+            $isFiltered  = true;
+            $filterFrom  = $fromParam;
+            $filterTo    = $fromParam;
+            $filterLabel = Carbon::parse($filterFrom)->format('d M Y');
+
+        } elseif ($dateParam) {
+            // Legacy single ?date= param
+            // Handle Flatpickr range strings like "2026-08-20 to 2026-08-24"
+            if (str_contains($dateParam, ' to ')) {
+                [$filterFrom, $filterTo] = array_map('trim', explode(' to ', $dateParam, 2));
+            } else {
+                $filterFrom = $filterTo = $dateParam;
+            }
+            $isFiltered  = true;
+            $filterLabel = $filterFrom === $filterTo
+                ? Carbon::parse($filterFrom)->format('d M Y')
+                : Carbon::parse($filterFrom)->format('d M Y') . ' — ' . Carbon::parse($filterTo)->format('d M Y');
+        }
+
+        if ($isFiltered && $filterFrom && $filterTo) {
+            [$boundsStart, $boundsEnd] = BusinessDay::boundsBetween($filterFrom, $filterTo);
+        }
+
+        return compact('isFiltered', 'filterFrom', 'filterTo', 'filterLabel',
+                       'boundsStart', 'boundsEnd', 'preset', 'today');
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  Payment breakdown JSON (used by Flatpickr AJAX filter)
+    // ─────────────────────────────────────────────────────────────
     public function paymentBreakdownJson(Request $request)
     {
-        // Business dates (06:00-05:59 the next day), not calendar midnight —
-        // see App\Support\BusinessDay.
-        $from = $request->input('from') ? BusinessDay::boundsFor($request->input('from'))[0] : null;
-        $to   = $request->input('to')   ? BusinessDay::boundsFor($request->input('to'))[1]   : null;
+        $filter = $this->resolveFilter($request);
 
-        $query = Order::where('status', 'completed')->whereNotNull('payment_method')
+        $query = Order::where('status', 'completed')
+                      ->whereNotNull('payment_method')
                       ->select('payment_method',
                                DB::raw('COUNT(*) as order_count'),
                                DB::raw('SUM(total) as total_revenue'))
                       ->groupBy('payment_method');
 
-        if ($from && $to) {
-            $query->whereBetween('created_at', [$from, $to]);
+        if ($filter['isFiltered']) {
+            $query->whereBetween('created_at', [$filter['boundsStart'], $filter['boundsEnd']]);
         }
 
         $breakdown  = $query->get();
@@ -38,7 +130,7 @@ class ReportsController extends Controller
         $labels     = ['pickme' => 'PickMe', 'uber' => 'Uber'];
 
         return response()->json([
-            'breakdown'   => $breakdown->map(fn($pm) => [
+            'breakdown'     => $breakdown->map(fn($pm) => [
                 'method'        => $pm->payment_method,
                 'label'         => $labels[$pm->payment_method] ?? ucfirst(str_replace('_', ' ', $pm->payment_method)),
                 'order_count'   => $pm->order_count,
@@ -50,70 +142,159 @@ class ReportsController extends Controller
         ]);
     }
 
-    public function index()
+    // ─────────────────────────────────────────────────────────────
+    //  Dashboard index
+    // ─────────────────────────────────────────────────────────────
+    public function index(Request $request)
     {
         $modules = $this->currentUser()->role->modules()->get();
-
-        return view('modules.reports', array_merge($this->baseReportData(), compact('modules')));
+        return view('modules.reports', array_merge($this->baseReportData($request), compact('modules')));
     }
 
-    public function exportSalesRangePdf(Request $request)
+    // ─────────────────────────────────────────────────────────────
+    //  Core dashboard data builder
+    // ─────────────────────────────────────────────────────────────
+    private function baseReportData(Request $request): array
     {
-        $from = $request->input('from') ? BusinessDay::boundsFor($request->input('from'))[0] : BusinessDay::boundsFor(BusinessDay::today())[0];
-        $to   = $request->input('to')   ? BusinessDay::boundsFor($request->input('to'))[1]   : BusinessDay::boundsFor(BusinessDay::today())[1];
+        $filter = $this->resolveFilter($request);
 
-        $sales = Order::where('status', 'completed')
-                      ->whereBetween('created_at', [$from, $to])
-                      ->latest()
-                      ->get();
+        [
+            'isFiltered'  => $isFiltered,
+            'filterFrom'  => $filterFrom,
+            'filterTo'    => $filterTo,
+            'filterLabel' => $filterLabel,
+            'boundsStart' => $boundsStart,
+            'boundsEnd'   => $boundsEnd,
+            'preset'      => $preset,
+            'today'       => $today,
+        ] = $filter;
 
-        $rangeRevenue = $sales->sum('total');
-        $rangeCount   = $sales->count();
-        $rangeAvg     = $rangeCount > 0 ? round($rangeRevenue / $rangeCount, 2) : 0;
+        // Always-available global metrics (lifetime totals, chart data, etc.)
+        $lifetimeRevenue = (float) Order::where('status', 'completed')->sum('total');
+        $lifetimeOrders  = Order::where('status', 'completed')->count();
+        [$monthStart, $monthEnd] = BusinessDay::monthBoundsFor($today);
+        $todaySales   = (float) Order::where('status', 'completed')->businessDay($today)->sum('total');
+        $monthRevenue = (float) Order::where('status', 'completed')
+                                     ->whereBetween('created_at', [$monthStart, $monthEnd])->sum('total');
 
-        $rangePayments = Order::where('status', 'completed')
-                              ->whereBetween('created_at', [$from, $to])
-                              ->whereNotNull('payment_method')
-                              ->select('payment_method',
-                                       DB::raw('COUNT(*) as order_count'),
-                                       DB::raw('SUM(total) as total_revenue'))
-                              ->groupBy('payment_method')
-                              ->get();
+        // ── Filtered or all-time metrics ──────────────────────────
+        if ($isFiltered) {
+            $totalRevenue  = (float) Order::where('status', 'completed')
+                                          ->whereBetween('created_at', [$boundsStart, $boundsEnd])->sum('total');
+            $totalOrders   = Order::where('status', 'completed')
+                                   ->whereBetween('created_at', [$boundsStart, $boundsEnd])->count();
+            $avgOrderValue = $totalOrders > 0 ? round($totalRevenue / $totalOrders, 2) : 0;
 
-        $pdf = Pdf::loadView('reports.sales-range-pdf', [
-            'sales'         => $sales,
-            'rangeRevenue'  => $rangeRevenue,
-            'rangeCount'    => $rangeCount,
-            'rangeAvg'      => $rangeAvg,
-            'rangePayments' => $rangePayments,
-            'from'          => $from,
-            'to'            => $to,
-            'generatedAt'   => now()->format('d M Y, H:i'),
-        ])->setPaper('a4', 'landscape');
+            $recentSales = Order::where('status', 'completed')
+                                ->whereBetween('created_at', [$boundsStart, $boundsEnd])
+                                ->latest()->limit(50)->get();
 
-        return $pdf->download('sales-report-' . $from->format('Y-m-d') . '-to-' . $to->format('Y-m-d') . '.pdf');
-    }
+            $pendingSales = Order::whereIn('status', ['pending', 'hold', 'confirmed'])
+                                 ->whereBetween('created_at', [$boundsStart, $boundsEnd])
+                                 ->whereHas('items')->with('items')->latest()->get();
 
-    private function baseReportData(): array
-    {
-        $totalRevenue  = Order::where('status', 'completed')->sum('total');
-        $todaySales    = Order::where('status', 'completed')->businessDay(BusinessDay::today())->sum('total');
-        [$monthStart, $monthEnd] = BusinessDay::monthBoundsFor(BusinessDay::today());
-        $monthRevenue  = Order::where('status', 'completed')
-                              ->whereBetween('created_at', [$monthStart, $monthEnd])->sum('total');
-        $totalOrders   = Order::where('status', 'completed')->count();
-        $avgOrderValue = $totalOrders > 0 ? round($totalRevenue / $totalOrders, 2) : 0;
+            $topProducts = OrderItem::whereHas('order', function ($q) use ($boundsStart, $boundsEnd) {
+                                    $q->where('status', 'completed')
+                                      ->whereBetween('created_at', [$boundsStart, $boundsEnd]);
+                                })
+                                ->select('product_name',
+                                         DB::raw('SUM(quantity) as total_qty'),
+                                         DB::raw('SUM(subtotal) as total_revenue'),
+                                         DB::raw('MAX(product_id) as product_id'))
+                                ->groupBy('product_name')->orderByDesc('total_qty')->limit(15)->get()
+                                ->map(function ($row) {
+                                    $p = Product::with('category')->find($row->product_id);
+                                    $row->category_name = $p?->category?->name ?? '—';
+                                    return $row;
+                                });
+
+            $paymentBreakdown = Order::where('status', 'completed')
+                                     ->whereBetween('created_at', [$boundsStart, $boundsEnd])
+                                     ->whereNotNull('payment_method')
+                                     ->select('payment_method',
+                                              DB::raw('COUNT(*) as order_count'),
+                                              DB::raw('SUM(total) as total_revenue'))
+                                     ->groupBy('payment_method')->get();
+
+            $totalExpenses  = (float) Expense::whereBetween('expense_date',
+                                         [Carbon::parse($filterFrom)->format('Y-m-d'),
+                                          Carbon::parse($filterTo)->format('Y-m-d')])->sum('amount');
+            $totalPurchases = (float) Purchase::whereBetween('purchase_date',
+                                         [Carbon::parse($filterFrom)->format('Y-m-d'),
+                                          Carbon::parse($filterTo)->format('Y-m-d')])->sum('amount');
+
+            $stockMovements      = StockMovement::with('product')
+                                       ->whereBetween('created_at', [$boundsStart, $boundsEnd])
+                                       ->latest()->limit(30)->get();
+            $ingredientMovements = IngredientStockMovement::with('ingredient')
+                                       ->whereBetween('created_at', [$boundsStart, $boundsEnd])
+                                       ->latest()->limit(30)->get();
+            $wastages            = Wastage::with('product')
+                                       ->whereBetween('created_at', [$boundsStart, $boundsEnd])
+                                       ->latest()->get();
+        } else {
+            // All-time
+            $totalRevenue  = $lifetimeRevenue;
+            $totalOrders   = $lifetimeOrders;
+            $avgOrderValue = $totalOrders > 0 ? round($totalRevenue / $totalOrders, 2) : 0;
+
+            $recentSales = Order::where('status', 'completed')->latest()->limit(20)->get();
+
+            $pendingSales = Order::whereIn('status', ['pending', 'hold', 'confirmed'])
+                                 ->whereHas('items')->with('items')->latest()->get();
+
+            $topProducts = OrderItem::whereHas('order', fn($q) => $q->where('status', 'completed'))
+                                ->select('product_name',
+                                         DB::raw('SUM(quantity) as total_qty'),
+                                         DB::raw('SUM(subtotal) as total_revenue'),
+                                         DB::raw('MAX(product_id) as product_id'))
+                                ->groupBy('product_name')->orderByDesc('total_qty')->limit(10)->get()
+                                ->map(function ($row) {
+                                    $p = Product::with('category')->find($row->product_id);
+                                    $row->category_name = $p?->category?->name ?? '—';
+                                    return $row;
+                                });
+
+            $paymentBreakdown = Order::where('status', 'completed')
+                                     ->whereNotNull('payment_method')
+                                     ->select('payment_method',
+                                              DB::raw('COUNT(*) as order_count'),
+                                              DB::raw('SUM(total) as total_revenue'))
+                                     ->groupBy('payment_method')->get();
+
+            $totalExpenses  = (float) Expense::sum('amount');
+            $totalPurchases = (float) Purchase::sum('amount');
+
+            $stockMovements      = StockMovement::with('product')->latest()->limit(20)->get();
+            $ingredientMovements = IngredientStockMovement::with('ingredient')->latest()->limit(20)->get();
+            $wastages            = Wastage::with('product')->latest()->limit(20)->get();
+        }
+
+        $pendingCount    = $pendingSales->count();
+        $pendingTotal    = (float) $pendingSales->sum('total');
+        $wastageQuantity = $wastages->sum('quantity');
+        $totalUnitsSold  = $topProducts->sum('total_qty');
+        $topProduct      = $topProducts->first()?->product_name ?? 'N/A';
+        $totalOutgoings  = $totalExpenses + $totalPurchases;
+        $netProfit       = $totalRevenue - $totalOutgoings;
+
+        // Month/today expenses (for footer cards — always global)
+        $monthExpenses  = (float) Expense::whereBetween('expense_date',
+                              [$monthStart->format('Y-m-d'), $monthEnd->format('Y-m-d')])->sum('amount');
+        $todayExpenses  = (float) Expense::whereDate('expense_date', $today->format('Y-m-d'))->sum('amount');
+        $monthPurchases = (float) Purchase::whereBetween('purchase_date',
+                              [$monthStart->format('Y-m-d'), $monthEnd->format('Y-m-d')])->sum('amount');
+        $todayPurchases = (float) Purchase::whereDate('purchase_date', $today->format('Y-m-d'))->sum('amount');
+        $monthOutgoings = $monthExpenses + $monthPurchases;
+        $monthNetProfit = $monthRevenue - $monthOutgoings;
 
         $activeOrders   = Order::whereIn('status', ['pending', 'confirmed', 'hold'])->count();
         $inventoryItems = Product::where('status', 'active')->count();
         $activeUsers    = User::where('status', 'active')->count() ?: User::count();
 
-        $topProductRow = OrderItem::select('product_name', DB::raw('SUM(quantity) as total_qty'))
-                                  ->groupBy('product_name')->orderByDesc('total_qty')->first();
-        $topProduct = $topProductRow?->product_name ?? 'N/A';
-
-        $last7Days = collect(range(6, 0))->map(function ($daysAgo) {
-            $date = BusinessDay::today()->subDays($daysAgo);
+        // 7-day revenue chart (always last 7 business days, regardless of filter)
+        $last7Days = collect(range(6, 0))->map(function ($daysAgo) use ($today) {
+            $date = $today->copy()->subDays($daysAgo);
             return [
                 'label'   => $date->format('D d'),
                 'revenue' => (float) Order::where('status', 'completed')->businessDay($date)->sum('total'),
@@ -122,49 +303,11 @@ class ReportsController extends Controller
         $chartLabels = $last7Days->pluck('label')->toJson();
         $chartData   = $last7Days->pluck('revenue')->toJson();
 
-        $pendingSales = Order::whereIn('status', ['pending', 'hold', 'confirmed'])
-                             ->whereHas('items')
-                             ->with('items')
-                             ->latest()
-                             ->get();
-        $pendingCount = $pendingSales->count();
-        $pendingTotal = $pendingSales->sum('total');
-
-        $recentSales = Order::where('status', 'completed')->latest()->limit(20)->get();
-
-        $topProducts = OrderItem::select(
-                           'product_name',
-                           DB::raw('SUM(quantity) as total_qty'),
-                           DB::raw('SUM(subtotal) as total_revenue'),
-                           DB::raw('MAX(product_id) as product_id')
-                       )->groupBy('product_name')->orderByDesc('total_qty')->limit(10)->get()
-                       ->map(function ($row) {
-                           $product = Product::with('category')->find($row->product_id);
-                           $row->category_name = $product?->category?->name ?? '—';
-                           return $row;
-                       });
-
-        $paymentBreakdown = Order::where('status', 'completed')->whereNotNull('payment_method')
-                                 ->select('payment_method',
-                                          DB::raw('COUNT(*) as order_count'),
-                                          DB::raw('SUM(total) as total_revenue'))
-                                 ->groupBy('payment_method')->get();
-
-        $totalExpenses = Expense::sum('amount');
-        $monthExpenses = Expense::whereBetween('expense_date', [$monthStart->format('Y-m-d'), $monthEnd->format('Y-m-d')])->sum('amount');
-        $todayExpenses = Expense::whereDate('expense_date', BusinessDay::today()->format('Y-m-d'))->sum('amount');
-
-        // Raw material / supplier purchases live in their own module now, but they're
-        // still real costs against revenue — fold them into the profit figures.
-        $totalPurchases = Purchase::sum('amount');
-        $monthPurchases = Purchase::whereBetween('purchase_date', [$monthStart->format('Y-m-d'), $monthEnd->format('Y-m-d')])->sum('amount');
-        $todayPurchases = Purchase::whereDate('purchase_date', BusinessDay::today()->format('Y-m-d'))->sum('amount');
-
-        $totalOutgoings = $totalExpenses + $totalPurchases;
-        $monthOutgoings = $monthExpenses + $monthPurchases;
-
-        $netProfit = $totalRevenue - $totalOutgoings;
-        $monthNetProfit = $monthRevenue - $monthOutgoings;
+        // Low stock alerts (always current stock, regardless of filter)
+        $allProducts         = Product::with('category')->get();
+        $lowStockProducts    = $allProducts->filter(fn($p) => $p->isLowStock());
+        $allIngredients      = Ingredient::all();
+        $lowStockIngredients = $allIngredients->filter(fn($i) => $i->isLowStock());
 
         return compact(
             'totalRevenue', 'todaySales', 'monthRevenue', 'totalOrders', 'avgOrderValue', 'topProduct',
@@ -173,159 +316,242 @@ class ReportsController extends Controller
             'pendingSales', 'pendingCount', 'pendingTotal',
             'totalExpenses', 'monthExpenses', 'todayExpenses',
             'totalPurchases', 'monthPurchases', 'todayPurchases',
-            'totalOutgoings', 'monthOutgoings', 'netProfit', 'monthNetProfit'
+            'totalOutgoings', 'monthOutgoings', 'netProfit', 'monthNetProfit',
+            'isFiltered', 'filterFrom', 'filterTo', 'filterLabel', 'preset', 'today',
+            'stockMovements', 'ingredientMovements', 'wastages', 'wastageQuantity',
+            'totalUnitsSold', 'lowStockProducts', 'lowStockIngredients'
         );
     }
 
-    public function exportSalesPdf()
+    // ─────────────────────────────────────────────────────────────
+    //  Date-range sales PDF (existing route, not used by dashboard)
+    // ─────────────────────────────────────────────────────────────
+    public function exportSalesRangePdf(Request $request)
     {
-        $totalRevenue  = Order::where('status', 'completed')->sum('total');
-        $todaySales    = Order::where('status', 'completed')
-                              ->businessDay(BusinessDay::today())->sum('total');
-        [$monthStart, $monthEnd] = BusinessDay::monthBoundsFor(BusinessDay::today());
-        $monthRevenue  = Order::where('status', 'completed')
-                              ->whereBetween('created_at', [$monthStart, $monthEnd])->sum('total');
-        $totalOrders   = Order::where('status', 'completed')->count();
+        $filter = $this->resolveFilter($request);
+        [$from, $to] = $filter['isFiltered']
+            ? [$filter['boundsStart'], $filter['boundsEnd']]
+            : [BusinessDay::boundsFor(BusinessDay::today())[0], BusinessDay::boundsFor(BusinessDay::today())[1]];
+
+        $sales = Order::where('status', 'completed')
+                      ->whereBetween('created_at', [$from, $to])->latest()->get();
+
+        $rangeRevenue  = $sales->sum('total');
+        $rangeCount    = $sales->count();
+        $rangeAvg      = $rangeCount > 0 ? round($rangeRevenue / $rangeCount, 2) : 0;
+
+        $rangePayments = Order::where('status', 'completed')
+                              ->whereBetween('created_at', [$from, $to])
+                              ->whereNotNull('payment_method')
+                              ->select('payment_method',
+                                       DB::raw('COUNT(*) as order_count'),
+                                       DB::raw('SUM(total) as total_revenue'))
+                              ->groupBy('payment_method')->get();
+
+        $pdf = Pdf::loadView('reports.sales-range-pdf', [
+            'sales'        => $sales,
+            'rangeRevenue' => $rangeRevenue,
+            'rangeCount'   => $rangeCount,
+            'rangeAvg'     => $rangeAvg,
+            'rangePayments'=> $rangePayments,
+            'from'         => $from,
+            'to'           => $to,
+            'generatedAt'  => now()->format('d M Y, H:i'),
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download('sales-report-' . $from->format('Y-m-d') . '-to-' . $to->format('Y-m-d') . '.pdf');
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  Sales PDF — respects ALL filter params including preset
+    // ─────────────────────────────────────────────────────────────
+    public function exportSalesPdf(Request $request)
+    {
+        $filter      = $this->resolveFilter($request);
+        $isFiltered  = $filter['isFiltered'];
+        $filterFrom  = $filter['filterFrom'];
+        $filterTo    = $filter['filterTo'];
+        $filterLabel = $filter['filterLabel'];
+        $boundsStart = $filter['boundsStart'];
+        $boundsEnd   = $filter['boundsEnd'];
+
+        if ($isFiltered) {
+            $sales       = Order::where('status', 'completed')
+                                 ->whereBetween('created_at', [$boundsStart, $boundsEnd])
+                                 ->latest()->get();
+            $titlePeriod = $filterLabel;
+        } else {
+            $sales       = Order::where('status', 'completed')->latest()->limit(200)->get();
+            $titlePeriod = 'All Time';
+        }
+
+        $totalRevenue  = (float) $sales->sum('total');
+        $totalOrders   = $sales->count();
         $avgOrderValue = $totalOrders > 0 ? round($totalRevenue / $totalOrders, 2) : 0;
 
-        $recentSales = Order::where('status', 'completed')
-                            ->latest()
-                            ->limit(100)
-                            ->get();
-
-        $paymentBreakdown = Order::where('status', 'completed')
-                                 ->whereNotNull('payment_method')
-                                 ->select('payment_method',
-                                          DB::raw('COUNT(*) as order_count'),
-                                          DB::raw('SUM(total) as total_revenue'))
-                                 ->groupBy('payment_method')
-                                 ->get();
+        $paymentQuery = Order::where('status', 'completed')->whereNotNull('payment_method');
+        if ($isFiltered) {
+            $paymentQuery->whereBetween('created_at', [$boundsStart, $boundsEnd]);
+        }
+        $paymentBreakdown = $paymentQuery->select('payment_method',
+                                             DB::raw('COUNT(*) as order_count'),
+                                             DB::raw('SUM(total) as total_revenue'))
+                                         ->groupBy('payment_method')->get();
 
         $pdf = Pdf::loadView('reports.sales-pdf', [
-            'totalRevenue' => $totalRevenue,
-            'todaySales' => $todaySales,
-            'monthRevenue' => $monthRevenue,
-            'totalOrders' => $totalOrders,
-            'avgOrderValue' => $avgOrderValue,
-            'recentSales' => $recentSales,
+            'totalRevenue'     => $totalRevenue,
+            'todaySales'       => $totalRevenue,   // for PDF layout compatibility
+            'monthRevenue'     => $totalRevenue,
+            'totalOrders'      => $totalOrders,
+            'avgOrderValue'    => $avgOrderValue,
+            'recentSales'      => $sales,
             'paymentBreakdown' => $paymentBreakdown,
-            'generatedAt' => now()->format('d M Y, H:i')
+            'periodLabel'      => $titlePeriod,
+            'filterFrom'       => $filterFrom,
+            'filterTo'         => $filterTo,
+            'generatedAt'      => now()->format('d M Y, H:i'),
         ])->setPaper('a4', 'landscape');
 
-        return $pdf->download('sales-report-' . now()->format('Y-m-d-His') . '.pdf');
+        $filename = 'sales-report-' . ($isFiltered ? $filterFrom . '-to-' . $filterTo . '-' : 'all-time-') . now()->format('Ymd') . '.pdf';
+        return $pdf->download($filename);
     }
 
-    public function exportProductsPdf()
+    // ─────────────────────────────────────────────────────────────
+    //  Products PDF — respects ALL filter params including preset
+    // ─────────────────────────────────────────────────────────────
+    public function exportProductsPdf(Request $request)
     {
-        $topProducts = OrderItem::select(
-                           'product_name',
-                           DB::raw('SUM(quantity) as total_qty'),
-                           DB::raw('SUM(subtotal) as total_revenue'),
-                           DB::raw('MAX(product_id) as product_id')
-                       )
-                       ->groupBy('product_name')
-                       ->orderByDesc('total_qty')
-                       ->get()
-                       ->map(function ($row) {
-                           $product = Product::with('category')->find($row->product_id);
-                           $row->category_name = $product?->category?->name ?? '—';
-                           return $row;
-                       });
+        $filter      = $this->resolveFilter($request);
+        $isFiltered  = $filter['isFiltered'];
+        $filterLabel = $filter['filterLabel'];
+        $boundsStart = $filter['boundsStart'];
+        $boundsEnd   = $filter['boundsEnd'];
 
-        $totalRevenue = Order::where('status', 'completed')->sum('total');
+        $query = OrderItem::whereHas('order', function ($q) use ($isFiltered, $boundsStart, $boundsEnd) {
+            $q->where('status', 'completed');
+            if ($isFiltered) {
+                $q->whereBetween('created_at', [$boundsStart, $boundsEnd]);
+            }
+        });
+
+        $topProducts = $query->select('product_name',
+                                  DB::raw('SUM(quantity) as total_qty'),
+                                  DB::raw('SUM(subtotal) as total_revenue'),
+                                  DB::raw('MAX(product_id) as product_id'))
+                             ->groupBy('product_name')->orderByDesc('total_qty')->get()
+                             ->map(function ($row) {
+                                 $p = Product::with('category')->find($row->product_id);
+                                 $row->category_name = $p?->category?->name ?? '—';
+                                 return $row;
+                             });
+
+        $totalRevenue = (float) $topProducts->sum('total_revenue');
 
         $pdf = Pdf::loadView('reports.products-pdf', [
-            'topProducts' => $topProducts,
+            'topProducts'  => $topProducts,
             'totalRevenue' => $totalRevenue,
-            'generatedAt' => now()->format('d M Y, H:i')
+            'periodLabel'  => $isFiltered ? $filterLabel : 'All Time',
+            'generatedAt'  => now()->format('d M Y, H:i'),
         ])->setPaper('a4', 'landscape');
 
-        return $pdf->download('products-report-' . now()->format('Y-m-d-His') . '.pdf');
+        $filename = 'products-report-' . ($isFiltered ? ($filter['filterFrom'] . '-to-' . $filter['filterTo'] . '-') : 'all-time-') . now()->format('Ymd') . '.pdf';
+        return $pdf->download($filename);
     }
 
+    // ─────────────────────────────────────────────────────────────
+    //  Stock PDF (snapshot of current stock, no date filter needed)
+    // ─────────────────────────────────────────────────────────────
     public function exportStockPdf()
     {
-        $products = Product::with('category', 'ingredients')->orderBy('name')->get();
+        $products    = Product::with('category', 'ingredients')->orderBy('name')->get();
         $ingredients = Ingredient::orderBy('name')->get();
 
-        $lowStockProducts = $products->filter(fn($p) => $p->isLowStock())->count();
-        $outOfStockProducts = $products->filter(function ($p) {
-            if ($p->is_unlimited_stock) {
-                return false;
-            }
-            return $p->availableStock() === 0;
-        })->count();
-
-        $lowStockIngredients = $ingredients->filter(fn($i) => $i->isLowStock())->count();
-        $outOfStockIngredients = $ingredients->filter(fn($i) => (float) $i->quantity <= 0)->count();
+        $lowStockProducts     = $products->filter(fn($p) => $p->isLowStock())->count();
+        $outOfStockProducts   = $products->filter(fn($p) => !$p->is_unlimited_stock && $p->availableStock() === 0)->count();
+        $lowStockIngredients  = $ingredients->filter(fn($i) => $i->isLowStock())->count();
+        $outOfStockIngredients= $ingredients->filter(fn($i) => (float) $i->quantity <= 0)->count();
 
         $pdf = Pdf::loadView('reports.stock-pdf', [
-            'products' => $products,
-            'ingredients' => $ingredients,
-            'totalProducts' => $products->count(),
-            'lowStockProducts' => $lowStockProducts,
-            'outOfStockProducts' => $outOfStockProducts,
-            'totalIngredients' => $ingredients->count(),
-            'lowStockIngredients' => $lowStockIngredients,
+            'products'              => $products,
+            'ingredients'           => $ingredients,
+            'totalProducts'         => $products->count(),
+            'lowStockProducts'      => $lowStockProducts,
+            'outOfStockProducts'    => $outOfStockProducts,
+            'totalIngredients'      => $ingredients->count(),
+            'lowStockIngredients'   => $lowStockIngredients,
             'outOfStockIngredients' => $outOfStockIngredients,
-            'generatedAt' => now()->format('d M Y, H:i'),
+            'generatedAt'           => now()->format('d M Y, H:i'),
         ])->setPaper('a4', 'landscape');
 
-        return $pdf->download('stock-report-' . now()->format('Y-m-d-His') . '.pdf');
+        return $pdf->download('stock-report-' . now()->format('Y-m-d') . '.pdf');
     }
 
-    public function exportCombinedPdf()
+    // ─────────────────────────────────────────────────────────────
+    //  Combined PDF — respects ALL filter params including preset
+    // ─────────────────────────────────────────────────────────────
+    public function exportCombinedPdf(Request $request)
     {
-        $totalRevenue  = Order::where('status', 'completed')->sum('total');
-        $todaySales    = Order::where('status', 'completed')
-                              ->businessDay(BusinessDay::today())->sum('total');
-        [$monthStart, $monthEnd] = BusinessDay::monthBoundsFor(BusinessDay::today());
-        $monthRevenue  = Order::where('status', 'completed')
-                              ->whereBetween('created_at', [$monthStart, $monthEnd])->sum('total');
-        $totalOrders   = Order::where('status', 'completed')->count();
+        $filter      = $this->resolveFilter($request);
+        $isFiltered  = $filter['isFiltered'];
+        $filterFrom  = $filter['filterFrom'];
+        $filterTo    = $filter['filterTo'];
+        $filterLabel = $filter['filterLabel'];
+        $boundsStart = $filter['boundsStart'];
+        $boundsEnd   = $filter['boundsEnd'];
+
+        $orderQuery = Order::where('status', 'completed');
+        $itemQuery  = OrderItem::whereHas('order', function ($q) use ($isFiltered, $boundsStart, $boundsEnd) {
+            $q->where('status', 'completed');
+            if ($isFiltered) {
+                $q->whereBetween('created_at', [$boundsStart, $boundsEnd]);
+            }
+        });
+
+        if ($isFiltered) {
+            $orderQuery->whereBetween('created_at', [$boundsStart, $boundsEnd]);
+        }
+
+        $sales         = $orderQuery->latest()->limit(100)->get();
+        $totalRevenue  = (float) $sales->sum('total');
+        $totalOrders   = $sales->count();
         $avgOrderValue = $totalOrders > 0 ? round($totalRevenue / $totalOrders, 2) : 0;
 
-        $recentSales = Order::where('status', 'completed')
-                            ->latest()
-                            ->limit(50)
-                            ->get();
+        $topProducts = $itemQuery->select('product_name',
+                                     DB::raw('SUM(quantity) as total_qty'),
+                                     DB::raw('SUM(subtotal) as total_revenue'),
+                                     DB::raw('MAX(product_id) as product_id'))
+                                 ->groupBy('product_name')->orderByDesc('total_qty')->limit(15)->get()
+                                 ->map(function ($row) {
+                                     $p = Product::with('category')->find($row->product_id);
+                                     $row->category_name = $p?->category?->name ?? '—';
+                                     return $row;
+                                 });
 
-        $topProducts = OrderItem::select(
-                           'product_name',
-                           DB::raw('SUM(quantity) as total_qty'),
-                           DB::raw('SUM(subtotal) as total_revenue'),
-                           DB::raw('MAX(product_id) as product_id')
-                       )
-                       ->groupBy('product_name')
-                       ->orderByDesc('total_qty')
-                       ->limit(15)
-                       ->get()
-                       ->map(function ($row) {
-                           $product = Product::with('category')->find($row->product_id);
-                           $row->category_name = $product?->category?->name ?? '—';
-                           return $row;
-                       });
-
-        $paymentBreakdown = Order::where('status', 'completed')
-                                 ->whereNotNull('payment_method')
-                                 ->select('payment_method',
-                                          DB::raw('COUNT(*) as order_count'),
-                                          DB::raw('SUM(total) as total_revenue'))
-                                 ->groupBy('payment_method')
-                                 ->get();
+        $pmQuery = Order::where('status', 'completed')->whereNotNull('payment_method');
+        if ($isFiltered) {
+            $pmQuery->whereBetween('created_at', [$boundsStart, $boundsEnd]);
+        }
+        $paymentBreakdown = $pmQuery->select('payment_method',
+                                        DB::raw('COUNT(*) as order_count'),
+                                        DB::raw('SUM(total) as total_revenue'))
+                                    ->groupBy('payment_method')->get();
 
         $pdf = Pdf::loadView('reports.combined-pdf', [
-            'totalRevenue' => $totalRevenue,
-            'todaySales' => $todaySales,
-            'monthRevenue' => $monthRevenue,
-            'totalOrders' => $totalOrders,
-            'avgOrderValue' => $avgOrderValue,
-            'recentSales' => $recentSales,
-            'topProducts' => $topProducts,
+            'totalRevenue'     => $totalRevenue,
+            'todaySales'       => $totalRevenue,
+            'monthRevenue'     => $totalRevenue,
+            'totalOrders'      => $totalOrders,
+            'avgOrderValue'    => $avgOrderValue,
+            'recentSales'      => $sales,
+            'topProducts'      => $topProducts,
             'paymentBreakdown' => $paymentBreakdown,
-            'generatedAt' => now()->format('d M Y, H:i')
+            'periodLabel'      => $isFiltered ? $filterLabel : 'All Time',
+            'filterFrom'       => $filterFrom,
+            'filterTo'         => $filterTo,
+            'generatedAt'      => now()->format('d M Y, H:i'),
         ])->setPaper('a4', 'landscape');
 
-        return $pdf->download('complete-report-' . now()->format('Y-m-d-His') . '.pdf');
+        $filename = 'complete-report-' . ($isFiltered ? $filterFrom . '-to-' . $filterTo . '-' : 'all-time-') . now()->format('Ymd') . '.pdf';
+        return $pdf->download($filename);
     }
 }

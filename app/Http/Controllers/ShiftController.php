@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use App\Models\Shift;
 use App\Models\ShiftTransaction;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -182,7 +184,39 @@ class ShiftController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Shift closed successfully',
+            'shift_id' => $shift->id,
+            'pdf_url' => route('shifts.export.pdf', $shift->id),
         ]);
+    }
+
+    public function exportShiftPdf(Shift $shift)
+    {
+        if ($shift->user_id !== auth()->id() && !auth()->user()->role->modules()->where('name', 'Reports')->exists()) {
+            abort(403, 'Unauthorized');
+        }
+
+        // Total sales for this shift (Opening + Sales = Expected)
+        $totalSales = DB::table('orders')
+            ->where('user_id', $shift->user_id)
+            ->where('created_at', '>=', $shift->started_at ?? $shift->created_at)
+            ->when($shift->ended_at, fn($q) => $q->where('created_at', '<=', $shift->ended_at))
+            ->where('status', 'completed')
+            ->sum('total');
+
+        // Denomination counts saved when the shift was closed
+        $denominations = DB::table('shift_cash_denominations')
+            ->where('shift_id', $shift->id)
+            ->orderByDesc('denomination')
+            ->get();
+
+        $pdf = Pdf::loadView('reports.shift-pdf', [
+            'shift'        => $shift,
+            'totalSales'   => (float) $totalSales,
+            'denominations'=> $denominations,
+            'generatedAt'  => now()->format('d M Y, h:i A'),
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->download('shift-report-' . str_pad($shift->id, 5, '0', STR_PAD_LEFT) . '-' . now()->format('Ymd') . '.pdf');
     }
 
     public function getShiftDetails(Shift $shift)
@@ -239,6 +273,7 @@ class ShiftController extends Controller
                 'total_tax' => (float) $totalTax,
                 'status' => $shift->status === 'active' ? 'Active' : 'Closed',
                 'denominations' => $denominations,
+                'pdf_url' => route('shifts.export.pdf', $shift->id),
             ],
         ]);
     }

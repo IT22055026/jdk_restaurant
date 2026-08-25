@@ -16,9 +16,6 @@ class IngredientStockService
      * $itemDeltas is an array of ['item' => OrderItem, 'delta' => int] where delta is the
      * newly-confirmed quantity for that item in this token print batch (not the item's total quantity).
      *
-     * Validates every ingredient requirement across the whole batch before writing anything,
-     * so a shortfall on one item never leaves another item's stock half-deducted.
-     *
      * @throws InsufficientStockException
      */
     public function deductForToken(array $itemDeltas, ?int $userId): array
@@ -45,9 +42,7 @@ class IngredientStockService
 
             $recipe = $product->ingredients()->get();
             if ($recipe->isEmpty()) {
-                throw new InsufficientStockException(
-                    "No recipe defined for \"{$item->product_name}\". Add its ingredients under Products → Recipe before printing the token."
-                );
+                continue;
             }
 
             foreach ($recipe as $ingredient) {

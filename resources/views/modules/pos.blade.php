@@ -824,10 +824,13 @@
                 </div>
                 <div style="display:flex; gap:4px; margin-bottom:6px;">
                     <button class="pay-method-btn" data-method="pickme" onclick="selectPaymentMethod('pickme')" style="flex:1; padding:6px 4px; font-size:11px;">
-                        <img src="/images/pickme.jpg" alt="PickMe" style="display:block; width:16px; height:16px; margin:0 auto 2px; border-radius:3px; object-fit:cover;">PickMe
+                        <svg style="display:block; width:14px; height:14px; margin:0 auto 2px; border-radius:3px;" viewBox="0 0 64 64">
+                            <rect width="64" height="64" rx="12" fill="#FFC800"/>
+                            <path d="M18 16h16c7.73 0 14 6.27 14 14s-6.27 14-14 14H26v8c0 1.1-.9 2-2 2h-4c-1.1 0-2-.9-2-2V18c0-1.1.9-2 2-2zm8 20h8c3.31 0 6-2.69 6-6s-2.69-6-6-6h-8v12z" fill="#E50914"/>
+                        </svg>PickMe
                     </button>
                     <button class="pay-method-btn" data-method="uber" onclick="selectPaymentMethod('uber')" style="flex:1; padding:6px 4px; font-size:11px;">
-                        <img src="/images/uber.png" alt="Uber" style="display:block; width:16px; height:16px; margin:0 auto 2px; border-radius:3px; object-fit:cover;">Uber
+                        <i class="fab fa-uber" style="display:block; font-size:14px; margin-bottom:2px;"></i>Uber
                     </button>
                     <button class="pay-method-btn" data-method="split" onclick="selectPaymentMethod('split')" style="flex:1; padding:6px 4px; font-size:11px;">
                         <i class="fas fa-code-branch" style="display:block; font-size:13px; margin-bottom:2px;"></i>Split

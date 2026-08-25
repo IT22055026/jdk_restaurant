@@ -11,15 +11,12 @@ use Illuminate\Support\Facades\DB;
 class ProductStockService
 {
     /**
-     * Deduct finished-good product stock for order items being newly confirmed to the
+     * Deduct finished-good or standalone product stock for order items being newly confirmed to the
      * kitchen (token print). Mirrors IngredientStockService but operates on products.quantity
-     * for items that are their own stock unit (e.g. bottled drinks), not ingredient-tracked.
+     * for items that are their own stock unit (e.g. bottled drinks) or don't have recipe ingredients.
      *
      * $itemDeltas is an array of ['item' => OrderItem, 'delta' => int] where delta is the
      * newly-confirmed quantity for that item in this token print batch (not the item's total quantity).
-     *
-     * Validates every product's stock across the whole batch before writing anything,
-     * so a shortfall on one item never leaves another item's stock half-deducted.
      *
      * @throws InsufficientStockException
      */
@@ -32,11 +29,14 @@ class ProductStockService
             $delta = $entry['delta'];
             $product = $item->product;
 
-            if (!$product || $product->is_unlimited_stock || !$product->is_finished_good || $delta <= 0) {
+            if (!$product || $product->is_unlimited_stock || $delta <= 0) {
                 continue;
             }
 
-            $required[$product->id] = ($required[$product->id] ?? 0) + $delta;
+            // Deduct from product table if it's explicitly a finished good OR if it has no recipe ingredients
+            if ($product->is_finished_good || !$product->hasRecipe()) {
+                $required[$product->id] = ($required[$product->id] ?? 0) + $delta;
+            }
         }
 
         if (empty($required)) {
@@ -57,7 +57,11 @@ class ProductStockService
             $delta = $entry['delta'];
             $product = $item->product;
 
-            if (!$product || $product->is_unlimited_stock || !$product->is_finished_good || $delta <= 0) {
+            if (!$product || $product->is_unlimited_stock || $delta <= 0) {
+                continue;
+            }
+
+            if (!($product->is_finished_good || !$product->hasRecipe())) {
                 continue;
             }
 

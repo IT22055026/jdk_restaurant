@@ -757,7 +757,7 @@
                                 style="flex:1; min-width:0; font-size:12px; border:1px solid #e2e8f0; border-radius:6px; padding:5px 6px; background:#f8fafc; outline:none; cursor:pointer;">
                             <option value="">None</option>
                             <option value="percentage">%</option>
-                            <option value="fixed">Rs</option>
+                            <option value="fixed" selected>Rs</option>
                         </select>
                         <input type="number" id="discountValue" placeholder="0" min="0" oninput="recalcTotal()"
                                style="width:48px; font-size:12px; border:1px solid #e2e8f0; border-radius:6px; padding:5px 6px; outline:none; background:#f8fafc;">
@@ -872,8 +872,8 @@
                         <div>
                             <label for="splitMethod1" style="font-size:12px; font-weight:600; color:#64748b; display:block; margin-bottom:4px;">Method 1</label>
                             <select id="splitMethod1" onchange="updateSplitTotal()" style="width:100%; font-size:14px; border:1.5px solid #e2e8f0; border-radius:8px; padding:9px 10px; outline:none;">
+                                <option value="card" selected>Card</option>
                                 <option value="cash">Cash</option>
-                                <option value="card">Card</option>
                                 <option value="bank">Bank</option>
                             </select>
                         </div>
@@ -2834,16 +2834,16 @@
             headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' },
             body: JSON.stringify(paymentData)
         });
+        const data = await res.json().catch(() => null);
         if (!res.ok) {
-            toast('Payment failed — server error', 'error');
+            toast((data && data.message) ? data.message : 'Payment failed — server error', 'error');
             return;
         }
-        const data = await res.json();
-        if (data.success) {
+        if (data && data.success) {
             showPaidBill(data);
             toast('Payment received!', 'success');
         } else {
-            toast(data.message || 'Payment failed', 'error');
+            toast((data && data.message) ? data.message : 'Payment failed', 'error');
         }
     }
 
@@ -2862,7 +2862,7 @@
     })();
 
     function showPaidBill(d) {
-        const methodLabel = { cash:'Cash', card:'Card', bank_transfer:'Bank Transfer', mixed:'Mixed', pickme:'PickMe', uber:'Uber' };
+        const methodLabel = { cash:'Cash', card:'Card', bank:'Bank', bank_transfer:'Bank Transfer', mixed:'Split', split:'Split', pickme:'PickMe', uber:'Uber' };
         const now = new Date();
         const dateStr = now.toLocaleDateString('en-GB') + ', ' + now.toLocaleTimeString('en-GB');
 
@@ -2876,6 +2876,27 @@
         const deliveryLabels = { pickme: 'PICKME DELIVERY', uber: 'UBER DELIVERY' };
         const specialLabel = !d.token_number ? (deliveryLabels[d.payment_method] || null) : null;
         const qrImageSrc = (typeof window !== 'undefined' && window.googleReviewQrDataUri) ? window.googleReviewQrDataUri : (window.location.origin + '/qr-code/generate?text=' + encodeURIComponent('https://www.google.com/maps/place//data=!4m3!3m2!1s0x3ae25b3ace14ea05:0x448c982eb6a931a0!12e1?source=g.page.m.ia._&utm_source=gbp&laa=nmx-review-solicitation-ia2'));
+
+        let paymentRows = '';
+        if (d.payment_method === 'mixed' || (d.split_method1 && d.split_amount1)) {
+            const m1Name = methodLabel[d.split_method1] || d.split_method1 || 'Method 1';
+            const m2Name = methodLabel[d.split_method2] || d.split_method2 || 'Method 2';
+            const a1 = (d.split_amount1 !== null && d.split_amount1 !== undefined) ? parseFloat(d.split_amount1) : 0;
+            const a2 = (d.split_amount2 !== null && d.split_amount2 !== undefined) ? parseFloat(d.split_amount2) : 0;
+
+            paymentRows += '<tr><td style="width:65%;">Paid (Split)</td><td style="text-align:right; width:35%;">Rs.' + d.amount_paid.toFixed(2) + '</td></tr>';
+            if (a1 > 0 || d.split_method1) {
+                paymentRows += '<tr><td style="width:65%; padding-left:10px; font-size:11px;">- ' + escapeHtml(m1Name) + '</td><td style="text-align:right; width:35%; font-size:11px;">Rs.' + a1.toFixed(2) + '</td></tr>';
+            }
+            if (a2 > 0 || d.split_method2) {
+                paymentRows += '<tr><td style="width:65%; padding-left:10px; font-size:11px;">- ' + escapeHtml(m2Name) + '</td><td style="text-align:right; width:35%; font-size:11px;">Rs.' + a2.toFixed(2) + '</td></tr>';
+            }
+        } else {
+            paymentRows += '<tr><td style="width:65%;">Paid (' + (methodLabel[d.payment_method] || d.payment_method) + ')</td><td style="text-align:right; width:35%;">Rs.' + d.amount_paid.toFixed(2) + '</td></tr>';
+        }
+        if (d.change_amount > 0) {
+            paymentRows += '<tr><td style="width:65%;">Change</td><td style="text-align:right; width:35%;">Rs.' + d.change_amount.toFixed(2) + '</td></tr>';
+        }
 
         let html = ''
             // ── HEADER ──
@@ -2891,7 +2912,13 @@
             // Special label for non-tokenized receipts (pickme / uber / no-token)
             + (specialLabel ? '<div style="text-align:center; font-weight:900; font-size:18px; margin-top:4px; color:#000;">' + specialLabel + '</div>' : '')
 
-            + (d.order_type ? '<div style="text-align:center; margin-top:6px;"><span style="font-size:11px; font-weight:700; color:#000; letter-spacing:1px; border:1px solid #000; display:inline-block; padding:2px 8px; border-radius:4px;">' + (d.order_type === 'takeaway' ? 'TAKEAWAY' : 'DINE IN') + '</span></div>' : '')
+            + (() => {
+                let badge = 'DINE IN';
+                if (d.payment_method === 'uber' || d.order_type === 'uber') badge = 'UBER';
+                else if (d.payment_method === 'pickme' || d.order_type === 'pickme') badge = 'PICKME';
+                else if (d.order_type === 'takeaway') badge = 'TAKEAWAY';
+                return '<div style="text-align:center; margin-top:6px;"><span style="font-size:11px; font-weight:700; color:#000; letter-spacing:1px; border:1px solid #000; display:inline-block; padding:2px 8px; border-radius:4px;">' + badge + '</span></div>';
+            })()
 
             // ── METADATA (two simple lines) ──
             + '<div style="font-size:11px; color:#000; margin-top:6px;">'
@@ -2925,8 +2952,7 @@
 
             // ── PAYMENT DETAILS ──
             + '<table width="100%" cellspacing="0" cellpadding="2" style="font-size:12px; color:#000; border-top:1px dashed #000; margin-top:6px; width:100%; table-layout:fixed;">'
-            + '<tr><td style="width:65%;">Paid (' + (methodLabel[d.payment_method] || d.payment_method) + ')</td><td style="text-align:right; width:35%;">Rs.' + d.amount_paid.toFixed(2) + '</td></tr>'
-            + (d.change_amount > 0 ? '<tr><td>Change</td><td style="text-align:right;">Rs.' + d.change_amount.toFixed(2) + '</td></tr>' : '')
+            + paymentRows
             + '</table>'
 
             // ── TOKEN NUMBER (shown after the total, not with the order metadata) ──
@@ -2972,24 +2998,58 @@
     // ═══════════════════════════════════════════
 
     function buildTokenHtml(data) {
-        const deliveryLabels = { pickme: 'PICKME DELIVERY', uber: 'UBER DELIVERY' };
-        const specialLabel = !data.token_number ? (deliveryLabels[data.payment_method] || 'NO TOKEN') : null;
-        const orderTypeStr = (data.order_type === 'takeaway') ? 'TAKEAWAY' : 'DINE IN';
+        let orderTypeStr = 'DINE IN';
+        if (data.payment_method === 'uber' || data.order_type === 'uber') {
+            orderTypeStr = 'UBER';
+        } else if (data.payment_method === 'pickme' || data.order_type === 'pickme') {
+            orderTypeStr = 'PICKME';
+        } else if (data.order_type === 'takeaway') {
+            orderTypeStr = 'TAKEAWAY';
+        }
 
-        return '<div style="text-align:center;">'
+        // Colour-code the order type badge so it's instantly identifiable
+        const badgeColors = {
+            'DINE IN':  { bg: '#000',    fg: '#fff' },
+            'TAKEAWAY': { bg: '#1d4ed8', fg: '#fff' },
+            'UBER':     { bg: '#000',    fg: '#fff' },
+            'PICKME':   { bg: '#dc2626', fg: '#fff' },
+        };
+        const badge = badgeColors[orderTypeStr] || { bg: '#000', fg: '#fff' };
+
+        return ''
+            // ── TOP SPACER: empty zone for the rail clip to grip ──
+            // 35mm of blank space so nothing useful is hidden behind the clip.
+            + '<div style="height:35mm;"></div>'
+
+            // ── ORDER TYPE ── BIG & BOLD — first thing visible below clip ──
+            + '<div style="text-align:center; margin-bottom:8px;">'
+            + '<span style="'
+            +     'display:inline-block;'
+            +     'font-size:22px; font-weight:900; letter-spacing:2px;'
+            +     'color:' + badge.fg + ';'
+            +     'background:' + badge.bg + ';'
+            +     'border:3px solid #000;'
+            +     'border-radius:8px;'
+            +     'padding:5px 20px;'
+            +     'text-transform:uppercase;'
+            + '">' + orderTypeStr + '</span>'
             + '</div>'
-            + '<div style="font-size:13px; font-weight:800; color:#000;">Order: ' + data.order_number + '</div>'
-            + '<div style="font-size:10px; color:#000; margin-bottom:6px;">' + new Date().toLocaleString() + '</div>'
-            + '<div style="text-align:center; margin-bottom:10px;"><span style="font-size:14px; font-weight:900; color:#000; letter-spacing:1.5px; border:2px solid #000; display:inline-block; padding:3px 12px; border-radius:6px; text-transform:uppercase;">' + orderTypeStr + '</span></div>'
+
+            // ── Order reference & timestamp ──
+            + '<div style="font-size:12px; font-weight:800; color:#000; text-align:center;">Order: ' + data.order_number + '</div>'
+            + '<div style="font-size:10px; color:#000; margin-bottom:6px; text-align:center;">' + new Date().toLocaleString() + '</div>'
+
+            // ── Items ──
             + '<div style="border-top:1px solid #000; padding-top:10px;">'
             + data.items.map(function(i) {
                 return '<div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700; margin:8px 0; border-bottom:1px dashed #000; padding-bottom:6px; color:#000;">'
                     + '<span>' + escapeHtml(i.product_name) + '</span>'
-                    + '<span style="font-size:16px; font-weight:900;">×' + i.quantity + '</span>'
+                    + '<span style="font-size:16px; font-weight:900;">&times;' + i.quantity + '</span>'
                     + '</div>'
                     + (i.kitchen_notes ? '<div style="font-size:11px; color:#000; margin-top:-4px; margin-bottom:6px;">Note: ' + escapeHtml(i.kitchen_notes) + '</div>' : '');
             }).join('')
             + '</div>'
+
             // ── TOKEN NUMBER at the bottom ──
             + (data.token_number
                 ? '<div style="text-align:center; border-top:2px solid #000; padding-top:8px; margin-top:10px;">'
@@ -3182,7 +3242,7 @@
         if (_confirmLiveBtn) _confirmLiveBtn.style.display = 'none';
         document.getElementById('customerName').value   = '';
         document.getElementById('customerPhone').value  = '';
-        document.getElementById('discountType').value   = '';
+        document.getElementById('discountType').value   = 'fixed';
         document.getElementById('discountValue').value  = '';
         document.getElementById('amountPaid').value     = '';
         document.getElementById('changeDisplay').textContent  = 'Rs. 0.00';
@@ -3193,6 +3253,12 @@
         });
         selectOrderType('dine_in', true);
         document.getElementById('cashSection').style.display = 'flex';
+        document.getElementById('splitSection').style.display = 'none';
+        if (document.getElementById('splitMethod1')) document.getElementById('splitMethod1').value = 'card';
+        if (document.getElementById('splitAmount1')) document.getElementById('splitAmount1').value = '';
+        if (document.getElementById('splitMethod2')) document.getElementById('splitMethod2').value = '';
+        if (document.getElementById('splitAmount2')) document.getElementById('splitAmount2').value = '';
+        if (document.getElementById('splitTotalDisplay')) document.getElementById('splitTotalDisplay').textContent = 'Rs. 0.00';
         document.getElementById('paymentBody').classList.remove('split-active');
 
         // Hand keyboard focus back to search so a cashier can start the next

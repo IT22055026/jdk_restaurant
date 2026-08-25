@@ -166,9 +166,16 @@
                                                 @endif
                                             </td>
                                             <td class="px-6 py-4 text-center">
-                                                <button onclick="viewShiftDetails({{ $shift->id }})" class="text-blue-600 hover:text-blue-900 font-medium transition">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
+                                                <div class="flex items-center justify-center space-x-2">
+                                                    <button onclick="viewShiftDetails({{ $shift->id }})" class="text-blue-600 hover:text-blue-900 font-medium text-xs bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded transition inline-flex items-center gap-1" title="View Details">
+                                                        <i class="fas fa-eye"></i>
+                                                        <span>View</span>
+                                                    </button>
+                                                    <a href="{{ route('shifts.export.pdf', $shift->id) }}" target="_blank" class="text-red-600 hover:text-red-900 font-medium text-xs bg-red-50 hover:bg-red-100 px-2.5 py-1.5 rounded transition inline-flex items-center gap-1" title="Download PDF">
+                                                        <i class="fas fa-file-pdf"></i>
+                                                        <span>PDF</span>
+                                                    </a>
+                                                </div>
                                             </td>
                                         </tr>
                                     @empty
@@ -196,42 +203,50 @@
     </div>
 
     <!-- Start Shift Modal -->
-    <div id="startShiftModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
-            <div class="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
-                <h2 class="text-2xl font-bold flex items-center space-x-2">
-                    <i class="fas fa-play-circle"></i>
-                    <span>Start New Shift</span>
-                </h2>
-                <p class="mt-2 text-blue-100">Optionally enter your opening balance to begin the shift</p>
+    <div id="startShiftModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col my-auto max-h-[92vh] border border-gray-100">
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-700 px-5 py-4 text-white flex items-center justify-between shrink-0 shadow-sm">
+                <div>
+                    <h2 class="text-lg font-bold flex items-center space-x-2">
+                        <i class="fas fa-play-circle"></i>
+                        <span>Start New Shift</span>
+                    </h2>
+                    <p class="mt-0.5 text-xs text-blue-100">Optionally enter your opening float</p>
+                </div>
+                <button type="button" onclick="closeStartShiftModal()" class="text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-1.5 transition">
+                    <i class="fas fa-times text-sm"></i>
+                </button>
             </div>
 
-            <form id="startShiftForm" class="p-6 space-y-4">
+            <form id="startShiftForm" class="flex flex-col flex-1 overflow-hidden">
                 @csrf
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Opening Balance (Till Float) <span class="text-gray-400 font-normal">— optional</span></label>
-                    <div class="relative">
-                        <span class="absolute left-3 top-3 text-gray-500 font-semibold">Rs.</span>
-                        <input type="number" id="openingBalance" name="opening_balance" step="0.01" min="0"
-                            class="w-full pl-12 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="0.00">
+                <div class="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Opening Balance (Till Float) <span class="text-slate-400 font-normal lowercase">— optional</span></label>
+                        <div class="relative">
+                            <span class="absolute left-3.5 top-2.5 text-slate-500 font-bold text-sm">Rs.</span>
+                            <input type="number" id="openingBalance" name="opening_balance" step="0.01" min="0"
+                                class="w-full pl-12 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-slate-900 text-sm"
+                                placeholder="0.00">
+                        </div>
+                        <p class="mt-1 text-[11px] text-slate-500">Leave blank to start with Rs. 0.00 float</p>
                     </div>
-                    <p class="mt-1 text-xs text-gray-600">Leave blank to start with Rs. 0.00 as the opening balance</p>
+
+                    <div class="bg-blue-50/80 border border-blue-200/80 rounded-xl p-3.5">
+                        <p class="text-xs text-blue-900 flex items-start gap-2">
+                            <i class="fas fa-info-circle text-blue-600 mt-0.5"></i>
+                            <span>Your shift will start immediately and all sales will be tracked. You can view and close this shift anytime.</span>
+                        </p>
+                    </div>
                 </div>
 
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p class="text-sm text-blue-900">
-                        <i class="fas fa-info-circle text-blue-600 mr-2"></i>
-                        Your shift will start immediately and all sales will be tracked. You can view and close this shift anytime.
-                    </p>
-                </div>
-
-                <div class="flex gap-3 pt-4">
-                    <button type="button" onclick="closeStartShiftModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold py-2 px-4 rounded-lg transition">
+                <div class="p-3.5 sm:p-4 bg-slate-50 border-t border-slate-200/80 flex gap-3 shrink-0">
+                    <button type="button" onclick="closeStartShiftModal()" class="flex-1 bg-white hover:bg-slate-100 text-slate-700 font-bold py-2.5 px-4 rounded-xl border border-slate-300 shadow-xs transition text-sm">
                         Cancel
                     </button>
-                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition">
-                        Start Shift
+                    <button type="submit" class="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-sm transition text-sm flex items-center justify-center gap-2">
+                        <i class="fas fa-play"></i>
+                        <span>Start Shift</span>
                     </button>
                 </div>
             </form>
@@ -239,72 +254,99 @@
     </div>
 
     <!-- Close Shift Modal -->
-    <div id="closeShiftModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
-            <div class="bg-gradient-to-r from-red-600 to-red-700 p-6 text-white">
-                <h2 class="text-2xl font-bold flex items-center space-x-2">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Close Shift</span>
-                </h2>
-                <p class="mt-2 text-red-100">Enter the actual till amount to reconcile and close the shift</p>
+    <div id="closeShiftModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col my-auto max-h-[92vh] border border-gray-100">
+            <div class="bg-gradient-to-r from-red-600 via-red-600 to-rose-700 px-5 py-3.5 text-white flex items-center justify-between shrink-0 shadow-sm">
+                <div>
+                    <h2 class="text-lg font-bold flex items-center space-x-2">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Close Shift</span>
+                    </h2>
+                    <p class="mt-0.5 text-xs text-red-100">Reconcile till cash and complete shift</p>
+                </div>
+                <button type="button" onclick="closeCloseShiftModal()" class="text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-1.5 transition">
+                    <i class="fas fa-times text-sm"></i>
+                </button>
             </div>
 
-            <form id="closeShiftForm" class="p-6 space-y-4">
+            <form id="closeShiftForm" class="flex flex-col flex-1 overflow-hidden">
                 @csrf
                 <input type="hidden" id="closeShiftId" name="shift_id">
 
-                <div id="closeShiftSummary" class="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Opening Balance:</span>
-                        <span id="closeSummaryOpening" class="font-semibold text-gray-900">Rs. 0.00</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Total Sales:</span>
-                        <span id="closeSummarySales" class="font-semibold text-blue-600">Rs. 0.00</span>
-                    </div>
-                    <div class="border-t border-gray-200 pt-3 flex justify-between">
-                        <span class="text-gray-700 font-medium">Expected Total:</span>
-                        <span id="closeSummaryExpected" class="font-bold text-gray-900">Rs. 0.00</span>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Count the Till (notes)</label>
-                    <div class="grid grid-cols-3 gap-2" id="denominationRows">
-                        @foreach ([5000, 1000, 500, 100, 50, 20] as $denom)
-                            <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-                                <span class="bg-gray-100 text-gray-700 text-sm font-semibold px-2 py-2">Rs.{{ $denom }}</span>
-                                <input type="number" class="denom-qty w-full px-2 py-2 focus:outline-none" data-denomination="{{ $denom }}"
-                                    min="0" step="1" placeholder="0" oninput="recalcDenominationTotal()">
+                <div class="p-4 sm:p-5 space-y-3.5 overflow-y-auto flex-1">
+                    <!-- Shift Summary Cards (Compact 3-column) -->
+                    <div id="closeShiftSummary" class="bg-slate-50 border border-slate-200/80 rounded-xl p-3 sm:p-3.5">
+                        <div class="grid grid-cols-3 gap-2 text-center divide-x divide-slate-200">
+                            <div class="px-1">
+                                <span class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Opening</span>
+                                <span id="closeSummaryOpening" class="block font-bold text-slate-800 text-sm mt-0.5">Rs. 0.00</span>
                             </div>
-                        @endforeach
+                            <div class="px-1">
+                                <span class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Sales</span>
+                                <span id="closeSummarySales" class="block font-bold text-blue-600 text-sm mt-0.5">Rs. 0.00</span>
+                            </div>
+                            <div class="px-1">
+                                <span class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Expected</span>
+                                <span id="closeSummaryExpected" class="block font-extrabold text-slate-900 text-sm mt-0.5">Rs. 0.00</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mt-3 flex justify-between items-center bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
-                        <span class="text-gray-700 font-medium">Total Counted:</span>
-                        <span id="actualTotalDisplay" class="text-xl font-bold text-gray-900">Rs. 0.00</span>
+
+                    <!-- Denominations Grid -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">Count the Till (notes)</label>
+                            <span class="text-[11px] text-slate-500">Enter note counts</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2" id="denominationRows">
+                            @foreach ([5000, 1000, 500, 100, 50, 20] as $denom)
+                                <div class="flex items-center border border-slate-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-red-500 focus-within:border-red-500 bg-white shadow-xs transition">
+                                    <span class="bg-slate-100 text-slate-700 text-xs font-bold px-2 py-1.5 border-r border-slate-200 shrink-0">Rs.{{ $denom }}</span>
+                                    <input type="number" class="denom-qty w-full px-2 py-1.5 text-center font-bold text-sm text-slate-900 focus:outline-none" data-denomination="{{ $denom }}"
+                                        min="0" step="1" placeholder="0" oninput="recalcDenominationTotal()">
+                                </div>
+                            @endforeach
+                        </div>
+                        <div class="mt-2.5 flex justify-between items-center bg-slate-900 text-white rounded-xl px-4 py-2.5 shadow-sm">
+                            <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Total Counted:</span>
+                            <span id="actualTotalDisplay" class="text-lg font-extrabold text-emerald-400">Rs. 0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Variance Alert -->
+                    <div id="varianceAlert" class="hidden rounded-xl p-3 text-xs font-semibold">
+                        <p class="flex items-center space-x-2">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span id="varianceText"></span>
+                        </p>
+                    </div>
+
+                    <!-- Notes -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Notes (Optional)</label>
+                        <textarea id="notes" name="notes"
+                            class="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none text-slate-800"
+                            placeholder="Any discrepancies or notes..." rows="2"></textarea>
+                    </div>
+
+                    <!-- PDF Download Option -->
+                    <div class="flex items-center space-x-2.5 bg-red-50/70 border border-red-200/80 rounded-xl p-2.5">
+                        <input type="checkbox" id="downloadPdfOnClose" name="download_pdf" checked class="h-4 w-4 text-red-600 focus:ring-red-500 border-slate-300 rounded cursor-pointer">
+                        <label for="downloadPdfOnClose" class="text-xs font-semibold text-red-950 cursor-pointer flex items-center gap-1.5 select-none">
+                            <i class="fas fa-file-pdf text-red-600 text-sm"></i>
+                            <span>Download shift reconciliation report as PDF</span>
+                        </label>
                     </div>
                 </div>
 
-                <div id="varianceAlert" class="hidden rounded-lg p-4">
-                    <p class="text-sm font-medium flex items-center space-x-2">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <span id="varianceText"></span>
-                    </p>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Notes (Optional)</label>
-                    <textarea id="notes" name="notes"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                        placeholder="Any discrepancies or notes..." rows="2"></textarea>
-                </div>
-
-                <div class="flex gap-3 pt-4">
-                    <button type="button" onclick="closeCloseShiftModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold py-2 px-4 rounded-lg transition">
+                <!-- Fixed Modal Actions Footer -->
+                <div class="p-3.5 sm:p-4 bg-slate-50 border-t border-slate-200/80 flex gap-3 shrink-0">
+                    <button type="button" onclick="closeCloseShiftModal()" class="flex-1 bg-white hover:bg-slate-100 text-slate-700 font-bold py-2.5 px-4 rounded-xl border border-slate-300 shadow-xs transition text-sm">
                         Cancel
                     </button>
-                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition">
-                        Close Shift
+                    <button type="submit" class="flex-1 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-sm transition text-sm flex items-center justify-center gap-2">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Close Shift</span>
                     </button>
                 </div>
             </form>
@@ -312,21 +354,34 @@
     </div>
 
     <!-- Shift Details Modal -->
-    <div id="detailsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 overflow-y-auto">
-        <div class="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4 my-8">
-            <div class="bg-gradient-to-r from-gray-600 to-gray-700 p-6 text-white">
-                <h2 class="text-2xl font-bold">Shift Details</h2>
+    <div id="detailsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col my-auto max-h-[92vh] border border-gray-100">
+            <div class="bg-gradient-to-r from-slate-700 to-slate-800 px-5 py-4 text-white flex items-center justify-between shrink-0 shadow-sm">
+                <div>
+                    <h2 class="text-lg font-bold flex items-center space-x-2">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <span>Shift Details</span>
+                    </h2>
+                    <p class="mt-0.5 text-xs text-slate-300">Complete summary and reconciliation breakdown</p>
+                </div>
+                <button type="button" onclick="closeDetailsModal()" class="text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-1.5 transition">
+                    <i class="fas fa-times text-sm"></i>
+                </button>
             </div>
 
-            <div id="detailsContent" class="p-6">
+            <div id="detailsContent" class="p-4 sm:p-6 overflow-y-auto flex-1">
                 <!-- Loading spinner -->
                 <div class="flex justify-center items-center py-8">
-                    <i class="fas fa-spinner fa-spin text-3xl text-gray-400"></i>
+                    <i class="fas fa-spinner fa-spin text-3xl text-slate-400"></i>
                 </div>
             </div>
 
-            <div class="bg-gray-100 p-6 border-t border-gray-200">
-                <button onclick="closeDetailsModal()" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-6 rounded-lg transition">
+            <div class="bg-slate-50 p-3.5 sm:p-4 border-t border-slate-200/80 flex justify-between items-center shrink-0">
+                <a id="modalDownloadPdfBtn" href="#" target="_blank" class="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-bold py-2 px-4 rounded-xl shadow-xs transition text-sm inline-flex items-center space-x-2">
+                    <i class="fas fa-file-pdf"></i>
+                    <span>Download PDF</span>
+                </a>
+                <button onclick="closeDetailsModal()" class="bg-white hover:bg-slate-100 text-slate-700 font-bold py-2 px-6 rounded-xl border border-slate-300 shadow-xs transition text-sm">
                     Close
                 </button>
             </div>
@@ -508,6 +563,9 @@
                         </div>
                     `;
                     document.getElementById('detailsContent').innerHTML = html;
+                    if (document.getElementById('modalDownloadPdfBtn')) {
+                        document.getElementById('modalDownloadPdfBtn').href = `/shifts/${shift.id}/pdf`;
+                    }
                 });
         }
 
@@ -581,6 +639,8 @@
                 notes: document.getElementById('notes').value,
             };
 
+            const shouldDownloadPdf = document.getElementById('downloadPdfOnClose') && document.getElementById('downloadPdfOnClose').checked;
+
             fetch('{{ route("shifts.close") }}', {
                 method: 'POST',
                 headers: {
@@ -592,6 +652,14 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    if (shouldDownloadPdf && data.pdf_url) {
+                        const link = document.createElement('a');
+                        link.href = data.pdf_url;
+                        link.target = '_blank';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    }
                     alert('Shift closed successfully!');
                     closeCloseShiftModal();
                     document.getElementById('closeShiftForm').reset();

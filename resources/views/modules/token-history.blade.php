@@ -314,29 +314,56 @@
         }
 
         function printTicket(data, title) {
+            let orderTypeBadge = 'DINE IN';
+            if (data.payment_method === 'uber' || data.order_type === 'uber') orderTypeBadge = 'UBER';
+            else if (data.payment_method === 'pickme' || data.order_type === 'pickme') orderTypeBadge = 'PICKME';
+            else if (data.order_type === 'takeaway') orderTypeBadge = 'TAKEAWAY';
+
+            // Colour-coded badge backgrounds (matches the new KOT layout)
+            const badgeStyle = {
+                'DINE IN':  'background:#000; color:#fff;',
+                'TAKEAWAY': 'background:#1d4ed8; color:#fff;',
+                'UBER':     'background:#000; color:#fff;',
+                'PICKME':   'background:#dc2626; color:#fff;',
+            }[orderTypeBadge] || 'background:#000; color:#fff;';
+
             const html = `
-                <div style="text-align:center; padding: 10px 0; border-bottom: 2px solid #000; margin-bottom: 10px;">
-                    <img src="/images/KDJ_logo.png" style="max-width:70px; max-height:70px; margin-bottom: 6px; display: inline-block;" />
-                    <div style="font-size: 24px; font-weight: 900; color: #2563eb; border: 3px solid #2563eb; display: inline-block; padding: 4px 15px; margin-bottom: 10px; border-radius: 8px; letter-spacing: 2px;">RE-PRINT</div>
-                    <div style="font-weight: 900; font-size: 16px; color:#000;">${title}</div>
-                    <div style="font-size: 13px; font-weight: 800; color:#000; margin-top: 5px;">Order: ${data.order_number}</div>
-                    <div style="margin-top: 6px;"><span style="font-size: 13px; font-weight: 900; color: #000; letter-spacing: 1.5px; border: 2px solid #000; display: inline-block; padding: 2px 10px; border-radius: 6px; text-transform: uppercase;">${data.order_type === 'takeaway' ? 'TAKEAWAY' : 'DINE IN'}</span></div>
-                    <div style="font-size: 32px; font-weight: 900; margin:4px 0; color:#000;">${data.token_number ? '#' + String(data.token_number).padStart(2, '0') : 'No token'}</div>
-                    <div style="font-size: 10px; color:#000;">Original: ${data.date_time}</div>
+                <!-- TOP SPACER — rail clip grips this blank zone -->
+                <div style="height:35mm;"></div>
+
+                <!-- RE-PRINT banner — identifies this as a duplicate -->
+                <div style="text-align:center; margin-bottom:8px;">
+                    <span style="font-size:13px; font-weight:900; color:#2563eb; border:2px solid #2563eb; display:inline-block; padding:2px 10px; border-radius:5px; letter-spacing:2px;">RE-PRINT</span>
                 </div>
-                <div style="border-bottom: 1px solid #000; padding-bottom: 10px;">
+
+                <!-- ORDER TYPE — first content visible below the clip -->
+                <div style="text-align:center; margin-bottom:8px;">
+                    <span style="${badgeStyle} display:inline-block; font-size:22px; font-weight:900; letter-spacing:2px; border:3px solid #000; border-radius:8px; padding:5px 20px; text-transform:uppercase;">
+                        ${orderTypeBadge}
+                    </span>
+                </div>
+
+                <!-- Order reference -->
+                <div style="font-size:13px; font-weight:800; color:#000; text-align:center;">Order: ${data.order_number}</div>
+                <div style="font-size:32px; font-weight:900; text-align:center; margin:4px 0; color:#000;">${data.token_number ? '#' + String(data.token_number).padStart(2, '0') : 'No token'}</div>
+                <div style="font-size:10px; color:#000; text-align:center; margin-bottom:6px;">Original: ${data.date_time}</div>
+
+                <!-- Items -->
+                <div style="border-top:1px solid #000; padding-top:10px; border-bottom:1px solid #000; padding-bottom:10px;">
                     ${data.items.map(i => `
                         <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700; margin:8px 0; border-bottom:1px dashed #000; padding-bottom:6px; color:#000;">
                             <span>${i.product_name}</span>
-                            <span style="font-size:16px; font-weight:900;">×${i.quantity}</span>
+                            <span style="font-size:16px; font-weight:900;">&times;${i.quantity}</span>
                         </div>
-                        ${i.kitchen_notes ? `<div style="font-size:11px; color:#000; margin-top:-4px; margin-bottom:6px; font-style: italic;">Note: ${i.kitchen_notes}</div>` : ''}
+                        ${i.kitchen_notes ? `<div style="font-size:11px; color:#000; margin-top:-4px; margin-bottom:6px; font-style:italic;">Note: ${i.kitchen_notes}</div>` : ''}
                     `).join('')}
                 </div>
+
                 <div style="text-align:center; font-size:10px; margin-top:10px; font-weight:800;">
                     RE-PRINTED AT: ${new Date().toLocaleString()}
                 </div>
             `;
+
 
             const w = window.open('', '', 'width=400');
             w.document.write(`

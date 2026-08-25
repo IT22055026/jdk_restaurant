@@ -615,7 +615,21 @@
                 </tr>`;
             }).join('');
 
-            const html = `
+                const methodLabel = { cash:'Cash', card:'Card', bank:'Bank', bank_transfer:'Bank Transfer', mixed:'Split', split:'Split', pickme:'PickMe', uber:'Uber' };
+                const m1Name = methodLabel[d.split_method1] || d.split_method1 || 'Method 1';
+                const m2Name = methodLabel[d.split_method2] || d.split_method2 || 'Method 2';
+                const a1 = (d.split_amount1 !== null && d.split_amount1 !== undefined) ? parseFloat(d.split_amount1) : 0;
+                const a2 = (d.split_amount2 !== null && d.split_amount2 !== undefined) ? parseFloat(d.split_amount2) : 0;
+
+                const paymentSectionHtml = (d.payment_method === 'mixed' || (d.split_method1 && d.split_amount1))
+                    ? `<div>Payment: Split</div>
+                       <div>Paid: Rs.${parseFloat(d.amount_paid || 0).toFixed(2)}</div>
+                       ${(a1 > 0 || d.split_method1) ? `<div style="padding-left:10px; font-size:11px;">- ${m1Name}: Rs.${a1.toFixed(2)}</div>` : ''}
+                       ${(a2 > 0 || d.split_method2) ? `<div style="padding-left:10px; font-size:11px;">- ${m2Name}: Rs.${a2.toFixed(2)}</div>` : ''}`
+                    : `<div>Payment: ${methodLabel[d.payment_method] || d.payment_method || 'N/A'}</div>
+                       <div>Paid: Rs.${parseFloat(d.amount_paid || 0).toFixed(2)}</div>`;
+
+                const html = `
                 <div style="text-align:center; padding-bottom:8px;">
                     <img src="/images/KDJ_logo.png" style="max-width:120px; max-height:120px; margin-bottom:6px; display:block; margin-left:auto; margin-right:auto;" />
                     <div style="font-size:16px; font-weight:900;">${CO_NAME}</div>
@@ -651,8 +665,7 @@
                 </table>
 
                 <div style="border-top:1px dashed #000; margin-top:8px; padding-top:6px; font-size:12px; font-weight:900;">
-                    <div>Payment: ${d.payment_method || 'N/A'}</div>
-                    <div>Paid: Rs.${parseFloat(d.amount_paid || 0).toFixed(2)}</div>
+                    ${paymentSectionHtml}
                     ${(d.change_amount > 0) ? `<div>Change: Rs.${parseFloat(d.change_amount).toFixed(2)}</div>` : ''}
                 </div>
 

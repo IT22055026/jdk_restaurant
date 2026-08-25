@@ -185,7 +185,7 @@ class ShiftController extends Controller
             'success' => true,
             'message' => 'Shift closed successfully',
             'shift_id' => $shift->id,
-            'pdf_url' => route('shifts.export.pdf', $shift->id),
+            'pdf_url' => url('/shifts/' . $shift->id . '/pdf'),
         ]);
     }
 
@@ -273,7 +273,7 @@ class ShiftController extends Controller
                 'total_tax' => (float) $totalTax,
                 'status' => $shift->status === 'active' ? 'Active' : 'Closed',
                 'denominations' => $denominations,
-                'pdf_url' => route('shifts.export.pdf', $shift->id),
+                'pdf_url' => url('/shifts/' . $shift->id . '/pdf'),
             ],
         ]);
     }

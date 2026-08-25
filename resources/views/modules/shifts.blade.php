@@ -171,7 +171,7 @@
                                                         <i class="fas fa-eye"></i>
                                                         <span>View</span>
                                                     </button>
-                                                    <a href="{{ route('shifts.export.pdf', $shift->id) }}" target="_blank" class="text-red-600 hover:text-red-900 font-medium text-xs bg-red-50 hover:bg-red-100 px-2.5 py-1.5 rounded transition inline-flex items-center gap-1" title="Download PDF">
+                                                    <a href="{{ url('/shifts/' . $shift->id . '/pdf') }}" target="_blank" class="text-red-600 hover:text-red-900 font-medium text-xs bg-red-50 hover:bg-red-100 px-2.5 py-1.5 rounded transition inline-flex items-center gap-1" title="Download PDF">
                                                         <i class="fas fa-file-pdf"></i>
                                                         <span>PDF</span>
                                                     </a>
